@@ -4,7 +4,7 @@ EXEC_TARGET = main
 # compiler & flags
 CXX = g++
 CPPFLAGS = -g -O3 -Wall -fno-operator-names -std=c++1y 
-LDFLAGS = -lcrypto -pthread -lsnappy  -lmbedcrypto   
+LDFLAGS = -lcrypto -pthread -lsnappy   
 
 # directory structure
 BUILD_DIR = ./build
