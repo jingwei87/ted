@@ -2,7 +2,7 @@ CC = g++
 CFLAGS = -O3 -Wall #-g2 -ggdb
 LIBS = -lcrypto -lssl -lpthread -lsnappy #-pg -lc
 INCLUDES = -I./lib/leveldb/include -I./backend/ -I./utils/ -I./lib/cryptopp -I./comm/ -I./dedup/ 
-MAIN_OBJS = ./utils/CryptoPrimitive.o ./dedup/DedupCore.o ./dedup/minDedupCore.o ./backend/BackendStorer.o ./comm/server.o
+MAIN_OBJS = ./utils/CryptoPrimitive.o ./dedup/DedupCore.o ./backend/BackendStorer.o ./comm/server.o
 
 all: leveldb server
 	$(shell ! test -d "meta" && mkdir meta)

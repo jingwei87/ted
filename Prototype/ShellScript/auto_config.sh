@@ -1,6 +1,5 @@
-cd client/lib
-make
 cd ..
+cd client
 make
 cd ../server
 make

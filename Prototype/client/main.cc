@@ -15,7 +15,8 @@
 #include "encoder.hh"
 #include "solver.h"
 #include "uploader.hh"
-#include <google/sparse_hash_map>
+#include <google/dense_hash_map>
+#include <openssl/sha.h>
 #define MAIN_CHUNK
 
 using namespace std;
@@ -31,21 +32,22 @@ Configuration* confObj;
 
 void usage(char* s)
 {
-    printf("usage: ./CLIENT [filename] [userID] [action] [secutiyType]\n- [filename]: full path of the file;\n- [userID]: use ID of current client;\n- [action]: [-u] upload; [-d] download;\n- [securityType]: [HIGH] AES-256 & SHA-256; [LOW] AES-128 & SHA-1\n");
+    printf("usage: ./CLIENT [filename] [userID] [action] [secutiyType]\n- [filename]: full path of the file;\n- [userID]: use ID of current client;\n- [action]: [-u] upload; [-d] download;\n- [securityType]: [HIGH] AES-256 & SHA-256; [LOW] AES-128 & SHA-1\n- [storageBlowUp]:\n");
     exit(1);
 }
 
 int main(int argc, char* argv[])
 {
     /* argument test */
-    if (argc != 5)
+    if (argc != 6)
         usage(NULL);
 
     /* get options */
     int userID = atoi(argv[2]);
     char* opt = argv[3];
     char* securesetting = argv[4];
-
+    double storageBlow;
+    storageBlow = atof(argv[5]);
     /* read file */
 
     unsigned char* buffer;
@@ -113,7 +115,7 @@ int main(int argc, char* argv[])
         uploaderObj = new Uploader(n, n, userID);
         encoderObj = new Encoder(CAONT_RS_TYPE, n, m, r, securetype, uploaderObj);
         chunkerObj = new Chunker(VAR_SIZE_TYPE);
-        cryptoObj = new CryptoPrimitive();
+        cryptoObj = new CryptoPrimitive(securetype);
 
         Encoder::Secret_Item_t header;
         header.type = 1;
@@ -128,55 +130,117 @@ int main(int argc, char* argv[])
         long total = 0;
         int totalChunks = 0;
 
-        struct eqstr {
-            bool operator()(unsigned char* s1, unsigned char* s2) const
-            {
-                return (s1 == s2) || (s1 && s2 && strcmp((const char*)s1, (const char*)s2) == 0);
-            }
-        };
+        // struct eqstr {
+        //     bool operator()(unsigned char* s1, unsigned char* s2) const
+        //     {
+        //         return (memcmp(s1, s2, 32) == 0);
+        //         // if (memcmp(s1, s2, 32) == 0) {
+        //         //     return true;
+        //         // } else {
+        //         //     return false;
+        //         // }
+        //     }
+        // };
 
-        google::sparse_hash_map<unsigned char*, int, hash<unsigned char*>, eqstr> chunkFreqTable;
-        chunkFreqTable.set_deleted_key(NULL);
+        google::dense_hash_map<unsigned char*, int> chunkFreqTable;
+        unsigned char emptyKey[33] = { 0 };
+        chunkFreqTable.set_empty_key(emptyKey);
 
         while (total < size) {
             int ret = fread(buffer, 1, bufferSize, fin);
             chunkerObj->chunking(buffer, ret, chunkEndIndexList, &numOfChunks);
-
+            chunkEndIndexListVec.push_back(chunkEndIndexList);
             int count = 0;
             int preEnd = -1;
             while (count < numOfChunks) {
                 unsigned char data[SECRET_SIZE];
-                unsigned char* hash;
+                unsigned char hash[33];
                 memcpy(data, buffer + preEnd + 1, chunkEndIndexList[count] - preEnd);
-                cryptoObj->generateHash(data, chunkEndIndexList[count] - preEnd, hash);
-                chunkFreqTable[hash] = ;
+                SHA256(data, chunkEndIndexList[count] - preEnd, hash);
+                char buf[65] = { 0 };
+                char tmp[3] = { 0 };
+                for (int i = 0; i < 32; i++) {
+                    sprintf(tmp, "%02x", hash[i]);
+                    strcat(buf, tmp);
+                }
+                cout << buf << endl;
+                //cout << chunkEndIndexList[count + 1] - chunkEndIndexList[count] << endl;
+                //auto current = chunkFreqTable.find(hash);
+                //cout << hash << endl;
+                chunkFreqTable.insert(make_pair(hash, 5));
+                // if (current == chunkFreqTable.end()) {
+                //     cout << "new unique" << endl
+                //          << endl;
+                //     chunkFreqTable.insert(make_pair(hash, 1));
+                // } else {
+                //     cout << "new dup" << strlen((const char*)current->first) << endl;
+                //     char output[65] = { 0 };
+                //     char temp[3] = { 0 };
+                //     for (int i = 0; i < 32; i++) {
+                //         sprintf(temp, "%02x", current->first[i]);
+                //         strcat(output, temp);
+                //     }
+                //     cout << output << endl
+                //          << endl;
+                //     current->second++;
+                // }
+                //cout << hash << endl;
                 preEnd = chunkEndIndexList[count];
                 count++;
+                totalChunks++;
             }
             total += ret;
         }
+        vector<pair<string, int>> opInput;
+        opInput.reserve(chunkFreqTable.size());
+        cout << "total chunk number = " << totalChunks << endl;
+        cout << "chunk number = " << chunkFreqTable.size() << endl;
+        for (auto it = chunkFreqTable.begin(); it != chunkFreqTable.end(); it++) {
+            char output[65] = { 0 };
+            char temp[3] = { 0 };
+            for (int i = 0; i < 32; i++) {
+                sprintf(temp, "%02x", it->first[i]);
+                strcat(output, temp);
+            }
+            cout << output << "\t" << it->second << endl
+                 << endl;
+            //cout << it->first << endl;
+            string currentHash = (const char*)it->first;
+            opInput.push_back(make_pair(currentHash, it->second));
+        }
+
+        m = chunkFreqTable.size() * (1 + storageBlow);
+        OpSolver* solver = new OpSolver(m, opInput);
+        encoderObj->set_T(solver->GetOptimal());
 
         total = 0;
+        totalChunks = 0;
         fseek(fin, 0, SEEK_SET);
         while (total < size) {
             int ret = fread(buffer, 1, bufferSize, fin);
 
             int count = 0;
             int preEnd = -1;
+            int i = 0;
             while (count < numOfChunks) {
                 Encoder::Secret_Item_t input;
                 input.type = 0;
                 input.secret.secretID = totalChunks;
-                input.secret.secretSize = chunkEndIndexList[count] - preEnd;
+
+                input.secret.secretSize
+                    = chunkEndIndexListVec[i][count] - preEnd;
                 memcpy(input.secret.data, buffer + preEnd + 1, input.secret.secretSize);
+                SHA256(input.secret.data, input.secret.secretSize, input.secret.hash);
+                input.secret.currentFreq = chunkFreqTable.find(input.secret.hash)->second--;
 
                 input.secret.end = 0;
                 if (total + ret == size && count + 1 == numOfChunks)
                     input.secret.end = 1;
                 encoderObj->add(&input);
                 totalChunks++;
-                preEnd = chunkEndIndexList[count];
+                preEnd = chunkEndIndexListVec[i][count];
                 count++;
+                i++;
             }
             total += ret;
         }

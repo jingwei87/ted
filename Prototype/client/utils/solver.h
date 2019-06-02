@@ -22,7 +22,7 @@ class OpSolver {
 public:
     OpSolver(int m, vector<pair<string, int>> inputDistribution);
     ~OpSolver();
-    void GetOptimal();
+    double GetOptimal();
     void PrintResult(FILE* fpOut);
     bool CheckConstrain(int startIndex);
     bool Compare(pair<string, int> a, pair<string, int> b);

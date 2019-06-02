@@ -89,7 +89,7 @@ void OpSolver::PrintDistri(FILE* outputP, FILE* outputC)
     }
 }
 
-void OpSolver::GetOptimal()
+double OpSolver::GetOptimal()
 {
     sort(inputFeqDistr_.begin(), inputFeqDistr_.end(), [=](pair<string, int> a, pair<string, int> b) { return a.second < b.second; });
 
@@ -132,6 +132,7 @@ void OpSolver::GetOptimal()
     for (int i = startIndex + 1; i < m_; i++) {
         outputFeqDistr_[i] = newAverage;
     }
+    return newAverage;
 }
 
 bool OpSolver::CheckConstrain(int startIndex)

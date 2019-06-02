@@ -1,3 +1,4 @@
+cd ..
 rm -rf server2/
 rm -rf server3/
 rm -rf server4/
