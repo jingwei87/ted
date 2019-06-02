@@ -139,6 +139,9 @@ int main(int argc, char* argv[])
         int index = 0;
         int maxReadTimes = size / confObj->getBufferSize() + 1;
         int maxChunkNumberPerRead = confObj->getBufferSize() / 2048;
+        cout << maxChunkNumberPerRead * maxReadTimes << endl;
+        unsigned char* hashTable;
+        hashTable = (unsigned char*)malloc(sizeof(unsigned char) * 300 * 1024 * 1024);
         int tempIndex[maxReadTimes][maxChunkNumberPerRead];
         while (total < size) {
             int ret = fread(buffer, 1, bufferSize, fin);
@@ -160,6 +163,7 @@ int main(int argc, char* argv[])
                 unsigned char hash[32];
                 memcpy(data, buffer + preEnd + 1, chunkEndIndexList[count] - preEnd);
                 SHA256(data, chunkEndIndexList[count] - preEnd, hash);
+                memcpy(hashTable + (totalChunks * 32), hash, 32);
                 // char buf[65] = { 0 };
                 // char tmp[3] = { 0 };
                 // for (int i = 0; i < 32; i++) {
@@ -240,7 +244,8 @@ int main(int argc, char* argv[])
                 input.secret.secretSize = tempIndex[i][count] - preEnd;
                 input.secret.end = 0;
                 memcpy(input.secret.data, buffer + preEnd + 1, input.secret.secretSize);
-                SHA256(input.secret.data, input.secret.secretSize, input.secret.hash);
+                //SHA256(input.secret.data, input.secret.secretSize, input.secret.hash);
+                memcpy(input.secret.hash, hashTable + (totalChunks * 32), 32);
                 // char buf[65] = { 0 };
                 // char tmp[3] = { 0 };
                 // for (int i = 0; i < 32; i++) {
