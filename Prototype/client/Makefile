@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS =  -Wall -fno-operator-names -g2 -ggdb
+CFLAGS = -O3 -Wall -fno-operator-names #-g2 -ggdb
 LIBS = -lcrypto -lssl -lpthread -lgf_complete#-pg -lc
 INCLUDES = -I./comm -I./coding -I./chunking -I./utils -I./keyClient -I./lib
 MAIN_OBJS = ./chunking/chunker.o ./utils/CryptoPrimitive.o ./coding/CDCodec.o ./coding/encoder.o  ./comm/uploader.o  ./utils/socket.o ./utils/solver.o ./comm/downloader.o ./coding/decoder.o

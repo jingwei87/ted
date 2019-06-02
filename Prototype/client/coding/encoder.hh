@@ -38,6 +38,7 @@ public:
     /* threads parameter structure */
     typedef struct {
         int index; // thread number
+        double t_;
         Encoder* obj; // encoder object pointer
     } param_encoder;
 
@@ -97,9 +98,6 @@ public:
     /* the total number of clouds */
     int n_;
 
-    /* the optimization t */
-    int t_;
-
     /* index for sequencially adding object */
     int nextAddIndex_;
 
@@ -129,7 +127,8 @@ public:
         int m,
         int r,
         int securetype,
-        Uploader* uploaderObj);
+        Uploader* uploaderObj,
+        double t);
 
     /*
          * destructor of encoder
@@ -140,11 +139,6 @@ public:
          * test if it's end of encoding a file
          */
     void indicateEnd();
-
-    /*
-         * set tunable encryption param t
-         */
-    void set_T(double t);
 
     /*
          * add function for sequencially add items to each encode buffer

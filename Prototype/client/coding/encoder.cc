@@ -17,6 +17,8 @@ void* Encoder::thread_handler(void* param)
 
     /* parse parameters */
     int index = ((param_encoder*)param)->index;
+    double t = ((param_encoder*)param)->t_;
+    //cout << "t= " << t << endl;
     Encoder* obj = ((param_encoder*)param)->obj;
     free(param);
 
@@ -39,7 +41,18 @@ void* Encoder::thread_handler(void* param)
         } else {
 
             /* if it's share object */
-            obj->encodeObj_[index]->encoding(temp.secret.data, temp.secret.secretSize, input.share_chunk.data, &(input.share_chunk.shareSize));
+            unsigned char key[32];
+            if (t != 0) {
+                double param = temp.secret.currentFreq / t;
+                unsigned char newKeyBuffer[32 + sizeof(double)];
+                memcpy(newKeyBuffer, temp.secret.hash, 32);
+                memcpy(newKeyBuffer + 32, &param, sizeof(double));
+                SHA256(newKeyBuffer, 32 + sizeof(double), key);
+            } else {
+                memcpy(key, temp.secret.hash, 32);
+            }
+
+            obj->encodeObj_[index]->encoding(temp.secret.data, temp.secret.secretSize, input.share_chunk.data, &(input.share_chunk.shareSize), key);
             input.share_chunk.secretID = temp.secret.secretID;
             input.share_chunk.secretSize = temp.secret.secretSize;
             input.share_chunk.end = temp.secret.end;
@@ -92,7 +105,9 @@ void* Encoder::collect(void* param)
             int tmp_s;
 
             //encode pathname into shares for privacy
-            obj->encodeObj_[0]->encoding(temp.file_header.data, temp.file_header.fullNameSize, tmp, &(tmp_s));
+            unsigned char key[32];
+            SHA256(temp.file_header.data, temp.file_header.fullNameSize, key);
+            obj->encodeObj_[0]->encoding(temp.file_header.data, temp.file_header.fullNameSize, tmp, &(tmp_s), key);
 
             input.fileObj.file_header.fullNameSize = tmp_s;
 
@@ -158,7 +173,7 @@ void Encoder::indicateEnd()
  * @param uploaderObj - pointer link to uploader object
  *
  */
-Encoder::Encoder(int type, int n, int m, int r, int securetype, Uploader* uploaderObj)
+Encoder::Encoder(int type, int n, int m, int r, int securetype, Uploader* uploaderObj, double t)
 {
 
     /* initialization of variables */
@@ -177,6 +192,7 @@ Encoder::Encoder(int type, int n, int m, int r, int securetype, Uploader* upload
         encodeObj_[i] = new CDCodec(type, n, m, r, cryptoObj_[i]);
         param_encoder* temp = (param_encoder*)malloc(sizeof(param_encoder));
         temp->index = i;
+        temp->t_ = t;
         temp->obj = this;
 
         /* create encoding threads */
@@ -220,9 +236,4 @@ int Encoder::add(Secret_Item_t* item)
     /* increment the index */
     nextAddIndex_ = (nextAddIndex_ + 1) % NUM_THREADS;
     return 1;
-}
-
-void Encoder::set_T(double t)
-{
-    t_ = t;
 }

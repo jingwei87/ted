@@ -178,7 +178,9 @@ int Downloader::downloadFile(char* filename, int namesize, int numOfCloud)
     int tmp_s;
 
     // encode the filepath into shares
-    decodeObj_->decodeObj_[0]->encoding((unsigned char*)filename, namesize, tmp, &(tmp_s));
+    unsigned char key[32];
+    SHA256((unsigned char*)filename, namesize, key);
+    decodeObj_->decodeObj_[0]->encoding((unsigned char*)filename, namesize, tmp, &(tmp_s), key);
 
     /* add init object for download */
     init_t input;
