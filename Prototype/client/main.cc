@@ -1,11 +1,6 @@
 /*
  * main test program
  */
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-
 #include "CDCodec.hh"
 #include "CryptoPrimitive.hh"
 #include "chunker.hh"
@@ -15,11 +10,19 @@
 #include "encoder.hh"
 #include "solver.h"
 #include "uploader.hh"
+#include <bits/stdc++.h>
 #include <google/dense_hash_map>
+#include <iostream>
 #include <openssl/sha.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
 #define MAIN_CHUNK
 
 using namespace std;
+
+struct timeval timestart;
+struct timeval timeend;
 
 Chunker* chunkerObj;
 Decoder* decoderObj;
@@ -38,6 +41,8 @@ void usage(char* s)
 
 int main(int argc, char* argv[])
 {
+
+    gettimeofday(&timestart, NULL);
     /* argument test */
     if (argc != 6)
         usage(NULL);
@@ -52,7 +57,7 @@ int main(int argc, char* argv[])
 
     unsigned char* buffer;
     int* chunkEndIndexList;
-    vector<int*> chunkEndIndexListVec;
+    vector<int> chunkNumberVec;
 
     int numOfChunks;
     int n, m, k, r, *kShareIDList;
@@ -113,7 +118,7 @@ int main(int argc, char* argv[])
         long size = ftell(fin);
         fseek(fin, 0, SEEK_SET);
         uploaderObj = new Uploader(n, n, userID);
-        encoderObj = new Encoder(CAONT_RS_TYPE, n, m, r, securetype, uploaderObj);
+
         chunkerObj = new Chunker(VAR_SIZE_TYPE);
         cryptoObj = new CryptoPrimitive(securetype);
 
@@ -124,127 +129,152 @@ int main(int argc, char* argv[])
         header.file_header.fileSize = size;
 
         // do encode
-        encoderObj->add(&header);
+
         //uploaderObj->generateMDHead(0,size,(unsigned char*) argv[1],namesize,n,0,0,0,0);
 
         long total = 0;
         int totalChunks = 0;
 
-        // struct eqstr {
-        //     bool operator()(unsigned char* s1, unsigned char* s2) const
-        //     {
-        //         return (memcmp(s1, s2, 32) == 0);
-        //         // if (memcmp(s1, s2, 32) == 0) {
-        //         //     return true;
-        //         // } else {
-        //         //     return false;
-        //         // }
-        //     }
-        // };
-
-        google::dense_hash_map<unsigned char*, int> chunkFreqTable;
-        unsigned char emptyKey[33] = { 0 };
-        chunkFreqTable.set_empty_key(emptyKey);
-
+        unordered_map<string, int> chunkFreqTable;
+        int index = 0;
+        int maxReadTimes = size / confObj->getBufferSize() + 1;
+        int maxChunkNumberPerRead = confObj->getBufferSize() / 2048;
+        int tempIndex[maxReadTimes][maxChunkNumberPerRead];
         while (total < size) {
             int ret = fread(buffer, 1, bufferSize, fin);
             chunkerObj->chunking(buffer, ret, chunkEndIndexList, &numOfChunks);
-            chunkEndIndexListVec.push_back(chunkEndIndexList);
+            for (int i = 0; i < numOfChunks; i++) {
+                tempIndex[index][i] = chunkEndIndexList[i];
+            }
+            chunkNumberVec.push_back(numOfChunks);
             int count = 0;
             int preEnd = -1;
+            // cout << index << "th:" << numOfChunks << endl;
+            // for (auto i = 0; i < numOfChunks; i++) {
+            //     cout << chunkEndIndexList[i] << "  ";
+            // }
+            // cout << endl;
             while (count < numOfChunks) {
+
                 unsigned char data[SECRET_SIZE];
-                unsigned char hash[33];
+                unsigned char hash[32];
                 memcpy(data, buffer + preEnd + 1, chunkEndIndexList[count] - preEnd);
                 SHA256(data, chunkEndIndexList[count] - preEnd, hash);
-                char buf[65] = { 0 };
-                char tmp[3] = { 0 };
-                for (int i = 0; i < 32; i++) {
-                    sprintf(tmp, "%02x", hash[i]);
-                    strcat(buf, tmp);
-                }
-                cout << buf << endl;
-                //cout << chunkEndIndexList[count + 1] - chunkEndIndexList[count] << endl;
-                //auto current = chunkFreqTable.find(hash);
-                //cout << hash << endl;
-                chunkFreqTable.insert(make_pair(hash, 5));
-                // if (current == chunkFreqTable.end()) {
-                //     cout << "new unique" << endl
-                //          << endl;
-                //     chunkFreqTable.insert(make_pair(hash, 1));
-                // } else {
-                //     cout << "new dup" << strlen((const char*)current->first) << endl;
-                //     char output[65] = { 0 };
-                //     char temp[3] = { 0 };
-                //     for (int i = 0; i < 32; i++) {
-                //         sprintf(temp, "%02x", current->first[i]);
-                //         strcat(output, temp);
-                //     }
-                //     cout << output << endl
-                //          << endl;
-                //     current->second++;
+                // char buf[65] = { 0 };
+                // char tmp[3] = { 0 };
+                // for (int i = 0; i < 32; i++) {
+                //     sprintf(tmp, "%02x", hash[i]);
+                //     strcat(buf, tmp);
                 // }
-                //cout << hash << endl;
+                // cout << buf << endl;
+                // cout << chunkEndIndexList[count + 1] - chunkEndIndexList[count] << endl;
+                string newChunkHash((char*)hash, 32);
+                auto current = chunkFreqTable.find(newChunkHash);
+                if (current == chunkFreqTable.end()) {
+                    // cout << "new unique" << endl;
+                    chunkFreqTable.insert(make_pair(newChunkHash, 1));
+                } else {
+                    // cout << "new dup" << current->first.length() << endl;
+                    // char output[65] = { 0 };
+                    // char temp[3] = { 0 };
+                    // for (int i = 0; i < 32; i++) {
+                    //     sprintf(temp, "%02x", current->first[i]);
+                    //     strcat(output, temp);
+                    // }
+                    // cout << output << endl
+                    //      << endl;
+                    current->second++;
+                }
                 preEnd = chunkEndIndexList[count];
                 count++;
                 totalChunks++;
             }
             total += ret;
+            index++;
         }
         vector<pair<string, int>> opInput;
         opInput.reserve(chunkFreqTable.size());
         cout << "total chunk number = " << totalChunks << endl;
-        cout << "chunk number = " << chunkFreqTable.size() << endl;
+        cout << "unique chunk number = " << chunkFreqTable.size() << endl;
         for (auto it = chunkFreqTable.begin(); it != chunkFreqTable.end(); it++) {
-            char output[65] = { 0 };
-            char temp[3] = { 0 };
-            for (int i = 0; i < 32; i++) {
-                sprintf(temp, "%02x", it->first[i]);
-                strcat(output, temp);
-            }
-            cout << output << "\t" << it->second << endl
-                 << endl;
-            //cout << it->first << endl;
-            string currentHash = (const char*)it->first;
-            opInput.push_back(make_pair(currentHash, it->second));
+            // char buf[65] = { 0 };
+            // char tmp[3] = { 0 };
+            // for (int i = 0; i < 32; i++) {
+            //     sprintf(tmp, "%02x", it->first.c_str()[i]);
+            //     strcat(buf, tmp);
+            // }
+            // cout << it->first.length() << buf << endl;
+            opInput.push_back(make_pair(it->first, it->second));
         }
 
-        m = chunkFreqTable.size() * (1 + storageBlow);
-        OpSolver* solver = new OpSolver(m, opInput);
-        encoderObj->set_T(solver->GetOptimal());
-
+        int opm = chunkFreqTable.size() * (1 + storageBlow);
+        OpSolver* solver = new OpSolver(opm, opInput);
+        encoderObj = new Encoder(CAONT_RS_TYPE, n, m, r, securetype, uploaderObj, solver->GetOptimal());
+        // encoderObj->set_T();
+        encoderObj->add(&header);
         total = 0;
         totalChunks = 0;
         fseek(fin, 0, SEEK_SET);
-        while (total < size) {
-            int ret = fread(buffer, 1, bufferSize, fin);
 
+        // for (auto i = 0; i < chunkNumberVec.size(); i++) {
+        //     cout << i << "th:" << chunkNumberVec[i] << endl;
+        //     for (auto j = 0; j < chunkNumberVec[i]; j++) {
+        //         cout << tempIndex[i][j] << "  ";
+        //     }
+        //     cout << endl;
+        // }
+        int i = 0;
+        while (total < size) {
+
+            int ret = fread(buffer, 1, bufferSize, fin);
+            //chunkerObj->chunking(buffer, ret, chunkEndIndexList, &numOfChunks);
+            //printf("line - %d\n", __LINE__);
             int count = 0;
             int preEnd = -1;
-            int i = 0;
             while (count < numOfChunks) {
+
                 Encoder::Secret_Item_t input;
                 input.type = 0;
                 input.secret.secretID = totalChunks;
-
-                input.secret.secretSize
-                    = chunkEndIndexListVec[i][count] - preEnd;
+                //input.secret.secretSize = chunkEndIndexList[count] - preEnd;
+                input.secret.secretSize = tempIndex[i][count] - preEnd;
+                input.secret.end = 0;
                 memcpy(input.secret.data, buffer + preEnd + 1, input.secret.secretSize);
                 SHA256(input.secret.data, input.secret.secretSize, input.secret.hash);
-                input.secret.currentFreq = chunkFreqTable.find(input.secret.hash)->second--;
-
-                input.secret.end = 0;
-                if (total + ret == size && count + 1 == numOfChunks)
+                // char buf[65] = { 0 };
+                // char tmp[3] = { 0 };
+                // for (int i = 0; i < 32; i++) {
+                //     sprintf(tmp, "%02x", input.secret.hash[i]);
+                //     strcat(buf, tmp);
+                // }
+                // cout << buf << endl;
+                string newChunkHash((char*)input.secret.hash, 32);
+                auto temp = chunkFreqTable.find(newChunkHash);
+                if (temp == chunkFreqTable.end()) {
+                    cout << "error in re find chunk" << endl;
+                } else {
+                    // cout << "success in re find chunk" << endl;
+                    // for (int i = 0; i < 32; i++) {
+                    //     sprintf(tmp, "%02x", temp->first[i]);
+                    //     strcat(buf, tmp);
+                    // }
+                    // cout << buf << endl;
+                    // cout << temp->second << endl;
+                    input.secret.currentFreq = temp->second;
+                    temp->second = temp->second - 1;
+                }
+                if (total + ret == size && count + 1 == chunkNumberVec[i] /*numOfChunks*/)
                     input.secret.end = 1;
                 encoderObj->add(&input);
+
                 totalChunks++;
-                preEnd = chunkEndIndexListVec[i][count];
+                //preEnd = chunkEndIndexList[count];
+                preEnd = tempIndex[i][count];
                 count++;
-                i++;
             }
             total += ret;
+            i++;
         }
-
         long long tt = 0, unique = 0;
         uploaderObj->indicateEnd(&tt, &unique);
 
@@ -280,5 +310,11 @@ int main(int argc, char* argv[])
     free(shareBuffer);
     free(kShareIDList);
     CryptoPrimitive::opensslLockCleanup();
+
+    gettimeofday(&timeend, NULL);
+    long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
+    double second = diff / 1000000.0;
+    printf("the total work time is %ld us = %lf s\n", diff, second);
+
     return 0;
 }
