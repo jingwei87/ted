@@ -48,6 +48,11 @@ void* Encoder::thread_handler(void* param)
                 memcpy(newKeyBuffer, temp.secret.hash, 32);
                 memcpy(newKeyBuffer + 32, &param, sizeof(double));
                 SHA256(newKeyBuffer, 32 + sizeof(double), key);
+                // unsigned char tempXOR[sizeof(double)];
+                // memcpy(&tempXOR, &param, sizeof(double));
+                // for (auto i = 0; i < sizeof(double); i++) {
+                //     key[i] = tempXOR[i] ^ key[i];
+                // }
             } else {
                 memcpy(key, temp.secret.hash, 32);
             }
