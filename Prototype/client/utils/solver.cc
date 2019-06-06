@@ -1,11 +1,11 @@
-#include "solver.h"
+#include "solver.hh"
 
 double Log2(double number)
 {
     return log(number) / log(2);
 }
 
-OpSolver::OpSolver(int m, vector<pair<string, int>> inputDistribution)
+OpSolver::OpSolver(int m, vector<pair<string, int> > inputDistribution)
 {
     m_ = m;
     n_ = inputDistribution.size();

@@ -8,10 +8,10 @@
 #include "decoder.hh"
 #include "downloader.hh"
 #include "encoder.hh"
-#include "solver.h"
+#include "solver.hh"
 #include "uploader.hh"
 #include <bits/stdc++.h>
-#include <google/dense_hash_map>
+//#include <google/dense_hash_map>
 #include <iostream>
 #include <openssl/sha.h>
 #include <stdio.h>
