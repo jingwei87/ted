@@ -20,7 +20,7 @@ using namespace std;
 
 class OpSolver {
 public:
-    OpSolver(int m, vector<pair<string, int>> inputDistribution);
+    OpSolver(int m, vector<pair<string, int> > inputDistribution);
     ~OpSolver();
     double GetOptimal();
     void PrintResult(FILE* fpOut);
@@ -38,7 +38,7 @@ private:
     double maxEntropy_;
     double originalEntropy_;
 
-    vector<pair<string, int>> inputFeqDistr_;
+    vector<pair<string, int> > inputFeqDistr_;
     vector<double> outputFeqDistr_;
 };
 
