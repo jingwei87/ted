@@ -44,9 +44,14 @@ void* Encoder::thread_handler(void* param)
             unsigned char key[32];
             if (t != 0) {
                 double param = temp.secret.currentFreq / t;
-                unsigned char newKeyBuffer[32 + sizeof(double)];
+                int paramFloor = floor(param);
+                int randNumber = rand() % (paramFloor * 2);
+                if (randNumber < paramFloor) {
+                    paramFloor = randNumber;
+                }
+                unsigned char newKeyBuffer[32 + sizeof(int)];
                 memcpy(newKeyBuffer, temp.secret.hash, 32);
-                memcpy(newKeyBuffer + 32, &param, sizeof(double));
+                memcpy(newKeyBuffer + 32, &paramFloor, sizeof(int));
                 SHA256(newKeyBuffer, 32 + sizeof(double), key);
                 // unsigned char tempXOR[sizeof(double)];
                 // memcpy(&tempXOR, &param, sizeof(double));

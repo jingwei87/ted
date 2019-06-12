@@ -9,6 +9,7 @@
 #include "CDCodec.hh"
 #include "CryptoPrimitive.hh"
 #include "uploader.hh"
+#include <bits/stdc++.h>
 
 /* num of encoder threads */
 #define NUM_THREADS 2
