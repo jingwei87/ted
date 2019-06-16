@@ -35,14 +35,14 @@ Configuration* confObj;
 
 void usage(char* s)
 {
-    printf("usage: ./CLIENT [filename] [userID] [action] [secutiyType]\n
-    - [filename]: full path of the file;\n
-    - [userID]: use ID of current client;\n
-    - [action]: [-u] upload; [-d] download;\n
-    - [securityType]: [HIGH] AES-256 & SHA-256; [LOW] AES-128 & SHA-1\n
-    - [storageBlowUp]:\n
-    - [Segment Size]:\n
-    - [Segment feature method: 1-(first hash) 2-(minhash) 3-(segment hash)]:\n
+    printf("usage: ./CLIENT [filename] [userID] [action] [secutiyType]\n \
+    - [filename]: full path of the file;\n\
+    - [userID]: use ID of current client;\n\
+    - [action]: [-u] upload; [-d] download;\n\
+    - [securityType]: [HIGH] AES-256 & SHA-256; [LOW] AES-128 & SHA-1\n\
+    - [storageBlowUp]:\n\
+    - [Segment Size]:\n\
+    - [Segment feature method: 1-(first hash) 2-(minhash) 3-(segment hash)]:\n\
     ");
     exit(1);
 }
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 
         vector<string> segmentHashList;
         int segmentItemCount = 0;
-
+        bool fileEndFlag = false;
         while (total < size) {
             int ret = fread(buffer, 1, bufferSize, fin);
             chunkerObj->chunking(buffer, ret, chunkEndIndexList, &numOfChunks);
@@ -188,6 +188,9 @@ int main(int argc, char* argv[])
                 // cout << chunkEndIndexList[count + 1] - chunkEndIndexList[count] << endl;
                 string newChunkHash((char*)hash, 32);
                 segmentItemCount++;
+                if (total + ret == size && count + 1 == chunkNumberVec[i] /*numOfChunks*/) {
+                    fileEndFlag = true;
+                }
                 if (segmentFeatureMethod == 1) {
                     if (segmentItemCount == 0) {
                         // hash table create =========
@@ -208,19 +211,19 @@ int main(int argc, char* argv[])
                             current->second++;
                         }
                         // hash table create =========
-                    } else if (segmentItemCount == segmentSize - 1) {
+                    } else if (segmentItemCount == segmentSize - 1 || fileEndFlag) {
                         segmentItemCount = 0;
                     }
                 } else if (segmentFeatureMethod == 2) {
 
-                    if (segmentItemCount == segmentSize - 1) {
-                        segmentItemCount = 0;
+                    if (segmentItemCount == segmentSize - 1 || fileEndFlag) {
+
                         unsigned char mask[32];
                         unsigned char currentHash[32];
                         memset(mask, '0', 32);
                         memset(currentHash, 0xFFFF, 32);
                         int minHash = 0;
-                        for (int i = 0; i < segmentSize; i++) {
+                        for (int i = 0; i < segmentItemCount; i++) {
                             int ret = memcmp(segmentHashList[i].c_str(), currentHash, 32);
                             if (ret < 0) {
                                 memcpy(currentHash, segmentHashList[i].c_str(), 32);
@@ -249,17 +252,18 @@ int main(int argc, char* argv[])
                         }
                         // hash table create =========
                         segmentHashList.clear();
+                        segmentItemCount = 0;
                     }
                     segmentHashList.push_back(newChunkHash);
                 } else if (segmentFeatureMethod == 3) {
-                    if (segmentItemCount == segmentSize - 1) {
-                        segmentItemCount = 0;
-                        unsigned char tempHashData[32 * segmentSize];
-                        for (int i = 0; i < segmentSize; i++) {
+                    if (segmentItemCount == segmentSize - 1 || fileEndFlag) {
+
+                        unsigned char tempHashData[32 * segmentItemCount];
+                        for (int i = 0; i < segmentItemCount; i++) {
                             memcpy(tempHashData + i * 32, segmentHashList[i].c_str(), 32);
                         }
                         unsigned char segmentHash[32];
-                        SHA256(tempHashData, 32 * segmentSize, segmentHash);
+                        SHA256(tempHashData, 32 * segmentItemCount, segmentHash);
                         string newSegmentHash((char*)hash, 32);
                         // hash table create =========
                         auto current = chunkFreqTable.find(newSegmentHash);
@@ -280,6 +284,7 @@ int main(int argc, char* argv[])
                         }
                         // hash table create =========
                         segmentHashList.clear();
+                        segmentItemCount = 0;
                     }
                     segmentHashList.push_back(newChunkHash);
                 }
@@ -322,6 +327,8 @@ int main(int argc, char* argv[])
         //     cout << endl;
         // }
         int i = 0;
+        vector<Encoder::Secret_Item_t> chunkVec;
+        fileEndFlag = false;
         while (total < size) {
 
             int ret = fread(buffer, 1, bufferSize, fin);
@@ -336,6 +343,7 @@ int main(int argc, char* argv[])
                 input.secret.secretID = totalChunks;
                 //input.secret.secretSize = chunkEndIndexList[count] - preEnd;
                 input.secret.secretSize = tempIndex[i][count] - preEnd;
+                input.secret.currentFreq = -1;
                 input.secret.end = 0;
                 memcpy(input.secret.data, buffer + preEnd + 1, input.secret.secretSize);
                 SHA256(input.secret.data, input.secret.secretSize, input.secret.hash);
@@ -348,6 +356,9 @@ int main(int argc, char* argv[])
                 // }
                 // cout << buf << endl;
                 string newChunkHash((char*)input.secret.hash, 32);
+                if (total + ret == size && count + 1 == chunkNumberVec[i] /*numOfChunks*/) {
+                    fileEndFlag = true;
+                }
                 segmentItemCount++;
                 if (segmentFeatureMethod == 1) {
                     if (segmentItemCount == 0) {
@@ -365,19 +376,19 @@ int main(int argc, char* argv[])
                             input.secret.currentFreq = temp->second;
                             temp->second = temp->second - 1;
                         }
-                    } else if (segmentItemCount == segmentSize - 1) {
+                    } else if (segmentItemCount == segmentSize - 1 || fileEndFlag) {
                         segmentItemCount = 0;
                     }
                 } else if (segmentFeatureMethod == 2) {
 
-                    if (segmentItemCount == segmentSize - 1) {
-                        segmentItemCount = 0;
+                    if (segmentItemCount == segmentSize - 1 || fileEndFlag) {
+
                         unsigned char mask[32];
                         unsigned char currentHash[32];
                         memset(mask, '0', 32);
                         memset(currentHash, 0xFFFF, 32);
                         int minHash = 0;
-                        for (int i = 0; i < segmentSize; i++) {
+                        for (int i = 0; i < segmentItemCount; i++) {
                             int ret = memcmp(segmentHashList[i].c_str(), currentHash, 32);
                             if (ret < 0) {
                                 memcpy(currentHash, segmentHashList[i].c_str(), 32);
@@ -387,7 +398,7 @@ int main(int argc, char* argv[])
                                 break;
                             }
                         }
-                        auto temp = chunkFreqTable.find(newChunkHash);
+                        auto temp = chunkFreqTable.find(segmentHashList[minHash]);
                         if (temp == chunkFreqTable.end()) {
                             cout << "error in re find chunk" << endl;
                         } else {
@@ -402,19 +413,20 @@ int main(int argc, char* argv[])
                             temp->second = temp->second - 1;
                         }
                         segmentHashList.clear();
+                        segmentItemCount = 0;
                     }
                     segmentHashList.push_back(newChunkHash);
                 } else if (segmentFeatureMethod == 3) {
-                    if (segmentItemCount == segmentSize - 1) {
-                        segmentItemCount = 0;
-                        unsigned char tempHashData[32 * segmentSize];
-                        for (int i = 0; i < segmentSize; i++) {
+                    if (segmentItemCount == segmentSize - 1 || fileEndFlag) {
+
+                        unsigned char tempHashData[32 * segmentItemCount];
+                        for (int i = 0; i < segmentItemCount; i++) {
                             memcpy(tempHashData + i * 32, segmentHashList[i].c_str(), 32);
                         }
                         unsigned char segmentHash[32];
-                        SHA256(tempHashData, 32 * segmentSize, segmentHash);
-                        string newSegmentHash((char*)hash, 32);
-                        auto temp = chunkFreqTable.find(newChunkHash);
+                        SHA256(tempHashData, 32 * segmentItemCount, segmentHash);
+                        string newSegmentHash((char*)segmentHash, 32);
+                        auto temp = chunkFreqTable.find(newSegmentHash);
                         if (temp == chunkFreqTable.end()) {
                             cout << "error in re find chunk" << endl;
                         } else {
@@ -429,13 +441,28 @@ int main(int argc, char* argv[])
                             temp->second = temp->second - 1;
                         }
                         segmentHashList.clear();
+                        segmentItemCount = 0;
                     }
                     segmentHashList.push_back(newChunkHash);
                 }
 
                 if (total + ret == size && count + 1 == chunkNumberVec[i] /*numOfChunks*/)
                     input.secret.end = 1;
-                encoderObj->add(&input);
+                chunkVec.push_back(input);
+                if (segmentItemCount == 0 && chunkVec.size() != 0) {
+                    int groupFreq = -1;
+                    for (int i = 0; i < chunkVec.size(); i++) {
+                        if (chunkVec[i].secret.currentFreq != -1) {
+                            groupFreq = chunkVec[i].secret.currentFreq;
+                            break;
+                        }
+                    }
+                    for (int i = 0; i < chunkVec.size(); i++) {
+                        chunkVec[i].secret.currentFreq = groupFreq;
+                        encoderObj->add(&chunkVec[i]);
+                    }
+                    chunkVec.clear();
+                }
 
                 totalChunks++;
                 //preEnd = chunkEndIndexList[count];
