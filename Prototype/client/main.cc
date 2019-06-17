@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 
     gettimeofday(&timestart, NULL);
     /* argument test */
-    if (argc != 6)
+    if (argc != 8)
         usage(NULL);
 
     /* get options */
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
                 // cout << buf << endl;
                 // cout << chunkEndIndexList[count + 1] - chunkEndIndexList[count] << endl;
                 string newChunkHash((char*)hash, 32);
-                segmentItemCount++;
+
                 if (total + ret == size && count + 1 == chunkNumberVec[i] /*numOfChunks*/) {
                     fileEndFlag = true;
                 }
@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
                         // hash table create =========
                         auto current = chunkFreqTable.find(newChunkHash);
                         if (current == chunkFreqTable.end()) {
-                            // cout << "new unique" << endl;
+                            cout << "new unique" << endl;
                             chunkFreqTable.insert(make_pair(newChunkHash, 1));
                         } else {
                             // cout << "new dup" << current->first.length() << endl;
@@ -287,6 +287,7 @@ int main(int argc, char* argv[])
                         segmentItemCount = 0;
                     }
                     segmentHashList.push_back(newChunkHash);
+                    segmentItemCount++;
                 }
                 preEnd = chunkEndIndexList[count];
                 count++;
