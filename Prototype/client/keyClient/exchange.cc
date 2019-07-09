@@ -26,51 +26,18 @@ void* KeyEx::threadHandler(void* param)
 
     /* check if cache temp file exists */
     entry_t l;
-    obj->createTable();
-    FILE* fp = fopen("./cache.db", "r");
-    if (fp != NULL) {
-
-        /* read cache entries */
-        while (!feof(fp)) {
-
-            unsigned char tmp[HASH_SIZE * 2];
-            int ret = fread(tmp, 1, HASH_SIZE * 2, fp);
-            if (ret < 0) {
-                printf("fail to load cache file\n");
-            }
-
-            memcpy(l.hash, tmp, HASH_SIZE);
-            memcpy(l.key, tmp + HASH_SIZE, HASH_SIZE);
-            double now;
-            timerStart(&now);
-            entry_t* e1 = obj->hashtable_->find(&l, now, true);
-            memcpy(e1->hash, l.hash, HASH_SIZE);
-            memcpy(e1->key, l.key, HASH_SIZE);
-        }
-
-        fclose(fp);
-        fp = fopen("./cache.db", "w");
-    } else {
-
-        /* otherwise create cache db file */
-        fp = fopen("./cache.db", "w");
-    }
-
-    /* index recode array */
-    int index_rcd[256];
-    memset(index_rcd, -1, 256);
 
     /* hash temp buffer for query hash table */
     unsigned char hash_tmp[32];
 
-    /* batch buffer */
-    unsigned char* buffer = (unsigned char*)malloc(sizeof(Chunk_t) * KEY_BATCH_SIZE);
-
     /* hash buffer */
-    unsigned char* hashBuffer = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * HASH_SIZE);
+    unsigned char* hashBuffer_1 = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * HASH_SIZE_SHORT);
+    unsigned char* hashBuffer_2 = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * HASH_SIZE_SHORT);
+    unsigned char* hashBuffer_3 = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * HASH_SIZE_SHORT);
+    unsigned char* hashBuffer_4 = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * HASH_SIZE_SHORT);
 
     /* key buffer */
-    unsigned char* keyBuffer = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * HASH_SIZE);
+    unsigned char* keyBuffer = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * sizeof(int));
 
     /* main loop for processing batches */
     while (true) {
@@ -81,77 +48,56 @@ void* KeyEx::threadHandler(void* param)
         entry_t e;
         Chunk_t temp;
         double timer;
-
+        chunk_t tempList[KEY_BATCH_SIZE];
         for (int i = 0; i < KEY_BATCH_SIZE; i++) {
             /* getting a batch item from input buffer */
             obj->inputbuffer_->Extract(&temp);
             obj->cryptoObj_->generateHash(temp.data, temp.chunkSize, hash_tmp);
-            memcpy(e.hash, hash_tmp, HASH_SIZE);
-            timerStart(&timer);
-            /* see if the hash value exists in hash table */
-            entry_t* ret = obj->hashtable_->find(&e, timer, false);
-            /* cache hits */
-            if (ret != NULL) {
-                memcpy(temp.key, ret->key, HASH_SIZE);
-                memcpy(buffer + i * itemSize, &temp, itemSize);
-                totalCount++;
-                fwrite(ret->hash, 1, HASH_SIZE, fp);
-                fwrite(ret->key, 1, HASH_SIZE, fp);
-                if (temp.end == 1)
-                    break;
-            } else {
-                index_rcd[itemCount] = i;
-                memcpy(buffer + i * itemSize, &temp, itemSize);
-                memcpy(hashBuffer + i * HASH_SIZE, hash_tmp, HASH_SIZE);
-                itemCount++;
-                totalCount++;
-                if (temp.end == 1)
-                    break;
+            memcpy(temp.key, hash_tmp, HASH_SIZE_SHORT);
+            memcpy(tempList[i], temp, sizeof(chunk_t));
+            memcpy(hashBuffer_1 + (i * HASH_SIZE_SHORT), hash_tmp, HASH_SIZE_SHORT);
+            memcpy(hashBuffer_2 + (i * HASH_SIZE_SHORT), hash_tmp + (1 * HASH_SIZE_SHORT), HASH_SIZE_SHORT);
+            memcpy(hashBuffer_3 + (i * HASH_SIZE_SHORT), hash_tmp + (2 * HASH_SIZE_SHORT), HASH_SIZE_SHORT);
+            memcpy(hashBuffer_4 + (i * HASH_SIZE_SHORT), hash_tmp + (3 * HASH_SIZE_SHORT), HASH_SIZE_SHORT);
+            itemCount++;
+            if (temp.end == 1) {
+                break;
             }
         }
-        /* if there are some hash value cache miss */
-        if (itemCount != 0) {
-            /* perform key generation */
-            obj->keyExchange(hashBuffer, itemCount * COMPUTE_SIZE, itemCount, keyBuffer, obj->cryptoObj_);
-        }
+
+        obj->keyExchange(hashBuffer_1, hashBuffer_2, hashBuffer_3, hashBuffer_4, itemCount, keyBuffer, obj->cryptoObj_);
         /* get back the keys */
         int j = 0;
-        for (int i = 0; i < totalCount; i++) {
+        for (int i = 0; i < itemCount; i++) {
             Encoder::Secret_Item_t input;
-            memcpy(&temp, buffer + i * itemSize, itemSize);
+            chunk_t tempChunk;
+            memcpy(&tempChunk, tempList[i], sizeof(chunk_t));
             input.type = SHARE_OBJECT;
-            if (temp.end == 1)
+            if (tempChunk.end == 1)
                 input.type = SHARE_END;
 
             /* create encoder input object */
-            memcpy(input.secret.data, temp.data, temp.chunkSize);
+            memcpy(input.secret.data, tempChunk.data, tempChunk.chunkSize);
 
-            if (index_rcd[j] == i) {
-                memcpy(input.secret.key, keyBuffer + j * HASH_SIZE, HASH_SIZE);
-                j++;
-            } else {
-                memcpy(input.secret.key, temp.key, HASH_SIZE);
+            int param = (int)(keyBuffer + i * sizeof(int));
+            int randNumber = rand() % (param * 2);
+            if (randNumber < param) {
+                paramFloor = randNumber;
             }
+            unsigned char newKeyBuffer[32 + sizeof(int)];
+            memcpy(newKeyBuffer, temp.key, 32);
+            memcpy(newKeyBuffer + 32, &param, sizeof(int));
+            unsigned char key[32];
+            SHA256(newKeyBuffer, 32 + sizeof(int), key);
+
+            memcpy(input.secret.key, key, 32);
+
             input.secret.secretID = temp.chunkID;
             input.secret.secretSize = temp.chunkSize;
             input.secret.end = temp.end;
 
             /* add object to encoder input buffer*/
             obj->encodeObj_->add(&input);
-
-            /* add key into hash table */
-            memcpy(e.hash, hashBuffer + i * HASH_SIZE, HASH_SIZE);
-            memcpy(e.key, keyBuffer + i * HASH_SIZE, HASH_SIZE);
-
-            /* write cache file */
-            fwrite(e.hash, 1, HASH_SIZE, fp);
-            fwrite(e.key, 1, HASH_SIZE, fp);
-
-            /* update hash entry */
-            timerStart(&timer);
-            entry_t* e1 = obj->hashtable_->find(&e, timer, true);
-            memcpy(e1->hash, e.hash, HASH_SIZE);
-            memcpy(e1->key, e.key, HASH_SIZE);
         }
     }
     fclose(fp);
@@ -217,7 +163,7 @@ KeyEx::~KeyEx()
     delete (cryptoObj_);
 }
 
-void KeyEx::keyExchange(unsigned char* hash_buf, int size, int num, unsigned char* key_buf, CryptoPrimitive* obj)
+void KeyEx::keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, unsigned char* hash_buf_3, unsigned char* hash_buf_4, int size, int num, unsigned char* key_buf, CryptoPrimitive* obj)
 {
 
     unsigned char buffer[sizeof(int) + size];
@@ -225,7 +171,7 @@ void KeyEx::keyExchange(unsigned char* hash_buf, int size, int num, unsigned cha
     //	blind all hashes
     for (int i = 0; i < num; i++) {
 
-        decoration(hash_buf + i * HASH_SIZE, HASH_SIZE, buffer + sizeof(int) + i * COMPUTE_SIZE, i);
+        decoration(hash_buf + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT, buffer + sizeof(int) + i * COMPUTE_SIZE, i);
     }
     //	send hashes to key server
     sock_[0]->genericSend((char*)buffer, size + sizeof(int));
@@ -236,7 +182,7 @@ void KeyEx::keyExchange(unsigned char* hash_buf, int size, int num, unsigned cha
 
         elimination(buffer + i * COMPUTE_SIZE, COMPUTE_SIZE, i);
         // 	hash 1024bit value back to 256bit
-        obj->generateHash(buffer + i * COMPUTE_SIZE, COMPUTE_SIZE, key_buf + i * HASH_SIZE);
+        obj->generateHash(buffer + i * COMPUTE_SIZE, COMPUTE_SIZE, key_buf + i * HASH_SIZE_SHORT);
     }
 }
 

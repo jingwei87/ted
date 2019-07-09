@@ -18,7 +18,7 @@
 #include "ssl.hh"
 
 /* init constants */
-#define HASH_SIZE 32
+#define HASH_SIZE_SHORT 4
 #define COMPUTE_SIZE 128
 
 #define MAX_CMD_LENGTH 65535
