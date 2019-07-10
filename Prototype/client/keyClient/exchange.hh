@@ -50,22 +50,6 @@ class KeyEx {
 private:
     // total chunk number
     int n_;
-    // key file object
-    BIO* key_;
-    // RSA object
-    RSA* rsa_;
-    // BN ctx
-    BN_CTX* ctx_;
-    // random number
-    BIGNUM* r_;
-    // inverse
-    BIGNUM* inv_;
-    // temp
-    BIGNUM* mid_;
-    // hash value convert to BN
-    BIGNUM* h_;
-    // array for record random numbers for each chunk
-    BIGNUM** record_;
     // array for SSL structures
     Ssl* sock_[SEND_THREADS];
     //key store ip
@@ -77,11 +61,6 @@ private:
     int segType_;
 
 public:
-    // hash table entry pair
-    typedef struct {
-        unsigned char hash[HASH_SIZE];
-        unsigned char key[HASH_SIZE];
-    } entry_t;
     // thread handler structure
     typedef struct {
         int index;
@@ -99,8 +78,6 @@ public:
     Encoder* encodeObj_;
     // input ring buffer
     RingBuffer<Chunk_t>* inputbuffer_;
-    // hash table for cache keys
-    HashTable<entry_t>* hashtable_;
     // thread id
     pthread_t tid_;
     //temp current key
@@ -134,48 +111,6 @@ public:
     void add(Chunk_t* item);
 
     /*
-			function : procedure for print a big number in hex
-			input : input(BIGNUM)
-			output : display the BIGNUM
-		*/
-    void printBN(BIGNUM* input);
-
-    /*
-			function : procedure for print a buffer content
-		*/
-    void printBuf(unsigned char* buff, int size);
-
-    /*
-			function : procedure for remove blind in returned keys 
-			input : 
-				@param buff - input big number buffer
-				@param size - input big number size
-		 		@param index - the index of recorded random number r
-		*/
-    void elimination(unsigned char* buff, int size, int index);
-
-    /*
-			function : procedure for blind hash value
-			input :
-				@param hash_buf - input buffer storing hash
-				@param size - the size of input hash
-				@param ret_buf - the returned buffer holding blinded hash
-				@param index - the index of record random number r
-		*/
-    void decoration(unsigned char* hash_buf, int size, unsigned char* ret_buf, int index);
-
-    /*
-			function : procedure for verify returned keys
-			input : 
-		 		@param original - the original hash value buffer
-		 		@param buff - the buffer contains returned blinded key
-		  		@param size - the size of hash value
-		 	output : 
-		  		verify pass -> 0, verification fails -> others
-		*/
-    int verify(unsigned char* original, unsigned char* buff, int size);
-
-    /*
 			function : main procedure for init key generation with key server
 			input :  
 		  		@param hash_buf - the buffer holding hash values
@@ -184,65 +119,14 @@ public:
 		  		@param key_buf - the returned buffer contains keys
 		  		@param obj - the pointer to crypto object
 		*/
-    void keyExchange(unsigned char* hash_buf, int size, int num, unsigned char* key_buf, CryptoPrimitive* obj);
-
-    /*
-			function : hash table initiation
-
-			note : init Hash Table for key cache
-		*/
-    void createTable();
+    void keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, unsigned char* hash_buf_3, unsigned char* hash_buf_4, int num, unsigned char* key_buf);
 
     /*
 			function : thread handler
 
 			note : do the main jobs of key manmger
 		*/
-    static void* threadHandlerMin(void* param);
     static void* threadHandler(void* param);
-    /*
-			function : make hash in hash table   
-			input : the hash table entry need to hash 
-		*/
-    static unsigned int keyHashFcn(const entry_t*);
-
-    /*
-			function : compare hash table item  
-			input : the two hash table entry need to compare
-			output : same-> true | different -> false
-		*/
-    static bool keyCmpFcn(const entry_t*, const entry_t*);
-
-    /*
-			function : init hash table item  
-			input : the hash table entry need to init
-		*/
-    static void keyInitFcn(entry_t*, void*);
-
-    /*
-			function : free hash table item  
-			input : the hash table entry need to free 
-		*/
-    static void keyFreeFcn(entry_t*, void*);
-
-    /*
-			function : insert new key to key store
-			input : user ID(int) file path(char *) file path size (int)
-			
-		 	note : called when upload first secerts
-		*/
-    void newFile(int user, char* filePath, int pathSize, char* policy);
-
-    /*
-			function : update existing file's state cipher
-			input : user ID(int) file path(char *) file path size (int)
-			
-		 	note : called when update secrets
-		*/
-    int updateFileByPolicy(int user, char* filePath, int pathSize, char* oldPk, char* policy);
-
-    int downloadFile(int user, char* filePath, int pathSize, char* pk);
 };
 
-void cpabeKeygen(char* pk, char* policy);
 #endif

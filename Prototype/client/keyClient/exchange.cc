@@ -65,7 +65,7 @@ void* KeyEx::threadHandler(void* param)
             }
         }
 
-        obj->keyExchange(hashBuffer_1, hashBuffer_2, hashBuffer_3, hashBuffer_4, itemCount, keyBuffer, obj->cryptoObj_);
+        obj->keyExchange(hashBuffer_1, hashBuffer_2, hashBuffer_3, hashBuffer_4, itemCount, keyBuffer);
         /* get back the keys */
         int j = 0;
         for (int i = 0; i < itemCount; i++) {
@@ -163,27 +163,21 @@ KeyEx::~KeyEx()
     delete (cryptoObj_);
 }
 
-void KeyEx::keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, unsigned char* hash_buf_3, unsigned char* hash_buf_4, int size, int num, unsigned char* key_buf, CryptoPrimitive* obj)
+void KeyEx::keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, unsigned char* hash_buf_3, unsigned char* hash_buf_4, int num, unsigned char* key_buf)
 {
 
-    unsigned char buffer[sizeof(int) + size];
-    memcpy(buffer, &num, sizeof(int));
-    //	blind all hashes
-    for (int i = 0; i < num; i++) {
-
-        decoration(hash_buf + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT, buffer + sizeof(int) + i * COMPUTE_SIZE, i);
-    }
+    unsigned char buffer[sizeof(int)];
+    memcpy(buffer, &num, sizeof(int);
     //	send hashes to key server
-    sock_[0]->genericSend((char*)buffer, size + sizeof(int));
+    sock_[0]->genericSend((char*)buffer, sizeof(int));
+    sock_[0]->genericSend((char*)hash_buf_1, num * HASH_SIZE_SHORT);
+    sock_[0]->genericSend((char*)hash_buf_2, num * HASH_SIZE_SHORT);
+    sock_[0]->genericSend((char*)hash_buf_3, num * HASH_SIZE_SHORT);
+    sock_[0]->genericSend((char*)hash_buf_4, num * HASH_SIZE_SHORT);
     //	get back the blinded keys
-    sock_[0]->genericDownload((char*)buffer, size);
-    //	remove the blind in returned keys
-    for (int i = 0; i < num; i++) {
-
-        elimination(buffer + i * COMPUTE_SIZE, COMPUTE_SIZE, i);
-        // 	hash 1024bit value back to 256bit
-        obj->generateHash(buffer + i * COMPUTE_SIZE, COMPUTE_SIZE, key_buf + i * HASH_SIZE_SHORT);
-    }
+    unsigned char bufferKeyTemp[num*sizeof(int)];
+    sock_[0]->genericDownload((char*)bufferKeyTemp, num*sizeof(int));
+    memcpy(key_buf, bufferKeyTemp,num*sizeof(int));
 }
 
 void KeyEx::add(Chunk_t* item)
