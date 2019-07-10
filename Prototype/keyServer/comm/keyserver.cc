@@ -108,6 +108,11 @@ double timerSplit(const double* t)
     return (cur_t - *t);
 }
 
+int sketchTable[4][W] = { 0 };
+int EditSketchTable(int hash_1, int hash_2, int hash_3, int hash_4)
+{
+}
+
 /*
  * Thread function: each thread maintains a socket from a certain client
  *
@@ -134,7 +139,7 @@ void* SocketHandler(void* lp)
 
         if ((bytecount = SSL_read(ssl, buffer, sizeof(int))) == -1) {
 
-            fprintf(stderr, "Error recv file hash %d\n", errno);
+            fprintf(stderr, "Error recv chunk batch size %d\n", errno);
         }
         if (bytecount == 0) {
             break;
@@ -144,36 +149,43 @@ void* SocketHandler(void* lp)
         memcpy(&num, buffer, sizeof(int));
         total = 0;
         // recv data (blinded hash, 1024bits values)
-        while (total < num * RSA_LENGTH) {
-
-            if ((bytecount = SSL_read(ssl, buffer + sizeof(int) + total, num * RSA_LENGTH - total)) == -1) {
-                fprintf(stderr, "Error recv file hash %d\n", errno);
-                exit(1);
-            }
-            total += bytecount;
+        char* hash_buffer_1 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
+        char* hash_buffer_2 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
+        char* hash_buffer_3 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
+        char* hash_buffer_4 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
+        if ((bytecount = SSL_read(ssl, hash_buffer_1, num * HASH_SIZE_SHORT)) == -1) {
+            fprintf(stderr, "Error recv hash_1 list %d\n", errno);
+            exit(1);
+        }
+        if ((bytecount = SSL_read(ssl, hash_buffer_2, num * HASH_SIZE_SHORT)) == -1) {
+            fprintf(stderr, "Error recv hash_2 list %d\n", errno);
+            exit(1);
+        }
+        if ((bytecount = SSL_read(ssl, hash_buffer_3, num * HASH_SIZE_SHORT)) == -1) {
+            fprintf(stderr, "Error recv hash_3 list %d\n", errno);
+            exit(1);
+        }
+        if ((bytecount = SSL_read(ssl, hash_buffer_4, num * HASH_SIZE_SHORT)) == -1) {
+            fprintf(stderr, "Error recv hash_4 list %d\n", errno);
+            exit(1);
         }
 
-        // main loop for computing keys
+        // main loop for computing params
         double timer, split;
         timerStart(&timer);
-        for (int i = 0; i < num; i++) {
-        }
+
+        //TODO
+
         split = timerSplit(&timer);
         printf("server compute: %lf\n", split);
         // send back the result
-        total = 0;
-        while (total < num * RSA_LENGTH) {
 
-            if ((bytecount = SSL_write(ssl, output + sizeof(int) + total, num * RSA_LENGTH - total)) == -1) {
+        if ((bytecount = SSL_write(ssl, output + sizeof(int) + total, num * RSA_LENGTH - total)) == -1) {
 
-                fprintf(stderr, "Error recv file hash %d\n", errno);
-                exit(1);
-            }
-            total += bytecount;
+            fprintf(stderr, "Error recv file hash %d\n", errno);
+            exit(1);
         }
     }
-    free(buffer);
-    free(output);
     return 0;
 }
 
