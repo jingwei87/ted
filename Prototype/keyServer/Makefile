@@ -3,7 +3,7 @@ CFLAGS = -O3 -Wall -Werror -Wunreachable-code -Wshadow -DLINUX -Wno-write-string
 LIBS = -lcrypto -lssl -lpthread 
 INCLUDES = -I./comm/
 JERASURE_OBJS = 
-MAIN_OBJS = ./comm/keyserver.o 
+MAIN_OBJS = ./comm/keyserver.o ./comm/solver.o
 
 all: server
 

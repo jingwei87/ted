@@ -54,6 +54,7 @@ public:
     typedef struct {
         unsigned char data[SECRET_SIZE];
         unsigned char hash[FP_SIZE];
+        unsigned char key[FP_SIZE];
         int currentFreq;
         int secretID;
         int secretSize;
@@ -128,8 +129,7 @@ public:
         int m,
         int r,
         int securetype,
-        Uploader* uploaderObj,
-        double t);
+        Uploader* uploaderObj);
 
     /*
          * destructor of encoder

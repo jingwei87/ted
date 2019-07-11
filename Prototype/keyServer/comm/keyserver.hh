@@ -21,14 +21,16 @@
 #include "openssl/bio.h"
 #include "openssl/err.h"
 #include "openssl/ssl.h"
+#include "solver.hh"
 #include <err.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sysexits.h>
 
 #define HASH_SIZE_SHORT 4
-#define W 8192
-
+#define W 8192 //W - sketch table size
+#define K 10000 // K - max chunk number sketch store before opsolver
+#define storageBlow 0.5
 // client cerificate
 #define SSL_CA_CRT "./keys/ca/ca.crt"
 // server certificate

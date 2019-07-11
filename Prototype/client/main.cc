@@ -16,7 +16,6 @@
 #include "encoder.hh"
 #include "exchange.hh"
 #include "uploader.hh"
-//#include "metadataChunkMaker.hh"
 
 #define MAIN_CHUNK
 
@@ -54,7 +53,6 @@ int main(int argc, char* argv[])
     if (argc != 5)
         usage(NULL);
     /* get options */
-    char* policy = "1";
     int userID = atoi(argv[2]);
     char* opt = argv[3];
     char* securesetting = argv[4];
@@ -71,7 +69,6 @@ int main(int argc, char* argv[])
 
     confObj = new Configuration();
     /* fix parameters here */
-    /* TO DO: load from config file */
     n = confObj->getN();
     m = confObj->getM();
     k = confObj->getK();
@@ -83,6 +80,7 @@ int main(int argc, char* argv[])
     int shareBufferSize = confObj->getShareBufferSize();
     unsigned char *secretBuffer, *shareBuffer;
 
+    delete confObj;
     buffer = (unsigned char*)malloc(sizeof(unsigned char) * bufferSize);
     chunkEndIndexList = (int*)malloc(sizeof(int) * chunkEndIndexListSize);
     secretBuffer = (unsigned char*)malloc(sizeof(unsigned char) * secretBufferSize);
@@ -111,11 +109,10 @@ int main(int argc, char* argv[])
         long size = ftell(fin);
         fseek(fin, 0, SEEK_SET);
 
-        uploaderObj = new Uploader(n, n, userID, argv[1], namesize);
+        uploaderObj = new Uploader(n, n, userID);
         encoderObj = new Encoder(CAONT_RS_TYPE, n, m, r, securetype, uploaderObj);
         chunkerObj = new Chunker(VAR_SIZE_TYPE);
-        keyObj = new KeyEx(encoderObj, securetype, confObj->getkmIP(), confObj->getkmPort(), confObj->getServerConf(0), CHARA_MIN_HASH, VAR_SEG);
-        keyObj->readKeyFile("./keys/public.pem");
+        keyObj = new KeyEx(encoderObj, securetype, confObj->getkmIP(), confObj->getkmPort());
 
         //chunking
         Encoder::Secret_Item_t header;
@@ -126,43 +123,21 @@ int main(int argc, char* argv[])
 
         // do encode
         encoderObj->add(&header);
-        //uploaderObj->generateMDHead(0,size,(unsigned char*) argv[1],namesize,n,0,0,0,0);
 
         long total = 0;
         int totalChunks = 0;
-        unsigned char tmp[secretBufferSize];
-        memset(tmp, 0, secretBufferSize);
         while (total < size) {
 
             int ret = fread(buffer, 1, bufferSize, fin);
             chunkerObj->chunking(buffer, ret, chunkEndIndexList, &numOfChunks);
-            //printf("line - %d\n", __LINE__);
             int count = 0;
             int preEnd = -1;
             while (count < numOfChunks) {
-
-                // Encoder::Secret_Item_t input;
-                // input.type = 0;
-                // input.secret.secretID = totalChunks;
-                // input.secret.secretSize = chunkEndIndexList[count] - preEnd;
-                // memcpy(input.secret.data, buffer + preEnd + 1, input.secret.secretSize);
-                // input.secret.end = 0;
-
-                // if (total + ret == size && count + 1 == numOfChunks)
-                //     input.secret.end = 1;
-                // encoderObj->add(&input);
-
-                // totalChunks++;
-                // preEnd = chunkEndIndexList[count];
-                // count++;
                 KeyEx::Chunk_t input;
                 input.chunkID = totalChunks;
                 input.chunkSize = chunkEndIndexList[count] - preEnd;
                 memcpy(input.data, buffer + preEnd + 1, input.chunkSize);
                 /* zero counting */
-                if (memcmp(buffer + preEnd + 1, tmp, input.chunkSize) == 0) {
-                    total += input.chunkSize;
-                }
                 /* set end indicator */
                 input.end = 0;
                 if (ret + total == size && count + 1 == numOfChunks) {
@@ -170,7 +145,7 @@ int main(int argc, char* argv[])
                 }
                 /* add chunk to key client */
                 keyObj->add(&input);
-                /* increase counter */
+
                 totalChunks++;
                 preEnd = chunkEndIndexList[count];
                 count++;
@@ -178,8 +153,6 @@ int main(int argc, char* argv[])
             total += ret;
         }
         long long tt = 0, unique = 0;
-        //printf("line - %d\n", __LINE__);
-        //printf("flag-out of loop before indicate\n");
         uploaderObj->indicateEnd(&tt, &unique);
 
         delete uploaderObj;
@@ -190,39 +163,22 @@ int main(int argc, char* argv[])
 
     if (strncmp(opt, "-d", 2) == 0 || strncmp(opt, "-a", 2) == 0) {
 
-        //cdCodecObj = new CDCodec(CAONT_RS_TYPE, n, m, r, cryptoObj);
         decoderObj = new Decoder(CAONT_RS_TYPE, n, m, r, securetype);
-        //printf("flag-before\n");
-        downloaderObj = new Downloader(k, k, userID, decoderObj, argv[1], namesize);
-        keyObj = new KeyEx(encoderObj, securetype, confObj->getkmIP(), confObj->getkmPort(), confObj->getServerConf(0), CHARA_MIN_HASH, VAR_SEG);
+        downloaderObj = new Downloader(k, k, userID, decoderObj);
         char nameBuffer[256];
         sprintf(nameBuffer, "%s.d", argv[1]);
-        //printf("flag-0\n");
-        downloaderObj->downloadKeyFile(argv[1]);
-        //printf("flag-1\n");
         FILE* fw = fopen(nameBuffer, "wb");
 
         decoderObj->setFilePointer(fw);
-        //printf("flag-2\n");
         decoderObj->setShareIDList(kShareIDList);
-        //printf("flag-3\n");
-        int preFlag = downloaderObj->preDownloadFile(argv[1], namesize, k);
-        //printf("flag-4\n");
-        if (preFlag == -1) {
-            //printf("flag-5\n");
-            downloaderObj->downloadFile(argv[1], namesize, k);
-        }
-        //printf("flag-6\n");
+        downloaderObj->downloadFile(argv[1], namesize, k);
         decoderObj->indicateEnd();
-        //printf("flag-7\n");
         downloaderObj->indicateEnd();
-        //printf("flag-8\n");
         fclose(fw);
         delete downloaderObj;
         delete decoderObj;
     }
 
-    delete confObj;
     free(buffer);
     free(chunkEndIndexList);
     free(secretBuffer);
@@ -233,8 +189,6 @@ int main(int argc, char* argv[])
     long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
     double second = diff / 1000000.0;
     printf("the total work time is %ld us = %lf s\n", diff, second);
-
-    //printf("\n\nRunning Time：%dms\n", timeendtime-begintime);
 
     return 0;
 }
