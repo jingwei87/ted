@@ -11,38 +11,24 @@
 
 #include "BasicRingBuffer.hh"
 #include "CryptoPrimitive.hh"
-#include "HashTable.hh"
 #include "conf.hh"
 #include "encoder.hh"
-#include "socket.hh"
 #include "ssl.hh"
 
 /* init constants */
 #define HASH_SIZE_SHORT 4
 #define COMPUTE_SIZE 128
+#define HASH_SIZE 32
+#define KEY_BATCH_SIZE 1000
 
 #define MAX_CMD_LENGTH 65535
 #define CHUNK_DATA_SIZE (16 * 1024)
 #define CHUNK_RB_SIZE 1024
 
 #define HASH_TABLE_SIZE (32 * 1024 * 1024)
-#define SEND_THREADS 2
+#define SEND_THREADS 1
 
-#define KEY_BATCH_SIZE_MAX (4096 * 1024 * 2)
-#define KEY_BATCH_SIZE_MIN (2048 * 1024)
 #define BATCH_COUNT 4100
-
-#define VAR_SEG 77
-#define FIX_SEG 88
-
-#define CHARA_MIN_HASH 1007
-#define CHARA_FIRST_HASH 1008
-#define CHARA_FIRST_64 1009
-#define CHARA_CACHE 1010
-
-#define KEY_NEW 1
-#define KEY_UPDATE 2
-#define DOWNLOAD_KEY 3
 
 using namespace std;
 
@@ -56,9 +42,6 @@ private:
     char* ksip_;
     //key store port
     int ksport_;
-    //type setting
-    int charaType_;
-    int segType_;
 
 public:
     // thread handler structure
@@ -90,7 +73,7 @@ public:
 		 	input : encoder(obj) securetype (int [macro]) key manager IP(char *) key manager port (int)
 					key store IP(char *) key store port (int) chara type (int [macro])
 		*/
-    KeyEx(Encoder* obj, int securetype, string kmip, int kmport, serverConf serverConf, int chara, int segType);
+    KeyEx(Encoder* obj, int securetype, string kmip, int kmport);
 
     /*
 			function : destructor of key exchange
@@ -119,7 +102,7 @@ public:
 		  		@param key_buf - the returned buffer contains keys
 		  		@param obj - the pointer to crypto object
 		*/
-    void keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, unsigned char* hash_buf_3, unsigned char* hash_buf_4, int num, unsigned char* key_buf);
+    void keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, unsigned char* hash_buf_3, unsigned char* hash_buf_4, int num, unsigned char* key_buf, double T);
 
     /*
 			function : thread handler

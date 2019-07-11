@@ -183,7 +183,7 @@ void Encoder::indicateEnd()
  * @param uploaderObj - pointer link to uploader object
  *
  */
-Encoder::Encoder(int type, int n, int m, int r, int securetype, Uploader* uploaderObj, double t)
+Encoder::Encoder(int type, int n, int m, int r, int securetype, Uploader* uploaderObj)
 {
 
     /* initialization of variables */
@@ -202,7 +202,6 @@ Encoder::Encoder(int type, int n, int m, int r, int securetype, Uploader* upload
         encodeObj_[i] = new CDCodec(type, n, m, r, cryptoObj_[i]);
         param_encoder* temp = (param_encoder*)malloc(sizeof(param_encoder));
         temp->index = i;
-        temp->t_ = t;
         temp->obj = this;
 
         /* create encoding threads */

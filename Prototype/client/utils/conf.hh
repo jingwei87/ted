@@ -28,6 +28,10 @@ private:
     /* security degree */
     int r_;
 
+    string kmIP;
+
+    int kmPort;
+
     /* secret buffer size */
     int secretBufferSize_;
 
@@ -61,6 +65,9 @@ public:
     inline int getK() { return k_; }
 
     inline int getR() { return r_; }
+
+    inline string getkmIP() { return kmIP; }
+    inline int getkmPort() { return kmPort; }
 
     inline int getSecretBufferSize() { return secretBufferSize_; }
 
