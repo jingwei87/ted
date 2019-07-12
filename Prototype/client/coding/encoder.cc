@@ -41,28 +41,28 @@ void* Encoder::thread_handler(void* param)
         } else {
 
             /* if it's share object */
-            unsigned char key[32];
-            if (t != 0) {
-                double param = temp.secret.currentFreq / t;
-                int paramFloor = floor(param);
-                int randNumber = rand() % (paramFloor * 2);
-                if (randNumber < paramFloor) {
-                    paramFloor = randNumber;
-                }
-                unsigned char newKeyBuffer[32 + sizeof(int)];
-                memcpy(newKeyBuffer, temp.secret.hash, 32);
-                memcpy(newKeyBuffer + 32, &paramFloor, sizeof(int));
-                SHA256(newKeyBuffer, 32 + sizeof(double), key);
-                // unsigned char tempXOR[sizeof(double)];
-                // memcpy(&tempXOR, &param, sizeof(double));
-                // for (auto i = 0; i < sizeof(double); i++) {
-                //     key[i] = tempXOR[i] ^ key[i];
-                // }
-            } else {
-                memcpy(key, temp.secret.hash, 32);
-            }
+            //unsigned char key[32];
+            // if (t != 0) {
+            //     double param = temp.secret.currentFreq / t;
+            //     int paramFloor = floor(param);
+            //     int randNumber = rand() % (paramFloor * 2);
+            //     if (randNumber < paramFloor) {
+            //         paramFloor = randNumber;
+            //     }
+            //     unsigned char newKeyBuffer[32 + sizeof(int)];
+            //     memcpy(newKeyBuffer, temp.secret.hash, 32);
+            //     memcpy(newKeyBuffer + 32, &paramFloor, sizeof(int));
+            //     SHA256(newKeyBuffer, 32 + sizeof(double), key);
+            //     // unsigned char tempXOR[sizeof(double)];
+            //     // memcpy(&tempXOR, &param, sizeof(double));
+            //     // for (auto i = 0; i < sizeof(double); i++) {
+            //     //     key[i] = tempXOR[i] ^ key[i];
+            //     // }
+            // } else {
+            //     memcpy(key, temp.secret.hash, 32);
+            // }
 
-            obj->encodeObj_[index]->encoding(temp.secret.data, temp.secret.secretSize, input.share_chunk.data, &(input.share_chunk.shareSize), key);
+            obj->encodeObj_[index]->encoding(temp.secret.data, temp.secret.secretSize, input.share_chunk.data, &(input.share_chunk.shareSize), temp.secret.key);
             input.share_chunk.secretID = temp.secret.secretID;
             input.share_chunk.secretSize = temp.secret.secretSize;
             input.share_chunk.end = temp.secret.end;
