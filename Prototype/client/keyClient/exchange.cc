@@ -17,10 +17,10 @@ void fatalx(char* s)
     ERR_print_errors_fp(stderr);
     errx(EX_DATAERR, "%.30s", s);
 }
-void* KeyEx::threadHandler(void* param)
+void* KeyEx::threadHandler(void* param_thread)
 {
-    param_keyex* temp = (param_keyex*)param;
-    KeyEx* obj = temp->obj;
+    param_keyex* temp_param = (param_keyex*)param_thread;
+    KeyEx* obj = temp_param->obj;
     //free(temp);
 
     /* hash temp buffer for query hash table */
@@ -33,20 +33,23 @@ void* KeyEx::threadHandler(void* param)
     unsigned char* hashBuffer_4 = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * HASH_SIZE_SHORT);
 
     /* key buffer */
-    unsigned char* keyBuffer = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * sizeof(int));
+    unsigned char* keyBuffer = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * sizeof(int) + sizeof(double));
 
     /* main loop for processing batches */
     while (true) {
 
         int itemCount = 0;
         Chunk_t temp;
-        Chunk_t tempList[KEY_BATCH_SIZE];
+        vector<Chunk_t> tempList;
+        tempList.reserve(KEY_BATCH_SIZE);
+        //Chunk_t tempList[KEY_BATCH_SIZE];
         for (int i = 0; i < KEY_BATCH_SIZE; i++) {
             /* getting a batch item from input buffer */
             obj->inputbuffer_->Extract(&temp);
             obj->cryptoObj_->generateHash(temp.data, temp.chunkSize, hash_tmp);
-            memcpy(temp.key, hash_tmp, HASH_SIZE_SHORT);
-            memcpy(&tempList[i], &temp, sizeof(Chunk_t));
+            memcpy(temp.key, hash_tmp, HASH_SIZE);
+            //memcpy(&tempList[i], &temp, sizeof(Chunk_t));
+            tempList.push_back(temp);
             memcpy(hashBuffer_1 + (i * HASH_SIZE_SHORT), hash_tmp, HASH_SIZE_SHORT);
             memcpy(hashBuffer_2 + (i * HASH_SIZE_SHORT), hash_tmp + (1 * HASH_SIZE_SHORT), HASH_SIZE_SHORT);
             memcpy(hashBuffer_3 + (i * HASH_SIZE_SHORT), hash_tmp + (2 * HASH_SIZE_SHORT), HASH_SIZE_SHORT);
@@ -80,21 +83,28 @@ void* KeyEx::threadHandler(void* param)
                 param = randNumber;
             }
             unsigned char newKeyBuffer[32 + sizeof(int)];
-            memcpy(newKeyBuffer, temp.key, 32);
+            memcpy(newKeyBuffer, tempChunk.key, 32);
             memcpy(newKeyBuffer + 32, &param, sizeof(int));
             unsigned char key[32];
             SHA256(newKeyBuffer, 32 + sizeof(int), key);
 
             memcpy(input.secret.key, key, 32);
 
-            input.secret.secretID = temp.chunkID;
-            input.secret.secretSize = temp.chunkSize;
-            input.secret.end = temp.end;
+            input.secret.secretID = tempChunk.chunkID;
+            input.secret.secretSize = tempChunk.chunkSize;
+            input.secret.end = tempChunk.end;
 
             /* add object to encoder input buffer*/
             obj->encodeObj_->add(&input);
         }
+        tempList.clear();
     }
+
+    free(hashBuffer_1);
+    free(hashBuffer_2);
+    free(hashBuffer_3);
+    free(hashBuffer_4);
+
     return NULL;
 }
 
@@ -104,12 +114,20 @@ KeyEx::KeyEx(Encoder* obj, int securetype, string kmip, int kmport, int userID)
     inputbuffer_ = new RingBuffer<Chunk_t>(CHUNK_RB_SIZE, true, 1);
     cryptoObj_ = new CryptoPrimitive(securetype);
     param_keyex* temp = (param_keyex*)malloc(sizeof(param_keyex));
-
+    memset(temp, 0, sizeof(param_keyex));
     sock_[0] = new Ssl((char*)kmip.c_str(), kmport, userID);
     cout << "connect to key server done" << endl;
     temp->obj = this;
-    pthread_create(&tid_, 0, &threadHandler, (void*)temp);
-    cout << "keyclient thread create done" << endl;
+
+    int pthread_status = pthread_create(&tid_, 0, &threadHandler, (void*)temp);
+    if (pthread_status != 0) {
+        cout << pthread_status << endl;
+        cout << "keyclient thread create failed" << endl;
+    } else {
+        cout << pthread_status << endl;
+        cout << "keyclient thread create done" << endl;
+    }
+    //free(temp);
 }
 
 KeyEx::~KeyEx()
@@ -117,6 +135,7 @@ KeyEx::~KeyEx()
 
     delete (inputbuffer_);
     delete (cryptoObj_);
+    pthread_join(tid_, NULL);
 }
 
 void KeyEx::keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, unsigned char* hash_buf_3, unsigned char* hash_buf_4, int num, unsigned char* key_buf, double T)
