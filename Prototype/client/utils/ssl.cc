@@ -95,7 +95,7 @@ Ssl::Ssl(char* ip, int port, int userID)
     if ((bytecount = SSL_write(ssl_, &netorder, sizeof(int))) == -1) {
         fprintf(stderr, "Error sending userID %d\n", errno);
     } else {
-        fprintf(stderr, "Sending userID done %d\n", errno);
+        fprintf(stderr, "Sending userID done\n");
     }
 }
 
