@@ -108,7 +108,7 @@ double timerSplit(const double* t)
     return (cur_t - *t);
 }
 
-int sketchTable[4][W] = { 0 };
+unsigned int sketchTable[4][W] = { 0 };
 int sketchTableCounter = 0;
 double T = 0;
 
@@ -118,21 +118,27 @@ double opSolver(int m, vector<pair<string, int>> opInput)
     return solver->GetOptimal();
 }
 
-int EditSketchTable(int hash_1, int hash_2, int hash_3, int hash_4)
+int EditSketchTable(unsigned int hash_1, unsigned int hash_2, unsigned int hash_3, unsigned int hash_4)
 {
     int cmpNumber = 0;
     sketchTableCounter++;
-    cmpNumber = sketchTable[0][hash_1 % W]++;
-    if (cmpNumber > sketchTable[1][hash_2 % W]++) {
+    //cout << "sketch table count = " << sketchTableCounter << endl;
+    //cout << "4 hash number = " << hash_1 % W << "," << hash_2 % W << "," << hash_3 % W << "," << hash_4 % W << endl;
+    sketchTable[0][hash_1 % W]++;
+    sketchTable[1][hash_2 % W]++;
+    sketchTable[2][hash_3 % W]++;
+    sketchTable[3][hash_4 % W]++;
+    cmpNumber = sketchTable[0][hash_1 % W];
+    if (cmpNumber > sketchTable[1][hash_2 % W]) {
         cmpNumber = sketchTable[1][hash_2 % W];
     }
-    if (cmpNumber > sketchTable[2][hash_3 % W]++) {
+    if (cmpNumber > sketchTable[2][hash_3 % W]) {
         cmpNumber = sketchTable[2][hash_3 % W];
     }
-    if (cmpNumber > sketchTable[3][hash_4 % W]++) {
+    if (cmpNumber > sketchTable[3][hash_4 % W]) {
         cmpNumber = sketchTable[3][hash_4 % W];
     }
-
+    //cout << "cmpNumber  = " << cmpNumber << endl;
     if (sketchTableCounter == K) {
         vector<pair<string, int>> opInput;
         opInput.reserve(W);
@@ -143,6 +149,7 @@ int EditSketchTable(int hash_1, int hash_2, int hash_3, int hash_4)
             opInput.push_back(make_pair(strTemp, sketchTable[0][i]));
         }
         int opm = W * (1 + storageBlow);
+        cout << "key server start optimization solver" << endl;
         T = opSolver(opm, opInput);
         sketchTableCounter = 0;
         for (int i = 0; i < W; i++) {
@@ -152,6 +159,7 @@ int EditSketchTable(int hash_1, int hash_2, int hash_3, int hash_4)
             sketchTable[3][i] = 0;
         }
     }
+    //cout << "Edit Sketch Table Over" << endl;
     return cmpNumber;
 }
 
@@ -189,6 +197,7 @@ void* SocketHandler(void* lp)
         // prepare to recv data
         int num;
         memcpy(&num, buffer, sizeof(int));
+        cout << "recv count request for " << num << " chunks" << endl;
         // recv data (blinded hash, 1024bits values)
         char* hash_buffer_1 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
         char* hash_buffer_2 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
@@ -215,21 +224,24 @@ void* SocketHandler(void* lp)
         double timer, split;
         timerStart(&timer);
         int currentFreqList[num];
+        //cout << "Frequency count start for " << num << " chunks" << endl;
         for (int i = 0; i < num; i++) {
             //EditSketchTableMutex.lock();
-            std::lock_guard<std::mutex> locker(EditSketchTableMutex);
-            int hash_int_1, hash_int_2, hash_int_3, hash_int_4;
-            memcpy(&hash_int_1, hash_buffer_1 + i * HASH_SIZE_SHORT, sizeof(int));
-            memcpy(&hash_int_2, hash_buffer_2 + i * HASH_SIZE_SHORT, sizeof(int));
-            memcpy(&hash_int_3, hash_buffer_3 + i * HASH_SIZE_SHORT, sizeof(int));
-            memcpy(&hash_int_4, hash_buffer_4 + i * HASH_SIZE_SHORT, sizeof(int));
+            //std::lock_guard<std::mutex> locker(EditSketchTableMutex);
+            unsigned int hash_int_1, hash_int_2, hash_int_3, hash_int_4;
+            memcpy(&hash_int_1, hash_buffer_1 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
+            memcpy(&hash_int_2, hash_buffer_2 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
+            memcpy(&hash_int_3, hash_buffer_3 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
+            memcpy(&hash_int_4, hash_buffer_4 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
 
             currentFreqList[i] = EditSketchTable(hash_int_1, hash_int_2, hash_int_3, hash_int_4);
+            //cout << "Frequency for chunk " << i << " = " << currentFreqList[i] << endl;
             //EditSketchTableMutex.unlock();
         }
 
         split = timerSplit(&timer);
         printf("server compute: %lf\n", split);
+        cout << "current T = " << T << endl;
         // send back the result
         char outPutBuffer[num * sizeof(int) + sizeof(double)];
         for (int i = 0; i < num; i++) {

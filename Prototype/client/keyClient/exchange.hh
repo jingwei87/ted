@@ -102,7 +102,7 @@ public:
 		  		@param key_buf - the returned buffer contains keys
 		  		@param obj - the pointer to crypto object
 		*/
-    void keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, unsigned char* hash_buf_3, unsigned char* hash_buf_4, int num, unsigned char* key_buf, double T);
+    double keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, unsigned char* hash_buf_3, unsigned char* hash_buf_4, int num, unsigned char* key_buf);
 
     /*
 			function : thread handler
