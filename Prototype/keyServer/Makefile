@@ -1,16 +1,16 @@
 CC = g++
-CFLAGS = -O3 -Wall -Werror -Wunreachable-code -Wshadow -DLINUX -Wno-write-strings
+CFLAGS = -std=c++1z
 LIBS = -lcrypto -lssl -lpthread 
 INCLUDES = -I./comm/
 JERASURE_OBJS = 
 MAIN_OBJS = ./comm/keyserver.o ./comm/solver.o
 
-all: server
+all: KEYMANAGER
 
 %.o: %.cc %.hh
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-server: main.cc $(MAIN_OBJS)  
+KEYMANAGER: main.cc $(MAIN_OBJS)  
 	$(CC) $(CFLAGS) $(INCLUDES) -o KEYMANAGER main.cc $(MAIN_OBJS) $(LIBS)
 
 

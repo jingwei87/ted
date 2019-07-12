@@ -46,8 +46,8 @@ private:
 public:
     // thread handler structure
     typedef struct {
-        int index;
         KeyEx* obj;
+        int index;
     } param_keyex;
     // ring buffer item structure
     typedef struct {
@@ -73,7 +73,7 @@ public:
 		 	input : encoder(obj) securetype (int [macro]) key manager IP(char *) key manager port (int)
 					key store IP(char *) key store port (int) chara type (int [macro])
 		*/
-    KeyEx(Encoder* obj, int securetype, string kmip, int kmport);
+    KeyEx(Encoder* obj, int securetype, string kmip, int kmport, int userID);
 
     /*
 			function : destructor of key exchange
