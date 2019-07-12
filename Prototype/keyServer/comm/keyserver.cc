@@ -175,7 +175,7 @@ void* SocketHandler(void* lp)
         fprintf(stderr, "Error recv userID %d\n", errno);
     }
     int user = ntohl(*(int*)buffer);
-    printf("connection from user %d\n", user);
+    printf("keyserver recv connection from user %d\n", user);
 
     while (true) {
 

@@ -17,12 +17,11 @@ void fatalx(char* s)
     ERR_print_errors_fp(stderr);
     errx(EX_DATAERR, "%.30s", s);
 }
-
 void* KeyEx::threadHandler(void* param)
 {
-
-    KeyEx* obj = ((param_keyex*)param)->obj;
-    free(param);
+    param_keyex* temp = (param_keyex*)param;
+    KeyEx* obj = temp->obj;
+    //free(temp);
 
     /* hash temp buffer for query hash table */
     unsigned char hash_tmp[32];
@@ -99,17 +98,18 @@ void* KeyEx::threadHandler(void* param)
     return NULL;
 }
 
-KeyEx::KeyEx(Encoder* obj, int securetype, string kmip, int kmport)
+KeyEx::KeyEx(Encoder* obj, int securetype, string kmip, int kmport, int userID)
 {
     // 	initialization
     inputbuffer_ = new RingBuffer<Chunk_t>(CHUNK_RB_SIZE, true, 1);
     cryptoObj_ = new CryptoPrimitive(securetype);
     param_keyex* temp = (param_keyex*)malloc(sizeof(param_keyex));
-    temp->index = 0;
-    temp->obj = this;
-    sock_[0] = new Ssl((char*)kmip.c_str(), kmport, 0);
 
+    sock_[0] = new Ssl((char*)kmip.c_str(), kmport, userID);
+    cout << "connect to key server done" << endl;
+    temp->obj = this;
     pthread_create(&tid_, 0, &threadHandler, (void*)temp);
+    cout << "keyclient thread create done" << endl;
 }
 
 KeyEx::~KeyEx()

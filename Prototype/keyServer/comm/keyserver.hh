@@ -32,11 +32,11 @@
 #define K 10000 // K - max chunk number sketch store before opsolver
 #define storageBlow 0.5
 // client cerificate
-#define SSL_CA_CRT "./keys/ca/ca.crt"
+#define SSL_CA_CRT "./keys/ca.crt"
 // server certificate
 #define SSL_SERVER_CRT "./keys/server.crt"
 // server key
-#define SSL_SERVER_KEY "./keys/private/server.key"
+#define SSL_SERVER_KEY "./keys/server.key"
 // hash value size 256 bits
 #define HASH_SIZE 32
 // rsa size 1024 bits

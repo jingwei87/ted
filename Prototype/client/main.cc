@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
         uploaderObj = new Uploader(n, n, userID);
         encoderObj = new Encoder(CAONT_RS_TYPE, n, m, r, securetype, uploaderObj);
         chunkerObj = new Chunker(VAR_SIZE_TYPE);
-        keyObj = new KeyEx(encoderObj, securetype, confObj->getkmIP(), confObj->getkmPort());
+        keyObj = new KeyEx(encoderObj, securetype, confObj->getkmIP(), confObj->getkmPort(), userID);
 
         //chunking
         Encoder::Secret_Item_t header;
