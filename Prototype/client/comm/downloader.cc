@@ -36,7 +36,7 @@ void* Downloader::thread_handler(void* param)
 
     /* start to download data into container */
     obj->socketArray_[cloudIndex]->downloadChunk(obj->downloadContainer_[cloudIndex], &retSize);
-
+    // cerr << "download chunk over, size = " << retSize << endl;
     /* get the header */
     shareFileHead_t* header = (shareFileHead_t*)obj->downloadContainer_[cloudIndex];
     index = sizeof(shareFileHead_t);
@@ -48,8 +48,9 @@ void* Downloader::thread_handler(void* param)
 
     /* add the header object into ringbuffer */
     obj->ringBuffer_[cloudIndex]->Insert(&headerObj, sizeof(headerObj));
-
+    int numOfShares = header->numOfShares;
     /* main loop to get data */
+    int shareCounter = 0;
     while (true) {
 
         /* if the current comtainer has been proceed, download next container */
@@ -73,6 +74,10 @@ void* Downloader::thread_handler(void* param)
 
         /* add the share object to ringbuffer */
         obj->ringBuffer_[cloudIndex]->Insert(&output, sizeof(output));
+        shareCounter++;
+        if (shareCounter == numOfShares) {
+            pthread_exit(NULL);
+        }
     }
     return NULL;
 }
@@ -204,7 +209,7 @@ int Downloader::downloadFile(char* filename, int namesize, int numOfCloud)
     shareFileHead_t* header = &(headerObj.fileObj.file_header);
     int numOfShares = header->numOfShares;
     decodeObj_->setTotal(numOfShares);
-
+    cerr << "Total chunks need to download = " << numOfShares << endl;
     /* proceed each secret */
     int count = 0;
     while (count < numOfShares) {
@@ -245,7 +250,8 @@ int Downloader::indicateEnd()
     int i;
     for (i = 0; i < DOWNLOAD_NUM_THREADS; i++) {
         /* trying to join all threads */
-        pthread_join(tid_[i], NULL);
+        int ret = pthread_join(tid_[i], NULL);
+        //cerr << "pthread join for " << tid_[i] << " ret = " << ret << endl;
     }
     return 1;
 }

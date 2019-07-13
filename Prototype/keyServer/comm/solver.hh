@@ -31,7 +31,7 @@ public:
 private:
     int m_;
     int n_;
-    int sum_;
+    unsigned int sum_;
     int currentIndex_;
     int remainSum_;
     double storageBlow_;

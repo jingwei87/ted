@@ -60,7 +60,7 @@ void* KeyEx::threadHandler(void* param_thread)
             }
         }
         double T;
-        cout << "key exchange for " << itemCount << " chunks" << endl;
+        //cout << "key exchange for " << itemCount << " chunks" << endl;
         T = obj->keyExchange(hashBuffer_1, hashBuffer_2, hashBuffer_3, hashBuffer_4, itemCount, keyBuffer);
         cout << "key exchange for " << itemCount << " chunks done, T = " << T << endl;
         /* get back the keys */
