@@ -29,7 +29,7 @@
 
 #define HASH_SIZE_SHORT 4
 #define W 8192 //W - sketch table size
-#define K 10000 // K - max chunk number sketch store before opsolver
+#define K 100000 // K - max chunk number sketch store before opsolver
 #define storageBlow 0.5
 // client cerificate
 #define SSL_CA_CRT "./keys/ca.crt"
@@ -63,6 +63,7 @@ private:
     struct sockaddr_in sadr_;
     //thread ID
     pthread_t threadId_;
+    pthread_t opSolverThreadId_;
     // SSL context
     SSL_CTX* ctx_;
 

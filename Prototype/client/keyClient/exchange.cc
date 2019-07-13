@@ -132,7 +132,7 @@ KeyEx::KeyEx(Encoder* obj, int securetype, string kmip, int kmport, int userID)
         cout << pthread_status << endl;
         cout << "keyclient thread create done" << endl;
     }
-    //free(temp);
+    free(temp);
 }
 
 KeyEx::~KeyEx()
@@ -155,7 +155,7 @@ double KeyEx::keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, 
     sock_[0]->genericSend((char*)hash_buf_3, num * HASH_SIZE_SHORT);
     sock_[0]->genericSend((char*)hash_buf_4, num * HASH_SIZE_SHORT);
     //	get back the blinded keys
-    unsigned char bufferKeyTemp[num * sizeof(int)];
+    unsigned char bufferKeyTemp[num * sizeof(int) + sizeof(double)];
     sock_[0]->genericDownload((char*)bufferKeyTemp, num * sizeof(int) + sizeof(double));
     memcpy(key_buf, bufferKeyTemp, num * sizeof(int));
     double T;

@@ -104,7 +104,11 @@ double timerSplit(const double* t)
 unsigned int sketchTable[4][W] = { 0 };
 int sketchTableCounter = 0;
 double T = 0;
-
+bool opSolverFlag = false;
+vector<pair<string, int>> opInput;
+int opm = W * (1 + storageBlow);
+std::mutex EditTMutex;
+std::mutex EditSketchTableMutex;
 double opSolver(int m, vector<pair<string, int>> opInput)
 {
     OpSolver* solver = new OpSolver(m, opInput);
@@ -113,6 +117,7 @@ double opSolver(int m, vector<pair<string, int>> opInput)
 
 int EditSketchTable(unsigned int hash_1, unsigned int hash_2, unsigned int hash_3, unsigned int hash_4)
 {
+    std::lock_guard<std::mutex> locker(EditSketchTableMutex);
     int cmpNumber = 0;
     sketchTableCounter++;
     //cout << "sketch table count = " << sketchTableCounter << endl;
@@ -133,7 +138,8 @@ int EditSketchTable(unsigned int hash_1, unsigned int hash_2, unsigned int hash_
     }
     //cout << "cmpNumber  = " << cmpNumber << endl;
     if (sketchTableCounter == K) {
-        vector<pair<string, int>> opInput;
+        std::lock_guard<std::mutex> locker(EditTMutex);
+        opInput.clear();
         opInput.reserve(W);
         for (int i = 0; i < W; i++) {
             stringstream ss;
@@ -141,9 +147,8 @@ int EditSketchTable(unsigned int hash_1, unsigned int hash_2, unsigned int hash_
             string strTemp = ss.str();
             opInput.push_back(make_pair(strTemp, sketchTable[0][i]));
         }
-        int opm = W * (1 + storageBlow);
         cout << "key server start optimization solver" << endl;
-        T = opSolver(opm, opInput);
+        //T = opSolver(opm, opInput);
         sketchTableCounter = 0;
         for (int i = 0; i < W; i++) {
             sketchTable[0][i] = 0;
@@ -151,6 +156,7 @@ int EditSketchTable(unsigned int hash_1, unsigned int hash_2, unsigned int hash_
             sketchTable[2][i] = 0;
             sketchTable[3][i] = 0;
         }
+        opSolverFlag = true;
     }
     //cout << "Edit Sketch Table Over" << endl;
     return cmpNumber;
@@ -161,7 +167,7 @@ int EditSketchTable(unsigned int hash_1, unsigned int hash_2, unsigned int hash_
  *
  * @param lp - input parameter structure
  */
-std::mutex EditSketchTableMutex;
+
 void* SocketHandler(void* lp)
 {
 
@@ -214,13 +220,13 @@ void* SocketHandler(void* lp)
         }
 
         // main loop for computing params
-        double timer, split;
-        timerStart(&timer);
+        //double timer, split;
+        //timerStart(&timer);
         int currentFreqList[num];
         //cout << "Frequency count start for " << num << " chunks" << endl;
+
         for (int i = 0; i < num; i++) {
             //EditSketchTableMutex.lock();
-            //std::lock_guard<std::mutex> locker(EditSketchTableMutex);
             unsigned int hash_int_1, hash_int_2, hash_int_3, hash_int_4;
             memcpy(&hash_int_1, hash_buffer_1 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
             memcpy(&hash_int_2, hash_buffer_2 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
@@ -232,9 +238,9 @@ void* SocketHandler(void* lp)
             //EditSketchTableMutex.unlock();
         }
 
-        split = timerSplit(&timer);
-        printf("server compute: %lf\n", split);
-        cout << "current T = " << T << endl;
+        //split = timerSplit(&timer);
+        //printf("server compute: %lf\n", split);
+        //cout << "current T = " << T << endl;
         // send back the result
         char outPutBuffer[num * sizeof(int) + sizeof(double)];
         for (int i = 0; i < num; i++) {
@@ -249,6 +255,17 @@ void* SocketHandler(void* lp)
     return 0;
 }
 
+void* opSolverThread(void* lp)
+{
+    while (true) {
+        std::lock_guard<std::mutex> locker(EditTMutex);
+        if (opSolverFlag) {
+            T = opSolver(opm, opInput);
+            opSolverFlag = false;
+        }
+    }
+}
+
 /*
  * main procedure for receiving data
  */
@@ -258,6 +275,8 @@ void KeyServer::runReceive()
 
     addrSize_ = sizeof(sockaddr_in);
     //create a thread whenever a client connects
+    pthread_create(&opSolverThreadId_, 0, &opSolverThread, NULL);
+    pthread_detach(opSolverThreadId_);
     while (true) {
 
         printf("waiting for a connection\n");
