@@ -144,11 +144,11 @@ Downloader::~Downloader()
 {
     int i;
     for (i = 0; i < total_; i++) {
-        delete (signalBuffer_[i]);
-        delete (ringBuffer_[i]);
+        delete signalBuffer_[i];
+        delete ringBuffer_[i];
         free(downloadMetaBuffer_[i]);
         free(downloadContainer_[i]);
-        delete (socketArray_[i]);
+        delete socketArray_[i];
     }
     free(signalBuffer_);
     free(ringBuffer_);
