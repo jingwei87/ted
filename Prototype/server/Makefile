@@ -1,5 +1,5 @@
-CC = g++
-CFLAGS = -Wall
+CC = clang++
+CFLAGS = -O3 -std=c++1z -g -ggdb -fsanitize=address
 LIBS = -lcrypto -lssl -lpthread -lsnappy #-pg -lc
 INCLUDES = -I./lib/leveldb/include -I./backend/ -I./utils/ -I./lib/cryptopp -I./comm/ -I./dedup/ 
 MAIN_OBJS = ./utils/CryptoPrimitive.o ./dedup/DedupCore.o ./backend/BackendStorer.o ./comm/server.o
