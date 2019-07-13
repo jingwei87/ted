@@ -1852,7 +1852,7 @@ bool DedupCore::firstStageDedup(const int& userID, unsigned char* shareMDBuffer,
             numOfShares++;
         }
     }
-    cerr << "Number of shares in first stage dedup is " << numOfShares << endl;
+    //cerr << "Number of shares in first stage dedup is " << numOfShares << endl;
     return 1;
 }
 
@@ -2064,7 +2064,7 @@ bool DedupCore::secondStageDedup(const int& userID, unsigned char* shareMDBuffer
                 /*do nothing*/
             }
         }
-        cerr << "Number of shares in second stage dedup is " << numOfShares << endl;
+        //cerr << "Number of shares in second stage dedup is " << numOfShares << endl;
     }
 
     return 1;
@@ -2351,6 +2351,7 @@ bool DedupCore::restoreShareFile(const int& userID, const std::string& fullFileN
 
         /*restore each share*/
         numOfShares = pShareFileHead->numOfShares;
+        cerr << "Number of shares need to be restored is " << numOfShares << endl;
         for (i = 0; i < numOfShares; i++) {
             /*check if recipeFileBuffer holds a complete file recipe entry*/
             if (recipeFileBufferOffset + fileRecipeEntrySize_ > RECIPE_BUFFER_SIZE) {
