@@ -221,10 +221,10 @@ Encoder::Encoder(int type, int n, int m, int r, int securetype, Uploader* upload
 Encoder::~Encoder()
 {
     for (int i = 0; i < NUM_THREADS; i++) {
-        delete (cryptoObj_[i]);
-        delete (encodeObj_[i]);
-        delete (inputbuffer_[i]);
-        delete (outputbuffer_[i]);
+        delete cryptoObj_[i];
+        delete encodeObj_[i];
+        delete inputbuffer_[i];
+        delete outputbuffer_[i];
     }
     free(inputbuffer_);
     free(outputbuffer_);
