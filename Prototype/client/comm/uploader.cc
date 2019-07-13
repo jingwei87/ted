@@ -157,11 +157,11 @@ Uploader::~Uploader()
 {
     int i;
     for (i = 0; i < total_; i++) {
-        delete (ringBuffer_[i]);
+        delete ringBuffer_[i];
         free(shareSizeArray_[i]);
         free(uploadMetaBuffer_[i]);
         free(uploadContainer_[i]);
-        delete (socketArray_[i]);
+        delete socketArray_[i];
     }
     free(ringBuffer_);
     free(shareSizeArray_);
