@@ -19,8 +19,6 @@ void* Decoder::thread_handler(void* param)
     int index = ((param_decoder*)param)->index;
     Decoder* obj = ((param_decoder*)param)->obj;
     free(param);
-    int i = 0;
-
     /* main loop for decode shares into secret */
     while (true) {
         ShareChunk_t temp;
@@ -35,7 +33,6 @@ void* Decoder::thread_handler(void* param)
 
         /* add secret into output buffer */
         obj->outputbuffer_[index]->Insert(&input, sizeof(input));
-        i++;
     }
     return NULL;
 }
@@ -51,14 +48,13 @@ void* Decoder::collect(void* param)
     char* buf = (char*)malloc(FWRITE_BUFFER_SIZE);
     Decoder* obj = (Decoder*)param;
     int count = 0;
-    int i;
     int out_index = 0;
 
     /* main loop for get secrets */
     while (true) {
 
         /* according to thread sequence */
-        for (i = 0; i < DECODE_NUM_THREADS; i++) {
+        for (int i = 0; i < DECODE_NUM_THREADS; i++) {
             Secret_t temp;
 
             /* extract secret object */
@@ -75,12 +71,16 @@ void* Decoder::collect(void* param)
             out_index += temp.secretSize;
 
             /* if this is the last secret, write to file and  exit the collect */
+
             count++;
+            //cout << "decoder write out chunk NO. = " << count << " of total = " << obj->totalSecrets_ << endl;
             if (count == obj->totalSecrets_) {
                 if (out_index > 0) {
                     fwrite(buf, out_index, 1, obj->fw_);
+                    //cerr << "final write file over" << endl;
                 }
                 free(buf);
+                //cerr << "decoder collect thread exit over" << endl;
                 pthread_exit(NULL);
             }
         }
@@ -130,7 +130,8 @@ Decoder::Decoder(int type, int n, int m, int r, int securetype)
  */
 int Decoder::indicateEnd()
 {
-    pthread_join(tid_[DECODE_NUM_THREADS], NULL);
+    int ret = pthread_join(tid_[DECODE_NUM_THREADS], NULL);
+    //cerr << "decode over, indicate end, ret = " << ret << endl;
     return 1;
 }
 

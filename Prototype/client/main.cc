@@ -154,7 +154,7 @@ int main(int argc, char* argv[])
         }
         long long tt = 0, unique = 0;
         uploaderObj->indicateEnd(&tt, &unique);
-
+        cerr << "File upload over, total upload chunk number = " << totalChunks << endl;
         delete uploaderObj;
         delete chunkerObj;
         delete encoderObj;
@@ -167,13 +167,14 @@ int main(int argc, char* argv[])
         downloaderObj = new Downloader(k, k, userID, decoderObj);
         char nameBuffer[256];
         sprintf(nameBuffer, "%s.d", argv[1]);
+        cerr << "Download start, the file will store as " << nameBuffer << endl;
         FILE* fw = fopen(nameBuffer, "wb");
-
         decoderObj->setFilePointer(fw);
         decoderObj->setShareIDList(kShareIDList);
         downloaderObj->downloadFile(argv[1], namesize, k);
         decoderObj->indicateEnd();
         downloaderObj->indicateEnd();
+        cerr << "Download over, cleaning up" << endl;
         fclose(fw);
         delete downloaderObj;
         delete decoderObj;

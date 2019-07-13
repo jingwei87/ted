@@ -15,14 +15,18 @@ OpSolver::OpSolver(int m, vector<pair<string, int>> inputDistribution)
     inputFeqDistr_ = inputDistribution;
     maxEntropy_ = 0;
     originalEntropy_ = 0;
+    sum_ = 0;
     for (auto iter = inputDistribution.begin(); iter != inputDistribution.end(); iter++) {
         sum_ += iter->second;
+        //cerr << sum_ << "\t" << iter->second << " ";
     }
+    //cerr << endl;
 
     /**Initialization */
     double average = static_cast<double>(sum_) / m_;
     if (sum_ % m_ != 0) {
         printf("the output maybe double\n");
+        printf("current sum = %d\n", sum_);
     }
     printf("the initialized average: %lf\n", average);
 
