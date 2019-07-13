@@ -13,6 +13,3 @@ make clean
 
 cd ../client
 make clean
-
-cd lib
-make clean

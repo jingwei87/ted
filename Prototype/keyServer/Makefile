@@ -1,5 +1,5 @@
-CC = g++
-CFLAGS = -std=c++1z
+CC = clang++
+CFLAGS = -O3 -std=c++1z -g -ggdb
 LIBS = -lcrypto -lssl -lpthread 
 INCLUDES = -I./comm/
 JERASURE_OBJS = 

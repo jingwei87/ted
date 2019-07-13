@@ -12,13 +12,6 @@
 
 using namespace std;
 
-void fatalx(char* s)
-{
-
-    ERR_print_errors_fp(stderr);
-    errx(EX_DATAERR, "%.30s", s);
-}
-
 /*
  * constructor: initialize host socket
  *
@@ -36,19 +29,19 @@ KeyServer::KeyServer(int port)
     // create TSL connection
     ctx_ = SSL_CTX_new(TLS_server_method());
     if (ctx_ == NULL)
-        fatalx("ctx");
+        cerr << "ssl ctx create error" << endl;
     //load client certificate
     if (!SSL_CTX_load_verify_locations(ctx_, SSL_CA_CRT, NULL))
-        fatalx("verify");
+        cerr << "ssl load verify error" << endl;
     SSL_CTX_set_client_CA_list(ctx_, SSL_load_client_CA_file(SSL_CA_CRT));
     if (!SSL_CTX_use_certificate_file(ctx_, SSL_SERVER_CRT, SSL_FILETYPE_PEM))
-        fatalx("cert");
+        cerr << "ssl use cert file error" << endl;
     //Load server key file
     if (!SSL_CTX_use_PrivateKey_file(ctx_, SSL_SERVER_KEY, SSL_FILETYPE_PEM))
-        fatalx("key");
+        cerr << "ssl use private key error" << endl;
     //check server key
     if (!SSL_CTX_check_private_key(ctx_))
-        fatalx("cert/key");
+        cerr << "ssl check private key error" << endl;
     //init SSL connection
     SSL_CTX_set_mode(ctx_, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_verify(ctx_, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);

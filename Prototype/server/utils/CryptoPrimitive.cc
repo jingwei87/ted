@@ -64,7 +64,7 @@ bool CryptoPrimitive::opensslLockSetup()
 #endif
     }
 
-    CRYPTO_THREADID_set_callback(&opensslThreadID_);
+    //CRYPTO_THREADID_set_callback(&opensslThreadID_);
     CRYPTO_set_locking_callback(&opensslLockingCallback_);
 
     fprintf(stderr, "OpenSSL lock setup done\n");
