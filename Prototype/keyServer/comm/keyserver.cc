@@ -196,7 +196,7 @@ void* SocketHandler(void* lp)
         // prepare to recv data
         int num;
         memcpy(&num, buffer, sizeof(int));
-        cout << "recv count request for " << num << " chunks" << endl;
+        //cout << "recv count request for " << num << " chunks" << endl;
         // recv data (blinded hash, 1024bits values)
         char* hash_buffer_1 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
         char* hash_buffer_2 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);

@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
         long size = ftell(fin);
         fseek(fin, 0, SEEK_SET);
 
-        uploaderObj = new Uploader(n, n, userID);
+        uploaderObj = new Uploader(n, n, userID, size);
         encoderObj = new Encoder(CAONT_RS_TYPE, n, m, r, securetype, uploaderObj);
         chunkerObj = new Chunker(VAR_SIZE_TYPE);
         keyObj = new KeyEx(encoderObj, securetype, confObj->getkmIP(), confObj->getkmPort(), userID);
