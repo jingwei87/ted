@@ -68,7 +68,8 @@ public:
 
     string getkmIP()
     {
-        return "0.0.0.0";
+        return "192.168.1.103";
+        //return "0.0.0.0";
     }
     int getkmPort()
     {
