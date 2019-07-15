@@ -120,6 +120,7 @@ public:
     typedef struct {
         int cloudIndex;
         Uploader* obj;
+        long size;
     } param_t;
 
     /* file header pointer array for modifying header */
@@ -172,7 +173,7 @@ public:
          * @param subset - input number of clouds to be chosen
          *
          */
-    Uploader(int total, int subset, int userID);
+    Uploader(int total, int subset, int userID, long size);
 
     /*
          * destructor

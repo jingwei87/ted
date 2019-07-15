@@ -17,6 +17,7 @@ void* Uploader::thread_handler(void* param)
     /* get input parameters */
     param_t* temp = (param_t*)param;
     int cloudIndex = temp->cloudIndex;
+    long fileSize = temp->size;
     Uploader* obj = temp->obj;
     free(temp);
 
@@ -38,7 +39,7 @@ void* Uploader::thread_handler(void* param)
 
             /* head array point to new file header */
             obj->headerArray_[cloudIndex] = (fileShareMDHead_t*)(obj->uploadMetaBuffer_[cloudIndex] + obj->metaWP_[cloudIndex]);
-
+            obj->headerArray_[cloudIndex]->fileSize = fileSize;
             /* meta index update */
             obj->metaWP_[cloudIndex] += obj->fileMDHeadSize_;
 
@@ -95,7 +96,7 @@ void* Uploader::thread_handler(void* param)
  * @param subset - input number of clouds to be chosen
  *
  */
-Uploader::Uploader(int total, int subset, int userID)
+Uploader::Uploader(int total, int subset, int userID, long size)
 {
     total_ = total;
     subset_ = subset;
@@ -128,6 +129,7 @@ Uploader::Uploader(int total, int subset, int userID)
         param_t* param = (param_t*)malloc(sizeof(param_t)); // thread's parameter
         param->cloudIndex = i;
         param->obj = this;
+        param->size = size;
         pthread_create(&tid_[i], 0, &thread_handler, (void*)param);
 
         /* line by line read config file*/
