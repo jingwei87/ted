@@ -1,5 +1,5 @@
-CC = clang++
-CFLAGS = -O3 -std=c++1z -g -ggdb -fsanitize=address
+CC = g++
+CFLAGS = -O3 -std=c++11# -g -ggdb -fsanitize=address
 LIBS = -lcrypto -lssl -lpthread 
 INCLUDES = -I./comm/
 JERASURE_OBJS = 
