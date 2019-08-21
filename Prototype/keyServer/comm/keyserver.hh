@@ -28,7 +28,7 @@
 #include <sysexits.h>
 
 #define HASH_SIZE_SHORT 4
-#define W 8192 //W - sketch table size
+#define W 1024 * 1024 //W - sketch table size
 #define K 50000 // K - max chunk number sketch store before opsolver
 #define storageBlow 0.5
 // client cerificate
@@ -43,6 +43,7 @@
 #define RSA_LENGTH 128
 // buffer size
 #define BUFFER_SIZE (32 * 1024 * 1024)
+#define RANDOM 1
 
 using namespace std;
 

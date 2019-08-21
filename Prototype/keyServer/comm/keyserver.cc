@@ -103,7 +103,7 @@ double timerSplit(const double* t)
 
 unsigned int sketchTable[4][W] = { 0 };
 int sketchTableCounter = 0;
-double T = 0;
+double T = 1;
 bool opSolverFlag = false;
 vector<pair<string, int>> opInput;
 int opm = W * (1 + storageBlow);
@@ -174,6 +174,8 @@ void* SocketHandler(void* lp)
     //double timer,split,bw;
     //get socket from input param
     SSL* ssl = ((KeyServer*)lp)->ssl_;
+    char serverPrivate[16];
+    memset(serverPrivate, 1, 16);
     //variable initialization
     int bytecount;
     char* buffer = (char*)malloc(sizeof(char) * BUFFER_SIZE + sizeof(int));
@@ -196,8 +198,7 @@ void* SocketHandler(void* lp)
         // prepare to recv data
         int num;
         memcpy(&num, buffer, sizeof(int));
-        //cout << "recv count request for " << num << " chunks" << endl;
-        // recv data (blinded hash, 1024bits values)
+        // cout << "recv count request for " << num << " chunks" << endl;
         char* hash_buffer_1 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
         char* hash_buffer_2 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
         char* hash_buffer_3 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
@@ -224,6 +225,7 @@ void* SocketHandler(void* lp)
         //timerStart(&timer);
         int currentFreqList[num];
         //cout << "Frequency count start for " << num << " chunks" << endl;
+        char outPutBuffer[num * 32];
 
         for (int i = 0; i < num; i++) {
             //EditSketchTableMutex.lock();
@@ -232,22 +234,41 @@ void* SocketHandler(void* lp)
             memcpy(&hash_int_2, hash_buffer_2 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
             memcpy(&hash_int_3, hash_buffer_3 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
             memcpy(&hash_int_4, hash_buffer_4 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
-
+            // cout << "current num = " << i << endl;
             currentFreqList[i] = EditSketchTable(hash_int_1, hash_int_2, hash_int_3, hash_int_4);
+            // cout << "current done num = " << i << endl;
+            int param;
+
+            param = floor(currentFreqList[i] / T);
+#ifdef RANDOM
+            int randNumber = rand() % (param * 2);
+            if (randNumber < param) {
+                param = randNumber;
+            }
+#endif
+            // cout << "current num = " << i << endl;
+            unsigned char newKeyBuffer[16 + 4 * HASH_SIZE_SHORT + sizeof(int)];
+            memcpy(newKeyBuffer, serverPrivate, 16);
+            memcpy(newKeyBuffer + 16, hash_buffer_1 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(newKeyBuffer + 16 + HASH_SIZE_SHORT, hash_buffer_2 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(newKeyBuffer + 16 + 2 * HASH_SIZE_SHORT, hash_buffer_3 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(newKeyBuffer + 16 + 3 * HASH_SIZE_SHORT, hash_buffer_4 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(newKeyBuffer + 16 + 4 * HASH_SIZE_SHORT, &param, sizeof(int));
+            // cout << "current = " << i << "memcpy done" << endl;
+            unsigned char key[32];
+            SHA256(newKeyBuffer, 16 + 4 * HASH_SIZE_SHORT + sizeof(int), key);
+            memcpy(outPutBuffer + i * 32, key, 32);
+
             //cout << "Frequency for chunk " << i << " = " << currentFreqList[i] << endl;
             //EditSketchTableMutex.unlock();
         }
 
         //split = timerSplit(&timer);
         //printf("server compute: %lf\n", split);
-        //cout << "current T = " << T << endl;
+        cout << "current T = " << T << endl;
         // send back the result
-        char outPutBuffer[num * sizeof(int) + sizeof(double)];
-        for (int i = 0; i < num; i++) {
-            memcpy(outPutBuffer + i * sizeof(int), &currentFreqList[i], sizeof(int));
-        }
-        memcpy(outPutBuffer + num * sizeof(int), &T, sizeof(double));
-        if ((bytecount = SSL_write(ssl, outPutBuffer, num * sizeof(int) + sizeof(double))) == -1) {
+        // cout << "generate key for " << num << "done" << endl;
+        if ((bytecount = SSL_write(ssl, outPutBuffer, num * 32)) == -1) {
             fprintf(stderr, "Error send compute ans %d\n", errno);
             exit(1);
         }
