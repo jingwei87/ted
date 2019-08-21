@@ -33,7 +33,7 @@ void* KeyEx::threadHandler(void* param_thread)
     unsigned char* hashBuffer_4 = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * HASH_SIZE_SHORT);
 
     /* key buffer */
-    unsigned char* keyBuffer = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * sizeof(int) + sizeof(double));
+    unsigned char* keyBuffer = (unsigned char*)malloc(sizeof(unsigned char) * KEY_BATCH_SIZE * HASH_SIZE);
 
     /* main loop for processing batches */
     while (true) {
@@ -59,13 +59,11 @@ void* KeyEx::threadHandler(void* param_thread)
                 break;
             }
         }
-        double T;
-        //cout << "key exchange for " << itemCount << " chunks" << endl;
-        T = obj->keyExchange(hashBuffer_1, hashBuffer_2, hashBuffer_3, hashBuffer_4, itemCount, keyBuffer);
-        cout << "key exchange for " << itemCount << " chunks done, T = " << T << endl;
+        // cout << "key exchange for " << itemCount << " chunks" << endl;
+        obj->keyExchange(hashBuffer_1, hashBuffer_2, hashBuffer_3, hashBuffer_4, itemCount, keyBuffer);
+        cout << "key exchange for " << itemCount << " chunks done" << endl;
         /* get back the keys */
 
-        memcpy(&T, keyBuffer + itemCount * sizeof(int), sizeof(double));
         for (int i = 0; i < itemCount; i++) {
             Encoder::Secret_Item_t input;
             input.type = SHARE_OBJECT;
@@ -74,25 +72,12 @@ void* KeyEx::threadHandler(void* param_thread)
 
             /* create encoder input object */
             memcpy(input.secret.data, tempList[i].data, tempList[i].chunkSize);
-
-            int c;
-            memcpy(&c, keyBuffer + i * sizeof(int), sizeof(int));
-            int param;
-            if (fabs(T - 0) < FLT_EPSILON) {
-                memcpy(input.secret.key, tempList[i].key, 32);
-            } else {
-                param = floor(c / T);
-                int randNumber = rand() % (param * 2);
-                if (randNumber < param) {
-                    param = randNumber;
-                }
-                unsigned char newKeyBuffer[32 + sizeof(int)];
-                memcpy(newKeyBuffer, tempList[i].key, 32);
-                memcpy(newKeyBuffer + 32, &param, sizeof(int));
-                unsigned char key[32];
-                SHA256(newKeyBuffer, 32 + sizeof(int), key);
-                memcpy(input.secret.key, key, 32);
-            }
+            unsigned char newKeyBuffer[HASH_SIZE * 2];
+            memcpy(newKeyBuffer, tempList[i].key, HASH_SIZE);
+            memcpy(newKeyBuffer + HASH_SIZE, keyBuffer + i * HASH_SIZE, HASH_SIZE);
+            unsigned char key[HASH_SIZE];
+            SHA256(newKeyBuffer, 2 * HASH_SIZE, key);
+            memcpy(input.secret.key, key, HASH_SIZE);
 
             input.secret.secretID = tempList[i].chunkID;
             input.secret.secretSize = tempList[i].chunkSize;
@@ -143,24 +128,21 @@ KeyEx::~KeyEx()
     pthread_join(tid_, NULL);
 }
 
-double KeyEx::keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, unsigned char* hash_buf_3, unsigned char* hash_buf_4, int num, unsigned char* key_buf)
+bool KeyEx::keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, unsigned char* hash_buf_3, unsigned char* hash_buf_4, int num, unsigned char* key_buf)
 {
 
-    unsigned char buffer[sizeof(int)];
+    char buffer[sizeof(int)];
     memcpy(buffer, &num, sizeof(int));
+    // cerr << "Num = " << num << endl;
     //	send hashes to key server
-    sock_[0]->genericSend((char*)buffer, sizeof(int));
+    sock_[0]->genericSend(buffer, sizeof(int));
     sock_[0]->genericSend((char*)hash_buf_1, num * HASH_SIZE_SHORT);
     sock_[0]->genericSend((char*)hash_buf_2, num * HASH_SIZE_SHORT);
     sock_[0]->genericSend((char*)hash_buf_3, num * HASH_SIZE_SHORT);
     sock_[0]->genericSend((char*)hash_buf_4, num * HASH_SIZE_SHORT);
     //	get back the blinded keys
-    unsigned char bufferKeyTemp[num * sizeof(int) + sizeof(double)];
-    sock_[0]->genericDownload((char*)bufferKeyTemp, num * sizeof(int) + sizeof(double));
-    memcpy(key_buf, bufferKeyTemp, num * sizeof(int));
-    double T;
-    memcpy(&T, bufferKeyTemp + num * sizeof(int), sizeof(double));
-    return T;
+    sock_[0]->genericDownload((char*)key_buf, num * HASH_SIZE);
+    return true;
 }
 
 void KeyEx::add(Chunk_t* item)
