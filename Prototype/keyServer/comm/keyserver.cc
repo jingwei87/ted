@@ -150,12 +150,12 @@ int EditSketchTable(unsigned int hash_1, unsigned int hash_2, unsigned int hash_
         cout << "key server start optimization solver" << endl;
         //T = opSolver(opm, opInput);
         sketchTableCounter = 0;
-        for (int i = 0; i < W; i++) {
-            sketchTable[0][i] = 0;
-            sketchTable[1][i] = 0;
-            sketchTable[2][i] = 0;
-            sketchTable[3][i] = 0;
-        }
+        // for (int i = 0; i < W; i++) {
+        //     sketchTable[0][i] = 0;
+        //     sketchTable[1][i] = 0;
+        //     sketchTable[2][i] = 0;
+        //     sketchTable[3][i] = 0;
+        // }
         opSolverFlag = true;
     }
     //cout << "Edit Sketch Table Over" << endl;
