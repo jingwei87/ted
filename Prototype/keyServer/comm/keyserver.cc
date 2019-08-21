@@ -174,8 +174,8 @@ void* SocketHandler(void* lp)
     //double timer,split,bw;
     //get socket from input param
     SSL* ssl = ((KeyServer*)lp)->ssl_;
-    char serverPrivate[16];
-    memset(serverPrivate, 1, 16);
+    char serverPrivate[64];
+    memset(serverPrivate, 1, 64);
     //variable initialization
     int bytecount;
     char* buffer = (char*)malloc(sizeof(char) * BUFFER_SIZE + sizeof(int));
@@ -247,16 +247,16 @@ void* SocketHandler(void* lp)
             }
 #endif
             // cout << "current num = " << i << endl;
-            unsigned char newKeyBuffer[16 + 4 * HASH_SIZE_SHORT + sizeof(int)];
-            memcpy(newKeyBuffer, serverPrivate, 16);
-            memcpy(newKeyBuffer + 16, hash_buffer_1 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
-            memcpy(newKeyBuffer + 16 + HASH_SIZE_SHORT, hash_buffer_2 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
-            memcpy(newKeyBuffer + 16 + 2 * HASH_SIZE_SHORT, hash_buffer_3 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
-            memcpy(newKeyBuffer + 16 + 3 * HASH_SIZE_SHORT, hash_buffer_4 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
-            memcpy(newKeyBuffer + 16 + 4 * HASH_SIZE_SHORT, &param, sizeof(int));
+            unsigned char newKeyBuffer[64 + 4 * HASH_SIZE_SHORT + sizeof(int)];
+            memcpy(newKeyBuffer, serverPrivate, 64);
+            memcpy(newKeyBuffer + 64, hash_buffer_1 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(newKeyBuffer + 64 + HASH_SIZE_SHORT, hash_buffer_2 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(newKeyBuffer + 64 + 2 * HASH_SIZE_SHORT, hash_buffer_3 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(newKeyBuffer + 64 + 3 * HASH_SIZE_SHORT, hash_buffer_4 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(newKeyBuffer + 64 + 4 * HASH_SIZE_SHORT, &param, sizeof(int));
             // cout << "current = " << i << "memcpy done" << endl;
             unsigned char key[32];
-            SHA256(newKeyBuffer, 16 + 4 * HASH_SIZE_SHORT + sizeof(int), key);
+            SHA256(newKeyBuffer, 64 + 4 * HASH_SIZE_SHORT + sizeof(int), key);
             memcpy(outPutBuffer + i * 32, key, 32);
 
             //cout << "Frequency for chunk " << i << " = " << currentFreqList[i] << endl;
