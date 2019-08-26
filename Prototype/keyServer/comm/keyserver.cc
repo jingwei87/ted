@@ -213,6 +213,7 @@ void *SocketHandler(void *lp)
         }
         // prepare to recv data
         int num;
+        cerr << "Recv number = " << num << endl;
         memcpy(&num, buffer, sizeof(int));
         // cout << "recv count request for " << num << " chunks" << endl;
         char *hash_buffer_1 = (char *)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
@@ -251,10 +252,10 @@ void *SocketHandler(void *lp)
         {
             //EditSketchTableMutex.lock();
             unsigned int hash_int_1, hash_int_2, hash_int_3, hash_int_4;
-            memcpy(&hash_int_1 + (sizeof(uint) - HASH_SIZE_SHORT), hash_buffer_1 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
-            memcpy(&hash_int_2 + (sizeof(uint) - HASH_SIZE_SHORT), hash_buffer_2 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
-            memcpy(&hash_int_3 + (sizeof(uint) - HASH_SIZE_SHORT), hash_buffer_3 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
-            memcpy(&hash_int_4 + (sizeof(uint) - HASH_SIZE_SHORT), hash_buffer_4 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(&hash_int_1, hash_buffer_1 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(&hash_int_2, hash_buffer_2 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(&hash_int_3, hash_buffer_3 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(&hash_int_4, hash_buffer_4 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
             // cout << "current num = " << i << endl;
             currentFreqList[i] = EditSketchTable(hash_int_1, hash_int_2, hash_int_3, hash_int_4);
             // cout << "current done num = " << i << endl;
@@ -317,8 +318,11 @@ void *SocketHandler(void *lp)
         if ((bytecount = SSL_write(ssl, outPutBuffer, num * 32)) == -1)
         {
             fprintf(stderr, "Error send compute ans %d\n", errno);
-            exit(1);
         }
+        free(hash_buffer_1);
+        free(hash_buffer_2);
+        free(hash_buffer_3);
+        free(hash_buffer_4);
     }
     return 0;
 }
