@@ -346,8 +346,13 @@ void *opSolverThread(void *lp)
         std::lock_guard<std::mutex> locker(EditTMutex);
         if (opSolverFlag)
         {
+            gettimeofday(&timestartInit, NULL);
             T = opSolver(opm, opInput);
             opSolverFlag = false;
+            gettimeofday(&timeendInit, NULL);
+            long diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
+            double second = diff / 1000000.0;
+            printf("optimal compute time is %ld us = %lf s\n", diff, second);
         }
     }
 }
