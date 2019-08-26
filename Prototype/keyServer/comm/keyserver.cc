@@ -12,6 +12,9 @@
 
 using namespace std;
 
+struct timeval timestartInit;
+struct timeval timeendInit;
+
 /*
  * constructor: initialize host socket
  *
@@ -250,6 +253,7 @@ void *SocketHandler(void *lp)
 
         for (int i = 0; i < num; i++)
         {
+            gettimeofday(&timestartInit, NULL);
             //EditSketchTableMutex.lock();
             unsigned int hash_int_1, hash_int_2, hash_int_3, hash_int_4;
             memcpy(&hash_int_1, hash_buffer_1 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
@@ -293,7 +297,12 @@ void *SocketHandler(void *lp)
                     param = result;
             }
 
+            gettimeofday(&timeendInit, NULL);
+            long diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
+            double second = diff / 1000000.0;
+            printf("generate key seed time is %ld us = %lf s\n", diff, second);
             // cout << "current num = " << i << endl;
+            gettimeofday(&timestartInit, NULL);
             unsigned char newKeyBuffer[64 + 4 * HASH_SIZE_SHORT + sizeof(int)];
             memcpy(newKeyBuffer, serverPrivate, 64);
             memcpy(newKeyBuffer + 64, hash_buffer_1 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
@@ -305,7 +314,10 @@ void *SocketHandler(void *lp)
             unsigned char key[32];
             SHA256(newKeyBuffer, 64 + 4 * HASH_SIZE_SHORT + sizeof(int), key);
             memcpy(outPutBuffer + i * 32, key, 32);
-
+            gettimeofday(&timeendInit, NULL);
+            diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
+            second = diff / 1000000.0;
+            printf("update param time is %ld us = %lf s\n", diff, second);
             //cout << "Frequency for chunk " << i << " = " << currentFreqList[i] << endl;
             //EditSketchTableMutex.unlock();
         }
