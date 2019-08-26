@@ -59,25 +59,25 @@ void *KeyEx::threadHandler(void *param_thread)
             char hash1[16];
             memcpy(data1, temp.data, temp.chunkSize);
             memcpy(data1 + temp.chunkSize, &seed1, sizeof(uint32_t));
-            MurmurHash3_x64_128(data1, temp.chunkSize + sizeof(uint32_t), seed1, hash1);
+            MurmurHash3_x64_128((void const *)data1, temp.chunkSize + sizeof(uint32_t), seed1, (void *)hash1);
 
             char data2[temp.chunkSize + sizeof(uint32_t)];
             char hash2[16];
             memcpy(data2, temp.data, temp.chunkSize);
             memcpy(data2 + temp.chunkSize, &seed2, sizeof(uint32_t));
-            MurmurHash3_x64_128(data2, temp.chunkSize + sizeof(uint32_t), seed2, hash2);
+            MurmurHash3_x64_128((void const *)data2, temp.chunkSize + sizeof(uint32_t), seed2, (void *)hash2);
 
             char data3[temp.chunkSize + sizeof(uint32_t)];
             char hash3[16];
             memcpy(data3, temp.data, temp.chunkSize);
             memcpy(data3 + temp.chunkSize, &seed3, sizeof(uint32_t));
-            MurmurHash3_x64_128(data3, temp.chunkSize + sizeof(uint32_t), seed3, hash3);
+            MurmurHash3_x64_128((void const *)data3, temp.chunkSize + sizeof(uint32_t), seed3, (void *)hash3);
 
             char data4[temp.chunkSize + sizeof(uint32_t)];
             char hash4[16];
             memcpy(data4, temp.data, temp.chunkSize);
             memcpy(data4 + temp.chunkSize, &seed4, sizeof(uint32_t));
-            MurmurHash3_x64_128(data4, temp.chunkSize + sizeof(uint32_t), seed4, hash4);
+            MurmurHash3_x64_128((void const *)data4, temp.chunkSize + sizeof(uint32_t), seed4, (void *)hash4);
 
             memcpy(hashBuffer_1 + (i * HASH_SIZE_SHORT), hash1, HASH_SIZE_SHORT);
             memcpy(hashBuffer_2 + (i * HASH_SIZE_SHORT), hash2, HASH_SIZE_SHORT);
