@@ -58,7 +58,7 @@ void *KeyEx::threadHandler(void *param_thread)
             /* getting a batch item from input buffer */
             obj->inputbuffer_->Extract(&temp);
 
-            gettimeofday(&timestartInit, NULL);
+            // gettimeofday(&timestartInit, NULL);
 
             obj->cryptoObj_->generateHash(temp.data, temp.chunkSize, hash_tmp);
             memcpy(temp.key, hash_tmp, HASH_SIZE);
@@ -92,10 +92,10 @@ void *KeyEx::threadHandler(void *param_thread)
             memcpy(hashBuffer_3 + (i * HASH_SIZE_SHORT), hash3, HASH_SIZE_SHORT);
             memcpy(hashBuffer_4 + (i * HASH_SIZE_SHORT), hash4, HASH_SIZE_SHORT);
 
-            gettimeofday(&timeendInit, NULL);
-            long diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
-            double second = diff / 1000000.0;
-            printf("murmurhash time is %ld us = %lf s\n", diff, second);
+            // gettimeofday(&timeendInit, NULL);
+            // long diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
+            // double second = diff / 1000000.0;
+            // printf("murmurhash time is %ld us = %lf s\n", diff, second);
 
             itemCount++;
             if (temp.end == 1)
@@ -116,7 +116,7 @@ void *KeyEx::threadHandler(void *param_thread)
                 input.type = SHARE_END;
 
             /* create encoder input object */
-            gettimeofday(&timestartInit, NULL);
+            // gettimeofday(&timestartInit, NULL);
             memcpy(input.secret.data, tempList[i].data, tempList[i].chunkSize);
             unsigned char newKeyBuffer[HASH_SIZE * 2];
             memcpy(newKeyBuffer, tempList[i].key, HASH_SIZE);
@@ -125,10 +125,10 @@ void *KeyEx::threadHandler(void *param_thread)
             SHA256(newKeyBuffer, 2 * HASH_SIZE, key);
             memcpy(input.secret.key, key, HASH_SIZE);
 
-            gettimeofday(&timeendInit, NULL);
-            long diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
-            double second = diff / 1000000.0;
-            printf("update key time is %ld us = %lf s\n", diff, second);
+            // gettimeofday(&timeendInit, NULL);
+            // long diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
+            // double second = diff / 1000000.0;
+            // printf("update key time is %ld us = %lf s\n", diff, second);
 
             input.secret.secretID = tempList[i].chunkID;
             input.secret.secretSize = tempList[i].chunkSize;
@@ -189,23 +189,23 @@ bool KeyEx::keyExchange(unsigned char *hash_buf_1, unsigned char *hash_buf_2, un
     memcpy(buffer, &num, sizeof(int));
     // cerr << "Num = " << num << endl;
     //	send hashes to key server
-    gettimeofday(&timestartKey, NULL);
+    // gettimeofday(&timestartKey, NULL);
     sock_[0]->genericSend(buffer, sizeof(int));
     sock_[0]->genericSend((char *)hash_buf_1, num * HASH_SIZE_SHORT);
     sock_[0]->genericSend((char *)hash_buf_2, num * HASH_SIZE_SHORT);
     sock_[0]->genericSend((char *)hash_buf_3, num * HASH_SIZE_SHORT);
     sock_[0]->genericSend((char *)hash_buf_4, num * HASH_SIZE_SHORT);
-    gettimeofday(&timeendKey, NULL);
-    long diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
-    double second = diff / 1000000.0;
-    printf("key upload time is %ld us = %lf s\n", diff, second);
+    // gettimeofday(&timeendKey, NULL);
+    // long diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+    // double second = diff / 1000000.0;
+    // printf("key upload time is %ld us = %lf s\n", diff, second);
 
     //	get back the blinded keys
     sock_[0]->genericDownload((char *)key_buf, num * HASH_SIZE);
-    gettimeofday(&timeendKey, NULL);
-    diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
-    second = diff / 1000000.0;
-    printf("key downlaod  time is %ld us = %lf s\n", diff, second);
+    // gettimeofday(&timeendKey, NULL);
+    // diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+    // second = diff / 1000000.0;
+    // printf("key downlaod  time is %ld us = %lf s\n", diff, second);
     return true;
 }
 
