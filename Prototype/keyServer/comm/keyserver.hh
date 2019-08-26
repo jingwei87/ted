@@ -27,9 +27,9 @@
 #include <sys/types.h>
 #include <sysexits.h>
 
-#define HASH_SIZE_SHORT 4
+#define HASH_SIZE_SHORT 3
 #define W 1024 * 1024 //W - sketch table size
-#define K 50000 // K - max chunk number sketch store before opsolver
+#define K 50000       // K - max chunk number sketch store before opsolver
 #define storageBlow 0.5
 // client cerificate
 #define SSL_CA_CRT "./keys/ca.crt"
@@ -43,11 +43,17 @@
 #define RSA_LENGTH 128
 // buffer size
 #define BUFFER_SIZE (32 * 1024 * 1024)
-#define RANDOM 1
+#define RANDOM_TYPE 1
+#define UNIFORM_INT_RAND 1
+#define POISSON_RAND 2
+#define NORMAL_RAND 3
+#define GEOMETRIC_RAND 4
+#define NO_RAND 5
 
 using namespace std;
 
-class KeyServer {
+class KeyServer
+{
 
 private:
     //port number
@@ -59,18 +65,18 @@ private:
     //socket size
     socklen_t addrSize_;
     //client socket
-    int* clientSock_;
+    int *clientSock_;
     //socket address
     struct sockaddr_in sadr_;
     //thread ID
     pthread_t threadId_;
     pthread_t opSolverThreadId_;
     // SSL context
-    SSL_CTX* ctx_;
+    SSL_CTX *ctx_;
 
 public:
     // SSL connection structure
-    SSL* ssl_;
+    SSL *ssl_;
     // constructor
     KeyServer(int port);
     // destructor
