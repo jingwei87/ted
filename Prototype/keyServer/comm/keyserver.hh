@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <sysexits.h>
 
+#define OPENSSL_VERSION_1_1 1
 #define HASH_SIZE_SHORT 3
 #define W 1024 * 1024 //W - sketch table size
 #define K 50000       // K - max chunk number sketch store before opsolver

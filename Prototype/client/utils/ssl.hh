@@ -30,23 +30,25 @@
 #define SSL_CLIENT_KEY "./keys/client.key"
 
 #define SOCKET_BUFFER_SIZE (8 + 4 * 1024 * 1024)
+#define OPENSSL_VERSION_1_1 1
 
 using namespace std;
 
-class Ssl {
+class Ssl
+{
 private:
     /* port number */
     int hostPort_;
 
     /* ip address */
-    char* hostName_;
+    char *hostName_;
 
     /* address structure */
     struct sockaddr_in myAddr_;
 
     /* host socket */
-    SSL_CTX* ctx_;
-    SSL* ssl_;
+    SSL_CTX *ctx_;
+    SSL *ssl_;
 
     char buffer_[SOCKET_BUFFER_SIZE];
 
@@ -57,7 +59,7 @@ public:
 		 * @param ip - server ip address
 		 * @param port - port number
 		 */
-    Ssl(char* ip, int port, int userID);
+    Ssl(char *ip, int port, int userID);
 
     int hostSock_;
 
@@ -72,7 +74,7 @@ public:
 		 * @param raw - raw data buffer_
 		 * @param rawSize - size of raw data
 		 */
-    int genericSend(char* raw, int rawSize);
+    int genericSend(char *raw, int rawSize);
 
     /*
 		 * data download function
@@ -81,7 +83,7 @@ public:
 		 * @param rawSize - the size of data to be downloaded
 		 * @return raw
 		 */
-    int genericDownload(char* raw, int rawSize);
+    int genericDownload(char *raw, int rawSize);
 };
 
 #endif

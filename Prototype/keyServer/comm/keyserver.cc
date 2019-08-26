@@ -30,7 +30,13 @@ KeyServer::KeyServer(int port)
     SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
     // create TSL connection
+
+#if defined(OPENSSL_VERSION_1_1)
     ctx_ = SSL_CTX_new(TLS_server_method());
+#else
+    ctx_ = SSL_CTX_new(TLSv1_2_server_method());
+#endif
+
     if (ctx_ == NULL)
         cerr << "ssl ctx create error" << endl;
     //load client certificate
@@ -297,12 +303,12 @@ void *SocketHandler(void *lp)
                     param = result;
             }
 
-            gettimeofday(&timeendInit, NULL);
-            long diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
-            double second = diff / 1000000.0;
-            printf("generate key seed time is %ld us = %lf s\n", diff, second);
-            // cout << "current num = " << i << endl;
-            gettimeofday(&timestartInit, NULL);
+            // gettimeofday(&timeendInit, NULL);
+            // long diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
+            // double second = diff / 1000000.0;
+            // printf("generate key seed time is %ld us = %lf s\n", diff, second);
+            // // cout << "current num = " << i << endl;
+            // gettimeofday(&timestartInit, NULL);
             unsigned char newKeyBuffer[64 + 4 * HASH_SIZE_SHORT + sizeof(int)];
             memcpy(newKeyBuffer, serverPrivate, 64);
             memcpy(newKeyBuffer + 64, hash_buffer_1 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
@@ -314,10 +320,10 @@ void *SocketHandler(void *lp)
             unsigned char key[32];
             SHA256(newKeyBuffer, 64 + 4 * HASH_SIZE_SHORT + sizeof(int), key);
             memcpy(outPutBuffer + i * 32, key, 32);
-            gettimeofday(&timeendInit, NULL);
-            diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
-            second = diff / 1000000.0;
-            printf("update param time is %ld us = %lf s\n", diff, second);
+            // gettimeofday(&timeendInit, NULL);
+            // diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
+            // second = diff / 1000000.0;
+            // printf("update param time is %ld us = %lf s\n", diff, second);
             //cout << "Frequency for chunk " << i << " = " << currentFreqList[i] << endl;
             //EditSketchTableMutex.unlock();
         }
@@ -346,13 +352,13 @@ void *opSolverThread(void *lp)
         std::lock_guard<std::mutex> locker(EditTMutex);
         if (opSolverFlag)
         {
-            gettimeofday(&timestartInit, NULL);
+            // gettimeofday(&timestartInit, NULL);
             T = opSolver(opm, opInput);
             opSolverFlag = false;
-            gettimeofday(&timeendInit, NULL);
-            long diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
-            double second = diff / 1000000.0;
-            printf("optimal compute time is %ld us = %lf s\n", diff, second);
+            // gettimeofday(&timeendInit, NULL);
+            // long diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;
+            // double second = diff / 1000000.0;
+            // printf("optimal compute time is %ld us = %lf s\n", diff, second);
         }
     }
 }

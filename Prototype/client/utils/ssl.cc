@@ -2,8 +2,8 @@
 
 using namespace std;
 
-extern void timerStart(double* t);
-extern double timerSplit(const double* t);
+extern void timerStart(double *t);
+extern double timerSplit(const double *t);
 
 /*
  * constructor: initialize sock structure and connect
@@ -11,7 +11,7 @@ extern double timerSplit(const double* t);
  * @param ip - server ip address
  * @param port - port number
  */
-Ssl::Ssl(char* ip, int port, int userID)
+Ssl::Ssl(char *ip, int port, int userID)
 {
 
     /* get port and ip */
@@ -22,7 +22,12 @@ Ssl::Ssl(char* ip, int port, int userID)
     SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
 
+#if defined(OPENSSL_VERSION_1_1)
     ctx_ = SSL_CTX_new(TLS_client_method());
+#else
+    ctx_ = SSL_CTX_new(TLSv1_2_client_method());
+#endif
+
     if (ctx_ == NULL)
         cerr << "ctx" << endl;
 
@@ -42,26 +47,26 @@ Ssl::Ssl(char* ip, int port, int userID)
 
     /* initializing socket object */
     hostSock_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (hostSock_ == -1) {
+    if (hostSock_ == -1)
+    {
         printf("Error initializing socket %d\n", errno);
     }
-    int* p_int = (int*)malloc(sizeof(int));
+    int *p_int = (int *)malloc(sizeof(int));
     *p_int = 1;
 
     /* set socket options */
     if (
         (setsockopt(hostSock_,
-             SOL_SOCKET,
-             SO_REUSEADDR,
-             (char*)p_int,
-             sizeof(int))
-            == -1)
-        || (setsockopt(hostSock_,
-                SOL_SOCKET,
-                SO_KEEPALIVE,
-                (char*)p_int,
-                sizeof(int))
-               == -1)) {
+                    SOL_SOCKET,
+                    SO_REUSEADDR,
+                    (char *)p_int,
+                    sizeof(int)) == -1) ||
+        (setsockopt(hostSock_,
+                    SOL_SOCKET,
+                    SO_KEEPALIVE,
+                    (char *)p_int,
+                    sizeof(int)) == -1))
+    {
         printf("Error setting options %d\n", errno);
         free(p_int);
     }
@@ -74,8 +79,10 @@ Ssl::Ssl(char* ip, int port, int userID)
     myAddr_.sin_addr.s_addr = inet_addr(ip);
 
     /* trying to connect socket */
-    if (connect(hostSock_, (struct sockaddr*)&myAddr_, sizeof(myAddr_)) == -1) {
-        if ((err = errno) != EINPROGRESS) {
+    if (connect(hostSock_, (struct sockaddr *)&myAddr_, sizeof(myAddr_)) == -1)
+    {
+        if ((err = errno) != EINPROGRESS)
+        {
             fprintf(stderr, "Error connecting socket %d\n", errno);
         }
     }
@@ -92,9 +99,12 @@ Ssl::Ssl(char* ip, int port, int userID)
     /* prepare user ID and send it to server */
     int netorder = htonl(userID);
     int bytecount;
-    if ((bytecount = SSL_write(ssl_, &netorder, sizeof(int))) == -1) {
+    if ((bytecount = SSL_write(ssl_, &netorder, sizeof(int))) == -1)
+    {
         fprintf(stderr, "Error sending userID %d\n", errno);
-    } else {
+    }
+    else
+    {
         fprintf(stderr, "Sending userID done\n");
     }
 }
@@ -115,13 +125,15 @@ Ssl::~Ssl()
  * @param raw - raw data buffer_
  * @param rawSize - size of raw data
  */
-int Ssl::genericSend(char* raw, int rawSize)
+int Ssl::genericSend(char *raw, int rawSize)
 {
 
     int bytecount;
     int total = 0;
-    while (total < rawSize) {
-        if ((bytecount = SSL_write(ssl_, raw + total, rawSize - total)) == -1) {
+    while (total < rawSize)
+    {
+        if ((bytecount = SSL_write(ssl_, raw + total, rawSize - total)) == -1)
+        {
             fprintf(stderr, "Error sending data %d\n", errno);
             return -1;
         }
@@ -136,13 +148,15 @@ int Ssl::genericSend(char* raw, int rawSize)
  * @param rawSize - the size of data to be downloaded
  * @return raw
  */
-int Ssl::genericDownload(char* raw, int rawSize)
+int Ssl::genericDownload(char *raw, int rawSize)
 {
 
     int bytecount;
     int total = 0;
-    while (total < rawSize) {
-        if ((bytecount = SSL_read(ssl_, raw + total, rawSize - total)) == -1) {
+    while (total < rawSize)
+    {
+        if ((bytecount = SSL_read(ssl_, raw + total, rawSize - total)) == -1)
+        {
             fprintf(stderr, "Error sending data %d\n", errno);
             return -1;
         }
