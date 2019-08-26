@@ -29,8 +29,8 @@
 
 #define OPENSSL_VERSION_1_1 1
 #define HASH_SIZE_SHORT 3
-#define W 1024 * 1024 //W - sketch table size
-#define K 50000       // K - max chunk number sketch store before opsolver
+#define W 1024 * 1024 // W - sketch table size
+#define K 3000        // K - max chunk number sketch store before opsolver
 #define storageBlow 0.5
 // client cerificate
 #define SSL_CA_CRT "./keys/ca.crt"
@@ -70,7 +70,6 @@ private:
     //socket address
     struct sockaddr_in sadr_;
     //thread ID
-    pthread_t threadId_;
     pthread_t opSolverThreadId_;
     // SSL context
     SSL_CTX *ctx_;

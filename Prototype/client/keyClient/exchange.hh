@@ -18,6 +18,7 @@
 
 /* init constants */
 #define HASH_SIZE_SHORT 3
+#define BIT_MUMBER 12
 #define COMPUTE_SIZE 128
 #define HASH_SIZE 32
 #define KEY_BATCH_SIZE 3000

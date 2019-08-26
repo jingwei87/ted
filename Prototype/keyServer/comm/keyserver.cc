@@ -202,8 +202,8 @@ void *SocketHandler(void *lp)
     char *buffer = (char *)malloc(sizeof(int));
     if ((bytecount = SSL_read(ssl, buffer, sizeof(int))) == -1)
     {
-
         fprintf(stderr, "Error recv userID %d\n", errno);
+        return 0;
     }
     int user = ntohl(*(int *)buffer);
     printf("keyserver recv connection from user %d\n", user);
@@ -213,8 +213,8 @@ void *SocketHandler(void *lp)
 
         if ((bytecount = SSL_read(ssl, buffer, sizeof(int))) == -1)
         {
-
             fprintf(stderr, "Error recv chunk batch size %d\n", errno);
+            return 0;
         }
         if (bytecount == 0)
         {
@@ -232,22 +232,38 @@ void *SocketHandler(void *lp)
         if ((bytecount = SSL_read(ssl, hash_buffer_1, num * HASH_SIZE_SHORT)) == -1)
         {
             fprintf(stderr, "Error recv hash_1 list %d\n", errno);
-            exit(1);
+            free(hash_buffer_1);
+            free(hash_buffer_2);
+            free(hash_buffer_3);
+            free(hash_buffer_4);
+            return 0;
         }
         if ((bytecount = SSL_read(ssl, hash_buffer_2, num * HASH_SIZE_SHORT)) == -1)
         {
             fprintf(stderr, "Error recv hash_2 list %d\n", errno);
-            exit(1);
+            free(hash_buffer_1);
+            free(hash_buffer_2);
+            free(hash_buffer_3);
+            free(hash_buffer_4);
+            return 0;
         }
         if ((bytecount = SSL_read(ssl, hash_buffer_3, num * HASH_SIZE_SHORT)) == -1)
         {
             fprintf(stderr, "Error recv hash_3 list %d\n", errno);
-            exit(1);
+            free(hash_buffer_1);
+            free(hash_buffer_2);
+            free(hash_buffer_3);
+            free(hash_buffer_4);
+            return 0;
         }
         if ((bytecount = SSL_read(ssl, hash_buffer_4, num * HASH_SIZE_SHORT)) == -1)
         {
             fprintf(stderr, "Error recv hash_4 list %d\n", errno);
-            exit(1);
+            free(hash_buffer_1);
+            free(hash_buffer_2);
+            free(hash_buffer_3);
+            free(hash_buffer_4);
+            return 0;
         }
 
         // main loop for computing params
@@ -336,6 +352,11 @@ void *SocketHandler(void *lp)
         if ((bytecount = SSL_write(ssl, outPutBuffer, num * 32)) == -1)
         {
             fprintf(stderr, "Error send compute ans %d\n", errno);
+            free(hash_buffer_1);
+            free(hash_buffer_2);
+            free(hash_buffer_3);
+            free(hash_buffer_4);
+            return 0;
         }
         free(hash_buffer_1);
         free(hash_buffer_2);
@@ -373,25 +394,24 @@ void KeyServer::runReceive()
     addrSize_ = sizeof(sockaddr_in);
     //create a thread whenever a client connects
     pthread_create(&opSolverThreadId_, 0, &opSolverThread, NULL);
-    pthread_detach(opSolverThreadId_);
     while (true)
     {
 
-        printf("waiting for a connection\n");
+        printf("key server waiting for a connection\n");
         clientSock_ = (int *)malloc(sizeof(int));
 
         if ((*clientSock_ = accept(hostSock_, (sockaddr *)&sadr_, &addrSize_)) != -1)
         {
 
-            printf("Received connection from %s\n", inet_ntoa(sadr_.sin_addr));
+            printf("key server Received connection from %s\n", inet_ntoa(sadr_.sin_addr));
             // SSL verify
             ssl_ = SSL_new(ctx_);
             SSL_set_fd(ssl_, *clientSock_);
             int r;
             if ((r = SSL_accept(ssl_)) == -1)
                 warn("SSL_accept");
+            pthread_t threadId_;
             pthread_create(&threadId_, 0, &SocketHandler, (void *)this);
-            pthread_detach(threadId_);
         }
         else
         {
