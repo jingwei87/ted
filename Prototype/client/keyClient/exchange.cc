@@ -70,7 +70,7 @@ void *KeyEx::threadHandler(void *param_thread)
             memcpy(data1 + temp.chunkSize, &seed1, sizeof(uint32_t));
             MurmurHash3_x64_128((void const *)data1, temp.chunkSize + sizeof(uint32_t), seed1, (void *)hash1);
             memcpy(&hashInt1, hash1, sizeof(int));
-            for (int i = 0; i < sizeof(int) * 8; i++)
+            for (int i = 0; i < BIT_MUMBER; i++)
             {
                 hashInt1 &= ~(1 << (32 - i));
             }
@@ -81,7 +81,7 @@ void *KeyEx::threadHandler(void *param_thread)
             memcpy(data2 + temp.chunkSize, &seed2, sizeof(uint32_t));
             MurmurHash3_x64_128((void const *)data2, temp.chunkSize + sizeof(uint32_t), seed2, (void *)hash2);
             memcpy(&hashInt2, hash2, sizeof(int));
-            for (int i = 0; i < sizeof(int) * 8; i++)
+            for (int i = 0; i < BIT_MUMBER; i++)
             {
                 hashInt2 &= ~(1 << (32 - i));
             }
@@ -92,7 +92,7 @@ void *KeyEx::threadHandler(void *param_thread)
             memcpy(data3 + temp.chunkSize, &seed3, sizeof(uint32_t));
             MurmurHash3_x64_128((void const *)data3, temp.chunkSize + sizeof(uint32_t), seed3, (void *)hash3);
             memcpy(&hashInt3, hash3, sizeof(int));
-            for (int i = 0; i < sizeof(int) * 8; i++)
+            for (int i = 0; i < BIT_MUMBER; i++)
             {
                 hashInt3 &= ~(1 << (32 - i));
             }
@@ -103,7 +103,7 @@ void *KeyEx::threadHandler(void *param_thread)
             memcpy(data4 + temp.chunkSize, &seed4, sizeof(uint32_t));
             MurmurHash3_x64_128((void const *)data4, temp.chunkSize + sizeof(uint32_t), seed4, (void *)hash4);
             memcpy(&hashInt4, hash4, sizeof(int));
-            for (int i = 0; i < sizeof(int) * 8; i++)
+            for (int i = 0; i < BIT_MUMBER; i++)
             {
                 hashInt4 &= ~(1 << (32 - i));
             }
