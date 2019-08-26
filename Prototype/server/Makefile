@@ -1,4 +1,4 @@
-CC = g++
+CC = clang++
 CFLAGS = -O3 -std=c++11# -g -ggdb -fsanitize=address
 LIBS = -lcrypto -lssl -lpthread -lsnappy #-pg -lc
 INCLUDES = -I./lib/leveldb/include -I./backend/ -I./utils/ -I./lib/cryptopp -I./comm/ -I./dedup/ 
