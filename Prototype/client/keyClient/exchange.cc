@@ -52,6 +52,7 @@ void *KeyEx::threadHandler(void *param_thread)
         uint32_t seed2 = 2;
         uint32_t seed3 = 3;
         uint32_t seed4 = 4;
+        int hashInt1, hashInt2, hashInt3, hashInt4;
         //Chunk_t tempList[KEY_BATCH_SIZE];
         for (int i = 0; i < KEY_BATCH_SIZE; i++)
         {
@@ -68,29 +69,49 @@ void *KeyEx::threadHandler(void *param_thread)
             memcpy(data1, temp.data, temp.chunkSize);
             memcpy(data1 + temp.chunkSize, &seed1, sizeof(uint32_t));
             MurmurHash3_x64_128((void const *)data1, temp.chunkSize + sizeof(uint32_t), seed1, (void *)hash1);
+            memcpy(&hashInt1, hash1, sizeof(int));
+            for (int i = 0; i < sizeof(int) * 8; i++)
+            {
+                hashInt1 &= ~(1 << (32 - i));
+            }
 
             char data2[temp.chunkSize + sizeof(uint32_t)];
             char hash2[16];
             memcpy(data2, temp.data, temp.chunkSize);
             memcpy(data2 + temp.chunkSize, &seed2, sizeof(uint32_t));
             MurmurHash3_x64_128((void const *)data2, temp.chunkSize + sizeof(uint32_t), seed2, (void *)hash2);
+            memcpy(&hashInt2, hash2, sizeof(int));
+            for (int i = 0; i < sizeof(int) * 8; i++)
+            {
+                hashInt2 &= ~(1 << (32 - i));
+            }
 
             char data3[temp.chunkSize + sizeof(uint32_t)];
             char hash3[16];
             memcpy(data3, temp.data, temp.chunkSize);
             memcpy(data3 + temp.chunkSize, &seed3, sizeof(uint32_t));
             MurmurHash3_x64_128((void const *)data3, temp.chunkSize + sizeof(uint32_t), seed3, (void *)hash3);
+            memcpy(&hashInt3, hash3, sizeof(int));
+            for (int i = 0; i < sizeof(int) * 8; i++)
+            {
+                hashInt3 &= ~(1 << (32 - i));
+            }
 
             char data4[temp.chunkSize + sizeof(uint32_t)];
             char hash4[16];
             memcpy(data4, temp.data, temp.chunkSize);
             memcpy(data4 + temp.chunkSize, &seed4, sizeof(uint32_t));
             MurmurHash3_x64_128((void const *)data4, temp.chunkSize + sizeof(uint32_t), seed4, (void *)hash4);
+            memcpy(&hashInt4, hash4, sizeof(int));
+            for (int i = 0; i < sizeof(int) * 8; i++)
+            {
+                hashInt4 &= ~(1 << (32 - i));
+            }
 
-            memcpy(hashBuffer_1 + (i * HASH_SIZE_SHORT), hash1, HASH_SIZE_SHORT);
-            memcpy(hashBuffer_2 + (i * HASH_SIZE_SHORT), hash2, HASH_SIZE_SHORT);
-            memcpy(hashBuffer_3 + (i * HASH_SIZE_SHORT), hash3, HASH_SIZE_SHORT);
-            memcpy(hashBuffer_4 + (i * HASH_SIZE_SHORT), hash4, HASH_SIZE_SHORT);
+            memcpy(hashBuffer_1 + (i * HASH_SIZE_SHORT), &hashInt1, HASH_SIZE_SHORT);
+            memcpy(hashBuffer_2 + (i * HASH_SIZE_SHORT), &hashInt2, HASH_SIZE_SHORT);
+            memcpy(hashBuffer_3 + (i * HASH_SIZE_SHORT), &hashInt3, HASH_SIZE_SHORT);
+            memcpy(hashBuffer_4 + (i * HASH_SIZE_SHORT), &hashInt4, HASH_SIZE_SHORT);
 
             // gettimeofday(&timeendInit, NULL);
             // long diff = 1000000 * (timeendInit.tv_sec - timestartInit.tv_sec) + timeendInit.tv_usec - timestartInit.tv_usec;

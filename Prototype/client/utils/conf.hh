@@ -14,7 +14,8 @@ using namespace std;
  * configuration class
  */
 
-class Configuration {
+class Configuration
+{
 private:
     /* total number for cloud */
     int n_;
