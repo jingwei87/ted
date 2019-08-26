@@ -1,5 +1,6 @@
 ## Synthetic data speed test
-### Setup
+### Test on server 2 (client) & server 3 (keyserver & 4 servers)
+#### Setup
 
 * File size = 2 GB (2048 MB)
 * Key generate batch size = 3000
@@ -7,10 +8,25 @@
 * Sketch table line size = 2^16
 * Short hash send size = 16 bit
 
-### Performance 
+#### Performance 
 
 * Upload : 28.320462s = 72.32 MB/s
 * Download : 18.633074s = 109.91 MB/s
+
+
+### Test on node11 (client) & node12 (keyserver) & node13~16 (4 storage servers)
+#### Setup
+
+* File size = 2 GB (2048 MB)
+* Key generate batch size = 3000
+* Optimal compute threshold = 3000
+* Sketch table line size = 2^16
+* Short hash send size = 16 bit
+
+#### Performance 
+
+* Upload : 35.476392s = 57.73 MB/s
+* Download : 21.014705s = 97.46 MB/s
 
 ## Key generate speed test
 
