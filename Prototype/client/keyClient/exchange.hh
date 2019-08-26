@@ -14,7 +14,7 @@
 #include "conf.hh"
 #include "encoder.hh"
 #include "ssl.hh"
-#include "MurmurHash3.h"
+#include "MurmurHash3.hh"
 
 /* init constants */
 #define HASH_SIZE_SHORT 3

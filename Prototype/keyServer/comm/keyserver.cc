@@ -190,7 +190,7 @@ void *SocketHandler(void *lp)
     memset(serverPrivate, 1, 64);
     //variable initialization
     int bytecount;
-    char *buffer = (char *)malloc(sizeof(char) * BUFFER_SIZE + sizeof(int));
+    char *buffer = (char *)malloc(sizeof(int));
     if ((bytecount = SSL_read(ssl, buffer, sizeof(int))) == -1)
     {
 
