@@ -49,15 +49,17 @@ KeyServer::KeyServer(int port)
     //server socket initialization
     hostSock_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-    if (hostSock_ == -1) {
+    if (hostSock_ == -1)
+    {
 
         printf("Error initializing socket %d\n", errno);
     }
     //set socket options
-    int* p_int = (int*)malloc(sizeof(int));
+    int *p_int = (int *)malloc(sizeof(int));
     *p_int = 1;
 
-    if ((setsockopt(hostSock_, SOL_SOCKET, SO_REUSEADDR, (char*)p_int, sizeof(int)) == -1) || (setsockopt(hostSock_, SOL_SOCKET, SO_KEEPALIVE, (char*)p_int, sizeof(int)) == -1)) {
+    if ((setsockopt(hostSock_, SOL_SOCKET, SO_REUSEADDR, (char *)p_int, sizeof(int)) == -1) || (setsockopt(hostSock_, SOL_SOCKET, SO_KEEPALIVE, (char *)p_int, sizeof(int)) == -1))
+    {
 
         printf("Error setting options %d\n", errno);
         free(p_int);
@@ -69,12 +71,14 @@ KeyServer::KeyServer(int port)
     memset(&(myAddr_.sin_zero), 0, 8);
     myAddr_.sin_addr.s_addr = INADDR_ANY;
     //bind port
-    if (bind(hostSock_, (sockaddr*)&myAddr_, sizeof(myAddr_)) == -1) {
+    if (bind(hostSock_, (sockaddr *)&myAddr_, sizeof(myAddr_)) == -1)
+    {
 
         fprintf(stderr, "Error binding to socket %d\n", errno);
     }
     //start to listen
-    if (listen(hostSock_, 10) == -1) {
+    if (listen(hostSock_, 10) == -1)
+    {
 
         fprintf(stderr, "Error listening %d\n", errno);
     }
@@ -83,7 +87,7 @@ KeyServer::KeyServer(int port)
 /*
  * Timer functions
  */
-void timerStart(double* t)
+void timerStart(double *t)
 {
 
     struct timeval tv;
@@ -91,7 +95,7 @@ void timerStart(double* t)
     *t = (double)tv.tv_sec + (double)tv.tv_usec * 1e-6;
 }
 
-double timerSplit(const double* t)
+double timerSplit(const double *t)
 {
 
     struct timeval tv;
@@ -101,7 +105,7 @@ double timerSplit(const double* t)
     return (cur_t - *t);
 }
 
-unsigned int sketchTable[4][W] = { 0 };
+unsigned int sketchTable[4][W] = {0};
 int sketchTableCounter = 0;
 double T = 1;
 bool opSolverFlag = false;
@@ -109,9 +113,10 @@ vector<pair<string, int>> opInput;
 int opm = W * (1 + storageBlow);
 std::mutex EditTMutex;
 std::mutex EditSketchTableMutex;
+
 double opSolver(int m, vector<pair<string, int>> opInput)
 {
-    OpSolver* solver = new OpSolver(m, opInput);
+    OpSolver *solver = new OpSolver(m, opInput);
     return solver->GetOptimal();
 }
 
@@ -127,21 +132,26 @@ int EditSketchTable(unsigned int hash_1, unsigned int hash_2, unsigned int hash_
     sketchTable[2][hash_3 % W]++;
     sketchTable[3][hash_4 % W]++;
     cmpNumber = sketchTable[0][hash_1 % W];
-    if (cmpNumber > sketchTable[1][hash_2 % W]) {
+    if (cmpNumber > sketchTable[1][hash_2 % W])
+    {
         cmpNumber = sketchTable[1][hash_2 % W];
     }
-    if (cmpNumber > sketchTable[2][hash_3 % W]) {
+    if (cmpNumber > sketchTable[2][hash_3 % W])
+    {
         cmpNumber = sketchTable[2][hash_3 % W];
     }
-    if (cmpNumber > sketchTable[3][hash_4 % W]) {
+    if (cmpNumber > sketchTable[3][hash_4 % W])
+    {
         cmpNumber = sketchTable[3][hash_4 % W];
     }
     //cout << "cmpNumber  = " << cmpNumber << endl;
-    if (sketchTableCounter == K) {
+    if (sketchTableCounter == K)
+    {
         std::lock_guard<std::mutex> locker(EditTMutex);
         opInput.clear();
         opInput.reserve(W);
-        for (int i = 0; i < W; i++) {
+        for (int i = 0; i < W; i++)
+        {
             stringstream ss;
             ss << i;
             string strTemp = ss.str();
@@ -168,54 +178,64 @@ int EditSketchTable(unsigned int hash_1, unsigned int hash_2, unsigned int hash_
  * @param lp - input parameter structure
  */
 
-void* SocketHandler(void* lp)
+void *SocketHandler(void *lp)
 {
 
+    random_device rd_;
+    mt19937_64 gen_ = mt19937_64(rd_());
     //double timer,split,bw;
     //get socket from input param
-    SSL* ssl = ((KeyServer*)lp)->ssl_;
+    SSL *ssl = ((KeyServer *)lp)->ssl_;
     char serverPrivate[64];
     memset(serverPrivate, 1, 64);
     //variable initialization
     int bytecount;
-    char* buffer = (char*)malloc(sizeof(char) * BUFFER_SIZE + sizeof(int));
-    if ((bytecount = SSL_read(ssl, buffer, sizeof(int))) == -1) {
+    char *buffer = (char *)malloc(sizeof(char) * BUFFER_SIZE + sizeof(int));
+    if ((bytecount = SSL_read(ssl, buffer, sizeof(int))) == -1)
+    {
 
         fprintf(stderr, "Error recv userID %d\n", errno);
     }
-    int user = ntohl(*(int*)buffer);
+    int user = ntohl(*(int *)buffer);
     printf("keyserver recv connection from user %d\n", user);
 
-    while (true) {
+    while (true)
+    {
 
-        if ((bytecount = SSL_read(ssl, buffer, sizeof(int))) == -1) {
+        if ((bytecount = SSL_read(ssl, buffer, sizeof(int))) == -1)
+        {
 
             fprintf(stderr, "Error recv chunk batch size %d\n", errno);
         }
-        if (bytecount == 0) {
+        if (bytecount == 0)
+        {
             break;
         }
         // prepare to recv data
         int num;
         memcpy(&num, buffer, sizeof(int));
         // cout << "recv count request for " << num << " chunks" << endl;
-        char* hash_buffer_1 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
-        char* hash_buffer_2 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
-        char* hash_buffer_3 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
-        char* hash_buffer_4 = (char*)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
-        if ((bytecount = SSL_read(ssl, hash_buffer_1, num * HASH_SIZE_SHORT)) == -1) {
+        char *hash_buffer_1 = (char *)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
+        char *hash_buffer_2 = (char *)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
+        char *hash_buffer_3 = (char *)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
+        char *hash_buffer_4 = (char *)malloc(sizeof(char) * num * HASH_SIZE_SHORT);
+        if ((bytecount = SSL_read(ssl, hash_buffer_1, num * HASH_SIZE_SHORT)) == -1)
+        {
             fprintf(stderr, "Error recv hash_1 list %d\n", errno);
             exit(1);
         }
-        if ((bytecount = SSL_read(ssl, hash_buffer_2, num * HASH_SIZE_SHORT)) == -1) {
+        if ((bytecount = SSL_read(ssl, hash_buffer_2, num * HASH_SIZE_SHORT)) == -1)
+        {
             fprintf(stderr, "Error recv hash_2 list %d\n", errno);
             exit(1);
         }
-        if ((bytecount = SSL_read(ssl, hash_buffer_3, num * HASH_SIZE_SHORT)) == -1) {
+        if ((bytecount = SSL_read(ssl, hash_buffer_3, num * HASH_SIZE_SHORT)) == -1)
+        {
             fprintf(stderr, "Error recv hash_3 list %d\n", errno);
             exit(1);
         }
-        if ((bytecount = SSL_read(ssl, hash_buffer_4, num * HASH_SIZE_SHORT)) == -1) {
+        if ((bytecount = SSL_read(ssl, hash_buffer_4, num * HASH_SIZE_SHORT)) == -1)
+        {
             fprintf(stderr, "Error recv hash_4 list %d\n", errno);
             exit(1);
         }
@@ -227,25 +247,51 @@ void* SocketHandler(void* lp)
         //cout << "Frequency count start for " << num << " chunks" << endl;
         char outPutBuffer[num * 32];
 
-        for (int i = 0; i < num; i++) {
+        for (int i = 0; i < num; i++)
+        {
             //EditSketchTableMutex.lock();
             unsigned int hash_int_1, hash_int_2, hash_int_3, hash_int_4;
-            memcpy(&hash_int_1, hash_buffer_1 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
-            memcpy(&hash_int_2, hash_buffer_2 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
-            memcpy(&hash_int_3, hash_buffer_3 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
-            memcpy(&hash_int_4, hash_buffer_4 + i * HASH_SIZE_SHORT, sizeof(unsigned int));
+            memcpy(&hash_int_1 + (sizeof(uint) - HASH_SIZE_SHORT), hash_buffer_1 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(&hash_int_2 + (sizeof(uint) - HASH_SIZE_SHORT), hash_buffer_2 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(&hash_int_3 + (sizeof(uint) - HASH_SIZE_SHORT), hash_buffer_3 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
+            memcpy(&hash_int_4 + (sizeof(uint) - HASH_SIZE_SHORT), hash_buffer_4 + i * HASH_SIZE_SHORT, HASH_SIZE_SHORT);
             // cout << "current num = " << i << endl;
             currentFreqList[i] = EditSketchTable(hash_int_1, hash_int_2, hash_int_3, hash_int_4);
             // cout << "current done num = " << i << endl;
             int param;
 
             param = floor(currentFreqList[i] / T);
-#ifdef RANDOM
-            int randNumber = rand() % (param * 2);
-            if (randNumber < param) {
-                param = randNumber;
+
+            if (RANDOM_TYPE == POISSON_RAND)
+            {
+                int lambda = ceil(param / 2.0);
+                poisson_distribution<> dis(lambda);
+                param = dis(gen_);
             }
-#endif
+            else if (RANDOM_TYPE == UNIFORM_INT_RAND)
+            {
+                uniform_int_distribution<> dis(0, param);
+                param = dis(gen_);
+            }
+            else if (RANDOM_TYPE == GEOMETRIC_RAND)
+            {
+                geometric_distribution<> dis;
+                int random = dis(gen_);
+                if (param < random)
+                    param = 0;
+                else
+                    param = param - random;
+            }
+            else if (RANDOM_TYPE == NORMAL_RAND)
+            {
+                normal_distribution<> dis(param, 1);
+                int result = round(dis(gen_));
+                if (result < 0)
+                    param = 0;
+                else
+                    param = result;
+            }
+
             // cout << "current num = " << i << endl;
             unsigned char newKeyBuffer[64 + 4 * HASH_SIZE_SHORT + sizeof(int)];
             memcpy(newKeyBuffer, serverPrivate, 64);
@@ -268,7 +314,8 @@ void* SocketHandler(void* lp)
         cout << "current T = " << T << endl;
         // send back the result
         // cout << "generate key for " << num << "done" << endl;
-        if ((bytecount = SSL_write(ssl, outPutBuffer, num * 32)) == -1) {
+        if ((bytecount = SSL_write(ssl, outPutBuffer, num * 32)) == -1)
+        {
             fprintf(stderr, "Error send compute ans %d\n", errno);
             exit(1);
         }
@@ -276,11 +323,13 @@ void* SocketHandler(void* lp)
     return 0;
 }
 
-void* opSolverThread(void* lp)
+void *opSolverThread(void *lp)
 {
-    while (true) {
+    while (true)
+    {
         std::lock_guard<std::mutex> locker(EditTMutex);
-        if (opSolverFlag) {
+        if (opSolverFlag)
+        {
             T = opSolver(opm, opInput);
             opSolverFlag = false;
         }
@@ -298,12 +347,14 @@ void KeyServer::runReceive()
     //create a thread whenever a client connects
     pthread_create(&opSolverThreadId_, 0, &opSolverThread, NULL);
     pthread_detach(opSolverThreadId_);
-    while (true) {
+    while (true)
+    {
 
         printf("waiting for a connection\n");
-        clientSock_ = (int*)malloc(sizeof(int));
+        clientSock_ = (int *)malloc(sizeof(int));
 
-        if ((*clientSock_ = accept(hostSock_, (sockaddr*)&sadr_, &addrSize_)) != -1) {
+        if ((*clientSock_ = accept(hostSock_, (sockaddr *)&sadr_, &addrSize_)) != -1)
+        {
 
             printf("Received connection from %s\n", inet_ntoa(sadr_.sin_addr));
             // SSL verify
@@ -312,9 +363,11 @@ void KeyServer::runReceive()
             int r;
             if ((r = SSL_accept(ssl_)) == -1)
                 warn("SSL_accept");
-            pthread_create(&threadId_, 0, &SocketHandler, (void*)this);
+            pthread_create(&threadId_, 0, &SocketHandler, (void *)this);
             pthread_detach(threadId_);
-        } else {
+        }
+        else
+        {
 
             fprintf(stderr, "Error accepting %d\n", errno);
         }
