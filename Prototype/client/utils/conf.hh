@@ -5,85 +5,100 @@
 #ifndef __CONF_HH__
 #define __CONF_HH__
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <bits/stdc++.h>
+
+#define NEW 1
+#define UPDATE 2
+#define STUB 3
+#define GETSTUB 4
+#define META (-1)
+#define DATA (-2)
+#define STAT (-3)
+#define DOWNLOAD (-7)
 
 using namespace std;
+
+struct serverConf {
+    string serverIP;
+    int dataStorePort;
+    int keyStorePort;
+};
 
 /*
  * configuration class
  */
 
-class Configuration
-{
+class Configuration {
+
 private:
     /* total number for cloud */
-    int n_;
+    int numOfStore_;
 
-    /* fault tolerance degree */
-    int m_;
+    /* only single key manager is allowed for current version */
+    string keymanagerIP_;
 
-    /* k = n - m */
-    int k_;
+    int keymanagerPort_;
 
-    /* security degree */
-    int r_;
-
-    string kmIP = "0.0.0.0";
-
-    int kmPort = 1930;
-
-    /* secret buffer size */
-    int secretBufferSize_;
-
-    /* share buffer size */
-    int shareBufferSize_;
-
-    /* buffer size */
-    int bufferSize_;
-
-    /* chunk end list size */
-    int chunkEndIndexListSize_;
+    vector<serverConf> server;
 
 public:
-    /* constructor */
     Configuration()
     {
-        n_ = 4;
-        m_ = 1;
-        k_ = n_ - m_;
-        r_ = k_ - 1;
-        secretBufferSize_ = 16 * 1024;
-        shareBufferSize_ = 16 * 1024 * n_;
-        bufferSize_ = 128 * 1024 * 1024;
-        chunkEndIndexListSize_ = 1024 * 1024;
+
+        fstream configFile;
+        configFile.open("config", ios::in | ios::binary);
+        if (!configFile.is_open()) {
+
+            cerr << "loading config file failed" << endl;
+            exit(-1);
+        }
+
+        /* SET HERE! key manager IP & Port */
+        configFile >> keymanagerIP_ >> keymanagerPort_;
+
+        /* SET HERE! data store IPs and Ports */
+        for (int i = 0; i < numOfStore_; i++) {
+
+            serverConf temp;
+            configFile >> temp.serverIP >> temp.dataStorePort >> temp.keyStorePort;
+            server.push_back(temp);
+        }
     }
 
-    inline int getN() { return n_; }
-
-    inline int getM() { return m_; }
-
-    inline int getK() { return k_; }
-
-    inline int getR() { return r_; }
-
-    string getkmIP()
+    inline int getN()
     {
-        return "192.168.1.103";
-        // return "127.0.0.1";
+
+        return numOfStore_;
     }
-    int getkmPort()
+
+    inline string getkmIP()
     {
-        return 19301;
+
+        return keymanagerIP_;
     }
 
-    inline int getSecretBufferSize() { return secretBufferSize_; }
+    inline int getkmPort()
+    {
 
-    inline int getShareBufferSize() { return shareBufferSize_; }
+        return keymanagerPort_;
+    }
 
-    inline int getBufferSize() { return bufferSize_; }
+    inline serverConf getServerConf(int index)
+    {
 
-    inline int getListSize() { return chunkEndIndexListSize_; }
+        if (index > numOfStore_ + 1) {
+
+            serverConf temp;
+            temp.serverIP = "0";
+            temp.dataStorePort = 0;
+            temp.keyStorePort = 0;
+            cerr << "index overflow numOfStore" << endl;
+            return temp;
+        } else {
+
+            return server[index];
+        }
+    }
 };
 
 #endif

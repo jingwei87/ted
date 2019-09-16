@@ -1,7 +1,3 @@
-/*
- *  encoder.hh 
- */
-
 #ifndef __DECODER_HH__
 #define __DECODER_HH__
 

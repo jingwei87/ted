@@ -28,10 +28,9 @@
 #include <sysexits.h>
 
 #define OPENSSL_VERSION_1_1 1
-#define HASH_SIZE_SHORT 3
 #define W 1024 * 1024 // W - sketch table size
-#define K 3000        // K - max chunk number sketch store before opsolver
-#define storageBlow 0.5
+#define K 48000 // K - max chunk number sketch store before opsolver
+#define storageBlow 0.05
 // client cerificate
 #define SSL_CA_CRT "./keys/ca.crt"
 // server certificate
@@ -53,8 +52,7 @@
 
 using namespace std;
 
-class KeyServer
-{
+class KeyServer {
 
 private:
     //port number
@@ -66,17 +64,17 @@ private:
     //socket size
     socklen_t addrSize_;
     //client socket
-    int *clientSock_;
+    int* clientSock_;
     //socket address
     struct sockaddr_in sadr_;
     //thread ID
     pthread_t opSolverThreadId_;
     // SSL context
-    SSL_CTX *ctx_;
+    SSL_CTX* ctx_;
 
 public:
     // SSL connection structure
-    SSL *ssl_;
+    SSL* ssl_;
     // constructor
     KeyServer(int port);
     // destructor

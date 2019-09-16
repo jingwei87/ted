@@ -1,7 +1,3 @@
-/*
- * uploader.cc
- */
-
 #include "uploader.hh"
 
 using namespace std;
@@ -14,10 +10,10 @@ using namespace std;
  */
 void* Uploader::thread_handler(void* param)
 {
+
     /* get input parameters */
     param_t* temp = (param_t*)param;
     int cloudIndex = temp->cloudIndex;
-    long fileSize = temp->size;
     Uploader* obj = temp->obj;
     free(temp);
 
@@ -39,7 +35,7 @@ void* Uploader::thread_handler(void* param)
 
             /* head array point to new file header */
             obj->headerArray_[cloudIndex] = (fileShareMDHead_t*)(obj->uploadMetaBuffer_[cloudIndex] + obj->metaWP_[cloudIndex]);
-            obj->headerArray_[cloudIndex]->fileSize = fileSize;
+
             /* meta index update */
             obj->metaWP_[cloudIndex] += obj->fileMDHeadSize_;
 
@@ -96,8 +92,9 @@ void* Uploader::thread_handler(void* param)
  * @param subset - input number of clouds to be chosen
  *
  */
-Uploader::Uploader(int total, int subset, int userID, long size)
+Uploader::Uploader(int total, int subset, int userID, Configuration* confObj)
 {
+
     total_ = total;
     subset_ = subset;
 
@@ -112,12 +109,8 @@ Uploader::Uploader(int total, int subset, int userID, long size)
     headerArray_ = (fileShareMDHead_t**)malloc(sizeof(fileShareMDHead_t*) * total_);
     shareSizeArray_ = (int**)malloc(sizeof(int*) * total_);
 
-    /* read server ip & port from config file */
-    FILE* fp = fopen("./config", "rb");
-    char line[225];
-    const char ch[2] = ":";
-
     for (int i = 0; i < total_; i++) {
+
         ringBuffer_[i] = new RingBuffer<Item_t>(UPLOAD_RB_SIZE, true, 1);
         shareSizeArray_[i] = (int*)malloc(sizeof(int) * UPLOAD_BUFFER_SIZE);
         uploadMetaBuffer_[i] = (char*)malloc(sizeof(char) * UPLOAD_BUFFER_SIZE);
@@ -129,25 +122,15 @@ Uploader::Uploader(int total, int subset, int userID, long size)
         param_t* param = (param_t*)malloc(sizeof(param_t)); // thread's parameter
         param->cloudIndex = i;
         param->obj = this;
-        param->size = size;
         pthread_create(&tid_[i], 0, &thread_handler, (void*)param);
 
-        /* line by line read config file*/
-        int ret = fscanf(fp, "%s", line);
-        if (ret == 0)
-            printf("fail to load config file\n");
-        char* token = strtok(line, ch);
-        char* ip = token;
-        token = strtok(NULL, ch);
-        int port = atoi(token);
-
         /* set sockets */
-        socketArray_[i] = new Socket(ip, port, userID);
+        char* IP = (char*)confObj->getServerConf(i).serverIP.c_str();
+        socketArray_[i] = new Socket(IP, confObj->getServerConf(i).dataStorePort, userID);
         accuData_[i] = 0;
         accuUnique_[i] = 0;
     }
 
-    fclose(fp);
     fileMDHeadSize_ = sizeof(fileShareMDHead_t);
     shareMDEntrySize_ = sizeof(shareMDEntry_t);
 }
@@ -157,14 +140,16 @@ Uploader::Uploader(int total, int subset, int userID, long size)
  */
 Uploader::~Uploader()
 {
-    int i;
-    for (i = 0; i < total_; i++) {
-        delete ringBuffer_[i];
+
+    for (int i = 0; i < total_; i++) {
+
+        delete (ringBuffer_[i]);
         free(shareSizeArray_[i]);
         free(uploadMetaBuffer_[i]);
         free(uploadContainer_[i]);
-        delete socketArray_[i];
+        delete (socketArray_[i]);
     }
+
     free(ringBuffer_);
     free(shareSizeArray_);
     free(headerArray_);
@@ -184,37 +169,9 @@ Uploader::~Uploader()
  */
 int Uploader::performUpload(int cloudIndex)
 {
-    /* 1st send metadata */
+
     socketArray_[cloudIndex]->sendMeta(uploadMetaBuffer_[cloudIndex], metaWP_[cloudIndex]);
-
-    /* 2nd get back the status list */
-    int numOfshares;
-    bool* statusList = (bool*)malloc(sizeof(bool) * (numOfShares_[cloudIndex] + 1));
-    socketArray_[cloudIndex]->getStatus(statusList, &numOfshares);
-
-    /* 3rd according to status list, reconstruct the container buffer */
-    char temp[RING_BUFFER_DATA_SIZE];
-    int indexCount = 0;
-    int containerIndex = 0;
-    int currentSize = 0;
-    for (int i = 0; i < numOfshares; i++) {
-        currentSize = shareSizeArray_[cloudIndex][i];
-        if (statusList[i] == 0) {
-            memcpy(temp, uploadContainer_[cloudIndex] + containerIndex, currentSize);
-            memcpy(uploadContainer_[cloudIndex] + indexCount, temp, currentSize);
-            indexCount += currentSize;
-        }
-        containerIndex += currentSize;
-    }
-
-    /* calculate the amount of sent data */
-    accuData_[cloudIndex] += containerIndex;
-    accuUnique_[cloudIndex] += indexCount;
-
-    /* finally send the unique data to the cloud */
-    socketArray_[cloudIndex]->sendData(uploadContainer_[cloudIndex], indexCount);
-
-    free(statusList);
+    socketArray_[cloudIndex]->sendData(uploadContainer_[cloudIndex], containerWP_[cloudIndex]);
     return 0;
 }
 
@@ -222,12 +179,10 @@ int Uploader::performUpload(int cloudIndex)
  * procedure for update headers when upload finished
  * 
  * @param cloudIndex - indicating targeting cloud
- *
- *
- *
  */
 int Uploader::updateHeader(int cloudIndex)
 {
+
     /* get the file name size */
     int offset = headerArray_[cloudIndex]->fullNameSize;
 
@@ -261,6 +216,7 @@ int Uploader::updateHeader(int cloudIndex)
  */
 int Uploader::add(Item_t* item, int size, int index)
 {
+
     ringBuffer_[index]->Insert(item, size);
     return 1;
 }
@@ -274,8 +230,9 @@ int Uploader::add(Item_t* item, int size, int index)
  */
 int Uploader::indicateEnd(long long* total, long long* uniq)
 {
-    int i;
-    for (i = 0; i < UPLOAD_NUM_THREADS; i++) {
+
+    for (int i = 0; i < total_; i++) {
+
         pthread_join(tid_[i], NULL);
         *total += accuData_[i];
         *uniq += accuUnique_[i];

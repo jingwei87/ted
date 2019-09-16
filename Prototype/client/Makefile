@@ -1,7 +1,7 @@
 CC = clang++
 CFLAGS = -O3 -std=c++11# -g -ggdb -fsanitize=address
-LIBS = -lcrypto -lssl -lpthread -lgf_complete#-pg -lc
-INCLUDES = -I./comm -I./coding -I./chunking -I./utils -I./keyClient -I./lib
+LIBS = -lcrypto -lssl -lpthread #-pg -lc
+INCLUDES = -I./comm -I./coding -I./chunking -I./utils -I./keyClient 
 MAIN_OBJS = ./chunking/chunker.o ./utils/CryptoPrimitive.o ./coding/CDCodec.o ./coding/encoder.o  ./comm/uploader.o  ./utils/socket.o ./utils/ssl.o ./comm/downloader.o ./coding/decoder.o ./keyClient/exchange.o ./keyClient/MurmurHash3.o
 
 all: client
