@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#include "CDCodec.hh"
 #include "CryptoPrimitive.hh"
 #include "chunker.hh"
 #include "conf.hh"
@@ -69,15 +68,11 @@ int main(int argc, char* argv[])
 
     confObj = new Configuration();
     /* fix parameters here */
-    n = confObj->getN();
-    m = confObj->getM();
-    k = confObj->getK();
-    r = confObj->getR();
     /* initialize buffers */
-    int bufferSize = confObj->getBufferSize();
-    int chunkEndIndexListSize = confObj->getListSize();
-    int secretBufferSize = confObj->getSecretBufferSize();
-    int shareBufferSize = confObj->getShareBufferSize();
+    int bufferSize = 1024 * 1024 * 1024;
+    int chunkEndIndexListSize = 1024 * 1024;
+    int secretBufferSize = 16 * 1024;
+    int shareBufferSize = 16 * 1024;
     unsigned char *secretBuffer, *shareBuffer;
 
     delete confObj;
@@ -109,10 +104,10 @@ int main(int argc, char* argv[])
         long size = ftell(fin);
         fseek(fin, 0, SEEK_SET);
 
-        uploaderObj = new Uploader(n, n, userID, size);
-        encoderObj = new Encoder(CAONT_RS_TYPE, n, m, r, securetype, uploaderObj);
+        uploaderObj = new Uploader(userID, confObj);
+        encoderObj = new Encoder(securetype, uploaderObj);
         chunkerObj = new Chunker(VAR_SIZE_TYPE);
-        keyObj = new KeyEx(encoderObj, securetype, confObj->getkmIP(), confObj->getkmPort(), userID);
+        keyObj = new KeyEx(encoderObj, confObj->getkmIP(), confObj->getkmPort(), userID);
 
         //chunking
         Encoder::Secret_Item_t header;

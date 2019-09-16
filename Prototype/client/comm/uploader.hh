@@ -1,11 +1,8 @@
-/*
- * uploader.hh
- */
-
 #ifndef __UPLOADER_HH__
 #define __UPLOADER_HH__
 
 #include <arpa/inet.h>
+#include <bits/stdc++.h>
 #include <cstring>
 #include <errno.h>
 #include <fcntl.h>
@@ -22,8 +19,8 @@
 #include <unistd.h>
 
 #include "BasicRingBuffer.hh"
-#include "CDCodec.hh"
 #include "CryptoPrimitive.hh"
+#include "conf.hh"
 #include "socket.hh"
 
 /* upload ringbuffer size */
@@ -47,6 +44,8 @@
 /* fingerprint size */
 #define FP_SIZE 32
 
+#define HASH_SIZE 32
+
 /* minimum ring buffer item size */
 #define MINIMUN_ITEM_SIZE 32
 
@@ -57,6 +56,15 @@
 #define FILE_HEADER (-9)
 #define SHARE_OBJECT (-8)
 #define SHARE_END (-27)
+
+#define NEW 1
+#define UPDATE 2
+#define STUB 3
+#define GETSTUB 4
+#define META (-1)
+#define DATA (-2)
+#define STAT (-3)
+#define DOWNLOAD (-7)
 
 using namespace std;
 
@@ -120,7 +128,6 @@ public:
     typedef struct {
         int cloudIndex;
         Uploader* obj;
-        long size;
     } param_t;
 
     /* file header pointer array for modifying header */
@@ -153,6 +160,9 @@ public:
     /* size of share metadata header */
     int shareMDEntrySize_;
 
+    // crpyto object
+    CryptoPrimitive* cryptoObj_;
+
     /* thread id array */
     pthread_t tid_[UPLOAD_NUM_THREADS];
 
@@ -166,63 +176,65 @@ public:
     RingBuffer<Item_t>** ringBuffer_;
 
     /*
-         * constructor
-         *
-         * @param p - input large prime number
-         * @param total - input total number of clouds
-         * @param subset - input number of clouds to be chosen
-         *
-         */
-    Uploader(int total, int subset, int userID, long size);
+		 * constructor
+		 *
+		 * @param p - input large prime number
+		 * @param total - input total number of clouds
+		 * @param subset - input number of clouds to be chosen
+		 * @param confObj - configuration object
+		 */
+    Uploader(int total, int subset, int userID, Configuration* confObj);
 
     /*
-         * destructor
-         */
+		 * destructor
+		 */
     ~Uploader();
 
+    int uploadStub(char* name, int namesize);
+
     /*
-         * Initiate upload
-         *
-         * @param cloudIndex - indicate targeting cloud
-         * 
-         */
+		 * Initiate upload
+		 *
+		 * @param cloudIndex - indicate targeting cloud
+		 * 
+		 */
     int performUpload(int cloudIndex);
 
     /*
-         * indicate the end of uploading a file
-         * 
-         * @return total - total amount of data that input to uploader
-         * @return uniq - the amount of unique data that transferred in network
-         *
-         */
+		 * indicate the end of uploading a file
+		 * 
+		 * @return total - total amount of data that input to uploader
+		 * @return uniq - the amount of unique data that transferred in network
+		 *
+		 */
     int indicateEnd(long long* total, long long* uniq);
 
     /*
-         * interface for adding object to ringbuffer
-         *
-         * @param item - the object to be added
-         * @param size - the size of the object
-         * @param index - the buffer index 
-         *
-         */
+		 * interface for adding object to ringbuffer
+		 *
+		 * @param item - the object to be added
+		 * @param size - the size of the object
+		 * @param index - the buffer index 
+		 *
+		 */
     int add(Item_t* item, int size, int index);
 
     /*
-         * procedure for update headers when upload finished
-         * 
-         * @param cloudIndex - indicating targeting cloud
-         *
-         *
-         *
-         */
+		 * procedure for update headers when upload finished
+		 * 
+		 * @param cloudIndex - indicating targeting cloud
+		 *
+		 *
+		 *
+		 */
     int updateHeader(int cloudIndex);
 
     /*
-         * uploader thread handler
-         *
-         * @param param - input structure
-         *
-         */
+		 * uploader thread handler
+		 *
+		 * @param param - input structure
+		 *
+		 */
 
     static void* thread_handler(void* param);
 };

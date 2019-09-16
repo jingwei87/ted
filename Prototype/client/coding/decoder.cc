@@ -1,8 +1,3 @@
-/*
- * decoder.cc
- *
- */
-
 #include "decoder.hh"
 
 using namespace std;

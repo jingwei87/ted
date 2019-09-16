@@ -12,22 +12,18 @@ int main(int argv, char** argc){
 
 	/* enable openssl locks */
 	if (!CryptoPrimitive::opensslLockSetup()) {
-		printf("fail to set up OpenSSL locks\n");
 
+		printf("fail to set up OpenSSL locks\n");
 		exit(1); 
 	}
-
 	/* initialize objects */
 	BackendStorer* recipeStorerObj = NULL;
 	BackendStorer* containerStorerObj = NULL;
-	dedupObj = new DedupCore("./","meta/DedupDB","meta/RecipeFiles","meta/ShareContainers",recipeStorerObj, containerStorerObj);
-
+	dedupObj = new DedupCore("./","DedupDB","RecipeFiles","ShareContainers",recipeStorerObj, containerStorerObj);
 	/* initialize server object */
-	server = new Server(atoi(argc[1]), dedupObj);
-
+	server = new Server(atoi(argc[1]), atoi(argc[2]), dedupObj);
 	/* run server service */
 	server->runReceive();
-
 	/* openssl lock cleanup */
 	CryptoPrimitive::opensslLockCleanup();
 

@@ -12,6 +12,7 @@ opensslLock_t* CryptoPrimitive::opensslLock_ = NULL;
  */
 void CryptoPrimitive::opensslLockingCallback_(int mode, int type, const char* file, int line)
 {
+
 #if OPENSSL_DEBUG
     CRYPTO_THREADID id;
     CRYPTO_THREADID_current(&id);

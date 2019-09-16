@@ -389,18 +389,21 @@ inline long BackendStorer::getUnopenedFileSize_(const std::string &fullFileName)
  * @return - a boolean value that indicates if the copy op succeeds
  */
 bool BackendStorer::localCopyFile_(const std::string &destFullFileName, const std::string &srcFullFileName) {
+
 	FILE *fpSrc =fopen(srcFullFileName.c_str(), "rb");
+
 	if (fpSrc == NULL) {
+
 		fprintf(stderr, "Error: fail to open the file '%s' for reading data!\n", srcFullFileName.c_str());
 		return 0;	
 	}	
 
 	FILE *fpDest =fopen(destFullFileName.c_str(), "wb");
+
 	if (fpDest == NULL) {
+		
 		fprintf(stderr, "Error: fail to open the file '%s' for writing data!\n", destFullFileName.c_str());
-
 		fclose(fpSrc);
-
 		return 0;	
 	}
 
@@ -408,10 +411,11 @@ bool BackendStorer::localCopyFile_(const std::string &destFullFileName, const st
 	size_t len;
 
 	while ((len = fread(buffer, sizeof(char), 4096, fpSrc)) > 0) {
+
 		if (fwrite(buffer, sizeof(char), len, fpDest) != len) {
+			
 			fprintf(stderr, "Error: incompletely copy data from the file '%s' to the file '%s'!\n", 
 					srcFullFileName.c_str(), destFullFileName.c_str());
-
 			fclose(fpSrc);
 			fclose(fpDest);
 
@@ -449,16 +453,22 @@ bool BackendStorer::IPCopyFile_(const std::string &destIP, const std::string &de
  * @return - a boolean value that indicates if the store op succeeds
  */
 bool BackendStorer::backendStoreNewFile_(const std::string &shortFileName) {
+
 	if (backendType_ == IPSERVER) {
+
 		if (backendIP_ == "127.0.0.1") {
+			
 			if (!localCopyFile_(backendDirName_ + shortFileName, cacheDirName_ + shortFileName)) {			
+				
 				fprintf(stderr, "Error: fail to store the file '%s' from the cache '%s' to the backend storage '%s'!\n", 
 						shortFileName.c_str(), cacheDirName_.c_str(), backendDirName_.c_str());
 				return 0;	
 			}
 		}
 		else {
+
 			if (!IPCopyFile_(backendIP_, backendDirName_ + shortFileName, "", cacheDirName_ + shortFileName)) {			
+			
 				fprintf(stderr, "Error: fail to store the file '%s' from the local cache '%s' to the backend storage '%s' with IP '%s'!\n", 
 						shortFileName.c_str(), cacheDirName_.c_str(), backendDirName_.c_str(), backendIP_.c_str());
 				return 0;	
@@ -482,6 +492,7 @@ bool BackendStorer::backendStoreNewFile_(const std::string &shortFileName) {
  * @return - a boolean value that indicates if the restore op succeeds
  */
 bool BackendStorer::backendRestoreOldFile_(const std::string &shortFileName, FILE *&fp) {
+
 	if (backendType_ == IPSERVER) {
 		if (backendIP_ == "127.0.0.1") {		
 			if (!localCopyFile_(cacheDirName_ + shortFileName, backendDirName_ + shortFileName)) {			
@@ -536,6 +547,7 @@ bool BackendStorer::addNewFile(const std::string &fullFileName) {
 
 	/*3. shorten the file name*/
 	if (!shortenFileName_(fullFileName, shortFileName)) {
+		
 		fprintf(stderr, "Error: fail to shorten the full file name '%s'!\n", fullFileName.c_str());
 		return 0;
 	}

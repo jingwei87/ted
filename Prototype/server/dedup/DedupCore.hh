@@ -20,7 +20,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+#define SOCKET_BUFFER_SIZE (8 + 4 * 1024 * 1024)
 /*for the use of LevelDB*/
 #include "leveldb/db.h"
 /*for the use of Slice*/
@@ -564,8 +564,10 @@ public:
 		 *
 		 * @return - a boolean value that indicates if the restore op succeeds
 		 */
-    bool restoreShareFile(const int& userID, const std::string& fullFileName, const int& versionNumber,
+    int restoreShareFile(const int& userID, const std::string& fullFileName, const int& versionNumber,
         int socketFD, CryptoPrimitive* cryptoObj);
+
+    bool downloadShareFile(const int& userID, const std::string& fullFileName, const int& versionNumber, int socketFD, CryptoPrimitive* cryptoObj);
 };
 
 #endif
