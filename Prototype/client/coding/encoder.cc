@@ -14,58 +14,29 @@ using namespace std;
  */
 void* Encoder::thread_handler(void* param)
 {
-
-    /* parse parameters */
     int index = ((param_encoder*)param)->index;
-    double t = ((param_encoder*)param)->t_;
-    //cout << "t= " << t << endl;
     Encoder* obj = ((param_encoder*)param)->obj;
     free(param);
-
     /* main loop for getting secrets and encode them into shares*/
     while (true) {
 
-        /* get an object from input buffer */
         Secret_Item_t temp;
-        ShareChunk_Item_t input;
+        Secret_Item_t input;
         obj->inputbuffer_[index]->Extract(&temp);
 
         /* get the object type */
-        int type = temp.type;
-        input.type = type;
+        input.type = temp.type;
 
         /* copy content into input object */
-        if (type == FILE_OBJECT) {
-            /* if it's file header */
+        if (input.type == FILE_OBJECT) {
+
             memcpy(&input.file_header, &temp.file_header, sizeof(fileHead_t));
         } else {
 
-            /* if it's share object */
-            //unsigned char key[32];
-            // if (t != 0) {
-            //     double param = temp.secret.currentFreq / t;
-            //     int paramFloor = floor(param);
-            //     int randNumber = rand() % (paramFloor * 2);
-            //     if (randNumber < paramFloor) {
-            //         paramFloor = randNumber;
-            //     }
-            //     unsigned char newKeyBuffer[32 + sizeof(int)];
-            //     memcpy(newKeyBuffer, temp.secret.hash, 32);
-            //     memcpy(newKeyBuffer + 32, &paramFloor, sizeof(int));
-            //     SHA256(newKeyBuffer, 32 + sizeof(double), key);
-            //     // unsigned char tempXOR[sizeof(double)];
-            //     // memcpy(&tempXOR, &param, sizeof(double));
-            //     // for (auto i = 0; i < sizeof(double); i++) {
-            //     //     key[i] = tempXOR[i] ^ key[i];
-            //     // }
-            // } else {
-            //     memcpy(key, temp.secret.hash, 32);
-            // }
-
-            obj->encodeObj_[index]->encoding(temp.secret.data, temp.secret.secretSize, input.share_chunk.data, &(input.share_chunk.shareSize), temp.secret.key);
-            input.share_chunk.secretID = temp.secret.secretID;
-            input.share_chunk.secretSize = temp.secret.secretSize;
-            input.share_chunk.end = temp.secret.end;
+            obj->cryptoObj_[index]->encryptWithKey(temp.secret.data, temp.secret.secretSize, temp.secret.key, input.secret.data);
+            input.secret.secretID = temp.secret.secretID;
+            input.secret.secretSize = temp.secret.secretSize;
+            input.secret.end = temp.secret.end;
         }
 
         /* add the object to output buffer */
@@ -74,11 +45,6 @@ void* Encoder::thread_handler(void* param)
     return NULL;
 }
 
-/*
- * collect thread for getting share object in order
- *
- * @param param - parameters for collect thread
- */
 void* Encoder::collect(void* param)
 {
     /* index for sequencially collect shares */
@@ -91,7 +57,7 @@ void* Encoder::collect(void* param)
     while (true) {
 
         /* extract an object from a certain ringbuffer */
-        ShareChunk_Item_t temp;
+        Secret_Item_t temp;
         obj->outputbuffer_[nextBufferIndex]->Extract(&temp);
         nextBufferIndex = (nextBufferIndex + 1) % NUM_THREADS;
 
@@ -110,54 +76,24 @@ void* Encoder::collect(void* param)
             input.fileObj.file_header.sizeOfPastSecrets = 0;
             input.fileObj.file_header.numOfComingSecrets = 0;
             input.fileObj.file_header.sizeOfComingSecrets = 0;
-
-            unsigned char tmp[temp.file_header.fullNameSize * 32];
-            int tmp_s;
-
-            //encode pathname into shares for privacy
             unsigned char key[32];
             SHA256(temp.file_header.data, temp.file_header.fullNameSize, key);
-            obj->encodeObj_[0]->encoding(temp.file_header.data, temp.file_header.fullNameSize, tmp, &(tmp_s), key);
+            input.fileObj.file_header.fullNameSize = 32;
+            memcpy(input.fileObj.data, key, input.fileObj.file_header.fullNameSize);
+            obj->uploadObj_->add(&input, sizeof(input));
 
-            input.fileObj.file_header.fullNameSize = tmp_s;
-
-            /* copy file name */
-            //memcpy(input.fileObj.data, temp.file_header.data, temp.file_header.fullNameSize);
-
-#ifndef ENCODE_ONLY_MODE
-            /* add the object to each cloud's uploader buffer */
-            for (int i = 0; i < obj->n_; i++) {
-
-                //copy the corresponding share as file name
-                memcpy(input.fileObj.data, tmp + i * tmp_s, input.fileObj.file_header.fullNameSize);
-                obj->uploadObj_->add(&input, sizeof(input), i);
-            }
-#endif
         } else {
-
-            /* if it's share object */
-            for (int i = 0; i < obj->n_; i++) {
                 input.type = SHARE_OBJECT;
 
                 /* copy share info */
-                int shareSize = temp.share_chunk.shareSize;
-                input.shareObj.share_header.secretID = temp.share_chunk.secretID;
-                input.shareObj.share_header.secretSize = temp.share_chunk.secretSize;
+                int shareSize = temp.secret.shareSize;
+                input.shareObj.share_header.secretID = temp.secret.secretID;
+                input.shareObj.share_header.secretSize = temp.secret.secretSize;
                 input.shareObj.share_header.shareSize = shareSize;
-                memcpy(input.shareObj.data, temp.share_chunk.data + (i * shareSize), shareSize);
-#ifndef ENCODE_ONLY_MODE
-#endif
-                /* see if it's the last secret of a file */
-                if (temp.share_chunk.end == 1)
+                memcpy(input.shareObj.data, temp.secret.data + (i * shareSize), shareSize);
+                if (temp.secret.end == 1)
                     input.type = SHARE_END;
-#ifdef ENCODE_ONLY_MODE
-                if (temp.share_chunk.end == 1)
-                    pthread_exit(NULL);
-#else
-                /* add the share object to targeting cloud uploader buffer */
                 obj->uploadObj_->add(&input, sizeof(input), i);
-#endif
-            }
         }
     }
     return NULL;
@@ -239,10 +175,7 @@ Encoder::~Encoder()
  */
 int Encoder::add(Secret_Item_t* item)
 {
-    /* add item */
     inputbuffer_[nextAddIndex_]->Insert(item, sizeof(Secret_Item_t));
-
-    /* increment the index */
     nextAddIndex_ = (nextAddIndex_ + 1) % NUM_THREADS;
     return 1;
 }

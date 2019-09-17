@@ -2,12 +2,6 @@
 
 using namespace std;
 
-void fatalx(char* s)
-{
-    ERR_print_errors_fp(stderr);
-    errx(EX_DATAERR, "%.30s", s);
-}
-
 void* KeyEx::threadHandler(void* param_thread)
 {
     param_keyex* temp_param = (param_keyex*)param_thread;
@@ -169,6 +163,5 @@ bool KeyEx::keyExchange(unsigned char* hash_buf_1, unsigned char* hash_buf_2, un
 
 void KeyEx::add(Chunk_t* item)
 {
-
     inputbuffer_->Insert(item, sizeof(Chunk_t));
 }
