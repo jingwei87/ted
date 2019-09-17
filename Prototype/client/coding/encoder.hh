@@ -61,15 +61,6 @@ public:
         int end;
     } Secret_t;
 
-    /* share metadata structure */
-    typedef struct {
-        unsigned char data[SHARE_BUFFER_SIZE];
-        int secretID;
-        int secretSize;
-        int shareSize;
-        int end;
-    } ShareChunk_t;
-
     /* union header for secret ringbuffer */
     typedef struct {
         union {
@@ -79,20 +70,11 @@ public:
         int type;
     } Secret_Item_t;
 
-    /* union header for share ringbuffer */
-    typedef struct {
-        union {
-            ShareChunk_t share_chunk;
-            fileHead_t file_header;
-        };
-        int type;
-    } ShareChunk_Item_t;
-
     /* the input secret ringbuffer */
     RingBuffer<Secret_Item_t>** inputbuffer_;
 
     /* the output share ringbuffer */
-    RingBuffer<ShareChunk_Item_t>** outputbuffer_;
+    RingBuffer<Secret_Item_t>** outputbuffer_;
 
     /* thread id array */
     pthread_t tid_[NUM_THREADS + 1];
@@ -102,9 +84,6 @@ public:
 
     /* index for sequencially adding object */
     int nextAddIndex_;
-
-    /* coding object array */
-    CDCodec* encodeObj_[NUM_THREADS];
 
     /* uploader object */
     Uploader* uploadObj_;

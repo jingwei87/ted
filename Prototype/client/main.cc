@@ -25,7 +25,6 @@ Decoder* decoderObj;
 Encoder* encoderObj;
 Uploader* uploaderObj;
 CryptoPrimitive* cryptoObj;
-CDCodec* cdCodecObj;
 Downloader* downloaderObj;
 Configuration* confObj;
 KeyEx* keyObj;
@@ -59,7 +58,6 @@ int main(int argc, char* argv[])
     unsigned char* buffer;
     int* chunkEndIndexList;
     int numOfChunks;
-    int n, m, k, r, *kShareIDList;
     /* initialize openssl locks */
     if (!CryptoPrimitive::opensslLockSetup()) {
         printf("fail to set up OpenSSL locks\n");
@@ -78,12 +76,6 @@ int main(int argc, char* argv[])
     delete confObj;
     buffer = (unsigned char*)malloc(sizeof(unsigned char) * bufferSize);
     chunkEndIndexList = (int*)malloc(sizeof(int) * chunkEndIndexListSize);
-    secretBuffer = (unsigned char*)malloc(sizeof(unsigned char) * secretBufferSize);
-    shareBuffer = (unsigned char*)malloc(sizeof(unsigned char) * shareBufferSize);
-    /* initialize share ID list */
-    kShareIDList = (int*)malloc(sizeof(int) * k);
-    for (int i = 0; i < k; i++)
-        kShareIDList[i] = i;
 
     /* full file name size process */
     int namesize = 0;
@@ -132,15 +124,11 @@ int main(int argc, char* argv[])
                 input.chunkID = totalChunks;
                 input.chunkSize = chunkEndIndexList[count] - preEnd;
                 memcpy(input.data, buffer + preEnd + 1, input.chunkSize);
-                /* zero counting */
-                /* set end indicator */
                 input.end = 0;
                 if (ret + total == size && count + 1 == numOfChunks) {
                     input.end = 1;
                 }
-                /* add chunk to key client */
                 keyObj->add(&input);
-
                 totalChunks++;
                 preEnd = chunkEndIndexList[count];
                 count++;
@@ -156,16 +144,15 @@ int main(int argc, char* argv[])
         fclose(fin);
     }
 
-    if (strncmp(opt, "-d", 2) == 0 || strncmp(opt, "-a", 2) == 0) {
+    if (strncmp(opt, "-d", 2) == 0) {
 
-        decoderObj = new Decoder(CAONT_RS_TYPE, n, m, r, securetype);
-        downloaderObj = new Downloader(k, k, userID, decoderObj);
+        decoderObj = new Decoder(securetype);
+        downloaderObj = new Downloader(userID, decoderObj);
         char nameBuffer[256];
         sprintf(nameBuffer, "%s.d", argv[1]);
         cerr << "Download start, the file will store as " << nameBuffer << endl;
         FILE* fw = fopen(nameBuffer, "wb");
         decoderObj->setFilePointer(fw);
-        decoderObj->setShareIDList(kShareIDList);
         downloaderObj->downloadFile(argv[1], namesize, k);
         decoderObj->indicateEnd();
         downloaderObj->indicateEnd();
@@ -177,9 +164,6 @@ int main(int argc, char* argv[])
 
     free(buffer);
     free(chunkEndIndexList);
-    free(secretBuffer);
-    free(shareBuffer);
-    free(kShareIDList);
     CryptoPrimitive::opensslLockCleanup();
     gettimeofday(&timeend, NULL);
     long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
