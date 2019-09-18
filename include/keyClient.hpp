@@ -5,6 +5,7 @@
 #include "cryptoPrimitive.hpp"
 #include "dataStructure.hpp"
 #include "messageQueue.hpp"
+#include "murmurHash3.hpp"
 #include "sender.hpp"
 #include "socket.hpp"
 
@@ -17,6 +18,7 @@ private:
     CryptoPrimitive* cryptoObj_;
     int keyBatchSize_;
     Socket socket_;
+    int sendShortHashMaskBitNumber;
 
 public:
     keyClient(Sender* senderObjTemp);
