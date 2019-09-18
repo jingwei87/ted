@@ -73,6 +73,7 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
     memcpy(&chunkNumber, data, sizeof(int));
     int readSize = sizeof(int);
     u_char hash[CHUNK_HASH_SIZE];
+    string tmpdata;
     for (int i = 0; i < chunkNumber; i++) {
         int currentChunkSize;
         string originHash(data + readSize, CHUNK_HASH_SIZE);
@@ -81,8 +82,12 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
         readSize += CHUNK_HASH_SIZE;
         memcpy(&currentChunkSize, data + readSize, sizeof(int));
         readSize += sizeof(int);
-        if (!saveChunk(originHash, data + readSize, currentChunkSize)) {
-            return false;
+        if (fp2ChunkDB.query(originHash, tmpdata)) {
+            continue;
+        } else {
+            if (!saveChunk(originHash, data + readSize, currentChunkSize)) {
+                return false;
+            }
         }
         readSize += currentChunkSize;
     }
