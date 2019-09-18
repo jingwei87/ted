@@ -26,6 +26,13 @@ using namespace std;
 #define NETWORK_RESPOND_BUFFER_MAX_SIZE 12 * 1000 * 1000
 #define CRYPTO_BLOCK_SZIE 16
 
+#define KEY_SERVER_UNIFORM_INT_RAND 1
+#define KEY_SERVER_POISSON_RAND 2
+#define KEY_SERVER_NORMAL_RAND 3
+#define KEY_SERVER_GEOMETRIC_RAND 4
+#define KEY_SERVER_NO_RAND 5
+#define KEY_SERVER_RANDOM_TYPE KEY_SERVER_NO_RAND
+
 class Configure {
 private:
     // following settings configure by macro set
@@ -45,8 +52,9 @@ private:
     std::vector<std::string> _keyServerIP;
     std::vector<int> _keyServerPort;
     int _keyBatchSize;
-    uint64_t _keyCacheSize;
-    uint64_t _keyGenLimitPerSessionKey;
+    uint64_t _sketchTableWidth;
+    double _storageBlowPercent;
+    int _optimalSolverComputeItemNumberThreshold;
 
     //message queue size settings
     int _Data_t_MQSize;
@@ -80,6 +88,7 @@ private:
     int _clientID;
     int _sendChunkBatchSize;
     int _sendRecipeBatchSize;
+    int _sendShortHashMaskBitNumber;
 
 public:
     //  Configure(std::ifstream& confFile); // according to setting json to init configure class
@@ -95,17 +104,11 @@ public:
 
     // chunking settings
     uint64_t getChunkingType();
-
     uint64_t getMaxChunkSize();
-
     uint64_t getMinChunkSize();
-
     uint64_t getAverageChunkSize();
-
     uint64_t getSlidingWinSize();
-
     uint64_t getSegmentSize();
-
     uint64_t getReadSize();
 
     // key management settings
@@ -116,8 +119,9 @@ public:
     //std::vector<int> getKeyServerPort();
     int getkeyServerRArequestPort();
     int getKeyBatchSize();
-    uint64_t getKeyCacheSize();
-    uint64_t getKeyGenLimitPerSessionkeySize();
+    uint64_t getSketchTableWidth();
+    int getOptimalSolverComputeItemNumberThreshold();
+    double getStorageBlowPercent();
 
     //message queue size setting
     int get_Data_t_MQSize();
@@ -128,7 +132,6 @@ public:
     int getEncoderThreadLimit();
     int getKeyClientThreadLimit();
     int getKeyServerThreadLimit();
-
     int getSenderThreadLimit();
     int getRecvDecodeThreadLimit();
     int getDecoderThreadLimit();
@@ -136,25 +139,6 @@ public:
     int getRetriverThreadLimit();
     int getDedupCoreThreadLimit();
     int getStorageCoreThreadLimit();
-
-    //pow settings
-    int getPOWQuoteType();
-    int getPOWIASVersion();
-    std::string getPOWServerIP();
-    int getPOWServerPort();
-    std::string getPOWEnclaveName();
-    std::string getPOWSPID();
-    int getPOWIASServerType();
-    uint64_t getPOWBatchSize();
-
-    //km settings
-    int getKMQuoteType();
-    int getKMIASVersion();
-    std::string getKMServerIP();
-    int getKMServerPort();
-    std::string getKMEnclaveName();
-    std::string getKMSPID();
-    int getKMIASServerType();
 
     // storage management settings
     uint64_t getStorageServerNumber();
@@ -171,15 +155,12 @@ public:
     std::string getContainerRootPath();
     std::string getFp2ChunkDBName();
     std::string getFp2MetaDBame();
-    uint64_t getRASessionKeylifeSpan();
 
     //client settings
     int getClientID();
     int getSendChunkBatchSize();
     int getSendRecipeBatchSize();
-
-    //timer settings
-    double getTimeOutScale();
+    int getSendShortHashMaskBitNumber();
 };
 
 #endif //GENERALDEDUPSYSTEM_CONFIGURE_HPP

@@ -19,7 +19,7 @@ set(BOOST_LIBRARY_OBJ boost_thread boost_system boost_serialization)
 set(SYSTEM_LIBRARY_OBJ pthread rt dl)
 set(OPENSSL_LIBRARY_OBJ ssl crypto)
 set(LEVELDB_LIBRARY_OBJ pthread leveldb)
-set(UTIL_OBJ configure cryptoPrimitive Sock database)
+set(UTIL_OBJ configure cryptoPrimitive Sock database murmurHash3 optimalSolver)
 
 set(LINK_OBJ ${UTIL_OBJ} ${OPENSSL_LIBRARY_OBJ} ${LEVELDB_LIBRARY_OBJ}
         ${BOOST_LIBRARY_OBJ} ${UTIL_OBJ} ${SYSTEM_LIBRARY_OBJ})

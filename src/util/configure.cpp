@@ -31,7 +31,6 @@ void Configure::readConf(std::string path)
     //Key Server Congigure
     _keyServerNumber = root.get<uint64_t>("KeyServerConfig._keyServerNumber");
     _keyBatchSize = root.get<uint64_t>("KeyServerConfig._keyBatchSize");
-    _keyCacheSize = root.get<uint64_t>("KeyServerConfig._keyCacheSize");
     _keyServerIP.clear();
     for (ptree::value_type& it : root.get_child("KeyServerConfig._keyServerIP")) {
         _keyServerIP.push_back(it.second.data());
@@ -40,7 +39,9 @@ void Configure::readConf(std::string path)
     for (ptree::value_type& it : root.get_child("KeyServerConfig._keyServerPort")) {
         _keyServerPort.push_back(it.second.get_value<int>());
     }
-
+    _sketchTableWidth = root.get<uint64_t>("KeyServerConfig._sketchTableWidth");
+    _optimalSolverComputeItemNumberThreshold = root.get<int>("KeyServerConfig._optimalSolverComputeItemNumberThreshold");
+    _storageBlowPercent = root.get<double>("KeyServerConfig._storageBlowPercent");
     //SP Configure
     _storageServerNumber = root.get<uint64_t>("SPConfig._storageServerNumber");
     _maxContainerSize = root.get<uint64_t>("SPConfig._maxContainerSize");
@@ -79,7 +80,7 @@ void Configure::readConf(std::string path)
     _clientID = root.get<int>("client._clientID");
     _sendChunkBatchSize = root.get<int>("client._sendChunkBatchSize");
     _sendRecipeBatchSize = root.get<int>("client._sendRecipeBatchSize");
-
+    _sendShortHashMaskBitNumber = root.get<int>("client._sendShortHashMaskBitNumber");
 }
 
 uint64_t Configure::getRunningType()
@@ -143,14 +144,13 @@ int Configure::getKeyBatchSize()
     return _keyBatchSize;
 }
 
-uint64_t Configure::getKeyCacheSize()
+uint64_t Configure::getSketchTableWidth()
 {
-    return _keyCacheSize;
+    return _sketchTableWidth;
 }
-
-uint64_t Configure::getKeyGenLimitPerSessionkeySize()
+double Configure::getStorageBlowPercent()
 {
-    return _keyGenLimitPerSessionKey;
+    return _storageBlowPercent;
 }
 
 /*
@@ -165,7 +165,6 @@ std::vector<int> Configure::getKeyServerPort() {
 }
 
 */
-
 std::string Configure::getKeyServerIP()
 {
     return _keyServerIP[0];
@@ -174,6 +173,11 @@ std::string Configure::getKeyServerIP()
 int Configure::getKeyServerPort()
 {
     return _keyServerPort[0];
+}
+
+int Configure::getOptimalSolverComputeItemNumberThreshold()
+{
+    return _optimalSolverComputeItemNumberThreshold;
 }
 
 // message queue size setting
@@ -307,4 +311,9 @@ int Configure::getStorageCoreThreadLimit()
 int Configure::getSendRecipeBatchSize()
 {
     return _sendRecipeBatchSize;
+}
+
+int Configure::getSendShortHashMaskBitNumber()
+{
+    return _sendShortHashMaskBitNumber;
 }

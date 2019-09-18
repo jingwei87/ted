@@ -33,6 +33,7 @@ keyClient::keyClient(Sender* senderObjTemp)
     cryptoObj_ = new CryptoPrimitive();
     keyBatchSize_ = (int)config.getKeyBatchSize();
     socket_.init(CLIENT_TCP, config.getKeyServerIP(), config.getKeyServerPort());
+    sendShortHashMaskBitNumber = config.getSendShortHashMaskBitNumber();
 }
 
 keyClient::~keyClient()
@@ -50,8 +51,14 @@ void keyClient::run()
     vector<Data_t> batchList;
     int batchNumber = 0;
     u_char chunkKey[CHUNK_ENCRYPT_KEY_SIZE * keyBatchSize_];
-    u_char chunkHash[CHUNK_HASH_SIZE * keyBatchSize_];
+    int singleChunkHashSize = 4 * sizeof(int);
+    u_char chunkHash[singleChunkHashSize * keyBatchSize_];
     bool JobDoneFlag = false;
+    uint32_t seed1 = 1;
+    uint32_t seed2 = 2;
+    uint32_t seed3 = 3;
+    uint32_t seed4 = 4;
+    int hashInt[4];
     while (true) {
 
         Data_t tempChunk;
@@ -65,7 +72,22 @@ void keyClient::run()
                 continue;
             }
             batchList.push_back(tempChunk);
-            memcpy(chunkHash + batchNumber * CHUNK_HASH_SIZE, tempChunk.chunk.chunkHash, CHUNK_HASH_SIZE);
+
+            char hash[16];
+            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, seed1, (void*)hash);
+            memcpy(&hashInt[0], hash, sizeof(int));
+            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, seed2, (void*)hash);
+            memcpy(&hashInt[1], hash, sizeof(int));
+            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, seed3, (void*)hash);
+            memcpy(&hashInt[2], hash, sizeof(int));
+            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, seed4, (void*)hash);
+            memcpy(&hashInt[3], hash, sizeof(int));
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < sendShortHashMaskBitNumber; j++) {
+                    hashInt[i] &= ~(1 << (32 - j));
+                }
+                memcpy(chunkHash + batchNumber * singleChunkHashSize + i * sizeof(int), &hashInt[i], sizeof(int));
+            }
             batchNumber++;
         }
         if (batchNumber == keyBatchSize_ || JobDoneFlag) {
@@ -75,8 +97,11 @@ void keyClient::run()
                 cerr << "KeyClient : error get key for " << setbase(10) << batchNumber << " chunks" << endl;
                 return;
             } else {
+                u_char newKeyBuffer[CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE];
                 for (int i = 0; i < batchNumber; i++) {
-                    memcpy(batchList[i].chunk.encryptKey, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
+                    memcpy(newKeyBuffer, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
+                    memcpy(newKeyBuffer + CHUNK_HASH_SIZE, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
+                    SHA256(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.encryptKey);
                     // cerr << "KeyClient : chunk hash & key for chunk " << i << " = " << endl;
                     // PRINT_BYTE_ARRAY_KEY_CLIENT(stderr, chunkHash + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
                     // PRINT_BYTE_ARRAY_KEY_CLIENT(stderr, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
