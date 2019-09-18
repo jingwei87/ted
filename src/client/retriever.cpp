@@ -1,5 +1,4 @@
 #include "retriever.hpp"
-#include "../pow/include/hexutil.h"
 
 Retriever::Retriever(string fileName, RecvDecode*& recvDecodeObjTemp)
 {

@@ -26,13 +26,12 @@ void PRINT_BYTE_ARRAY_KEY_CLIENT(
     fprintf(file, "\n}\n");
 }
 
-keyClient::keyClient(powClient* powObjTemp, u_char* keyExchangeKey)
+keyClient::keyClient(Sender* senderObjTemp)
 {
     inputMQ_ = new messageQueue<Data_t>(config.get_Data_t_MQSize());
-    powObj_ = powObjTemp;
+    senderObj_ = senderObjTemp;
     cryptoObj_ = new CryptoPrimitive();
     keyBatchSize_ = (int)config.getKeyBatchSize();
-    memcpy(keyExchangeKey_, keyExchangeKey, 16);
     socket_.init(CLIENT_TCP, config.getKeyServerIP(), config.getKeyServerPort());
 }
 
@@ -62,7 +61,7 @@ void keyClient::run()
         }
         if (extractMQFromChunker(tempChunk)) {
             if (tempChunk.dataType == DATA_TYPE_RECIPE) {
-                insertMQToPOW(tempChunk);
+                insertMQToSender(tempChunk);
                 continue;
             }
             batchList.push_back(tempChunk);
@@ -82,7 +81,7 @@ void keyClient::run()
                     // PRINT_BYTE_ARRAY_KEY_CLIENT(stderr, chunkHash + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
                     // PRINT_BYTE_ARRAY_KEY_CLIENT(stderr, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
                     if (encodeChunk(batchList[i])) {
-                        insertMQToPOW(batchList[i]);
+                        insertMQToSender(batchList[i]);
                     } else {
                         cerr << "KeyClient : encode chunk error, exiting" << endl;
                         return;
@@ -95,7 +94,7 @@ void keyClient::run()
             }
         }
         if (JobDoneFlag) {
-            if (!powObj_->editJobDoneFlag()) {
+            if (!senderObj_->editJobDoneFlag()) {
                 cerr << "KeyClient : error to set job done flag for encoder" << endl;
             } else {
                 cerr << "KeyClient : key exchange thread job done, set job done flag for encoder done, exit now" << endl;
@@ -162,9 +161,9 @@ bool keyClient::extractMQFromChunker(Data_t& newChunk)
     return inputMQ_->pop(newChunk);
 }
 
-bool keyClient::insertMQToPOW(Data_t& newChunk)
+bool keyClient::insertMQToSender(Data_t& newChunk)
 {
-    return powObj_->insertMQFromEncoder(newChunk);
+    return senderObj_->insertMQFromKeyClient(newChunk);
 }
 
 bool keyClient::editJobDoneFlag()

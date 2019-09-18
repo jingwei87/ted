@@ -32,8 +32,6 @@ void Configure::readConf(std::string path)
     _keyServerNumber = root.get<uint64_t>("KeyServerConfig._keyServerNumber");
     _keyBatchSize = root.get<uint64_t>("KeyServerConfig._keyBatchSize");
     _keyCacheSize = root.get<uint64_t>("KeyServerConfig._keyCacheSize");
-    _keyGenLimitPerSessionKey = root.get<uint64_t>("KeyServerConfig._keyGenLimitPerSessionKey");
-    _keyServerRArequestPort = root.get<int>("KeyServerConfig._keyServerRArequestPort");
     _keyServerIP.clear();
     for (ptree::value_type& it : root.get_child("KeyServerConfig._keyServerIP")) {
         _keyServerIP.push_back(it.second.data());
@@ -71,39 +69,17 @@ void Configure::readConf(std::string path)
     _dedupCoreThreadLimit = root.get<int>("mutiThread._dedupCoreThreadLimit");
     _storageCoreThreadLimit = root.get<int>("mutiThread._storageCoreThreadLimit");
 
-    //pow Configure
-    _POWQuoteType = root.get<int>("pow._quoteType");
-    _POWIasVersion = root.get<int>("pow._iasVersion");
-    _POWServerIp = root.get<std::string>("pow._ServerIp");
-    _POWServerPort = root.get<int>("pow._ServerPort");
-    _POWEnclaveName = root.get<std::string>("pow._enclave_name");
-    _POWSPID = root.get<std::string>("pow._SPID");
-    _POWIasServerType = root.get<int>("pow._iasServerType");
-    _POWBatchSize = root.get<uint64_t>("pow._batchSize");
-
-    //km enclave Configure
-    _KMQuoteType = root.get<int>("km._quoteType");
-    _KMIasVersion = root.get<int>("km._iasVersion");
-    _KMServerIp = root.get<std::string>("km._ServerIp");
-    _KMServerPort = root.get<int>("km._ServerPort");
-    _KMEnclaveName = root.get<std::string>("km._enclave_name");
-    _KMSPID = root.get<std::string>("km._SPID");
-    _KMIasServerType = root.get<int>("km._iasServerType");
-
     //server Configure
     _RecipeRootPath = root.get<std::string>("server._RecipeRootPath");
     _containerRootPath = root.get<std::string>("server._containerRootPath");
     _fp2ChunkDBName = root.get<std::string>("server._fp2ChunkDBName");
     _fp2MetaDBame = root.get<std::string>("server._fp2MetaDBame");
-    _raSessionKeylifeSpan = root.get<uint64_t>("server._raSessionKeylifeSpan");
 
     //client Configure
     _clientID = root.get<int>("client._clientID");
     _sendChunkBatchSize = root.get<int>("client._sendChunkBatchSize");
     _sendRecipeBatchSize = root.get<int>("client._sendRecipeBatchSize");
 
-    //timer Configure
-    _timeOutScale = root.get<double>("timer._timeScale");
 }
 
 uint64_t Configure::getRunningType()
@@ -165,12 +141,6 @@ int Configure::getKeyBatchSize()
 {
 
     return _keyBatchSize;
-}
-
-int Configure::getkeyServerRArequestPort()
-{
-
-    return _keyServerRArequestPort;
 }
 
 uint64_t Configure::getKeyCacheSize()
@@ -273,83 +243,6 @@ uint64_t Configure::getMaxContainerSize()
     return _maxContainerSize;
 }
 
-//pow enclave settings
-
-int Configure::getPOWQuoteType()
-{
-    return _POWQuoteType;
-}
-
-int Configure::getPOWIASVersion()
-{
-    return _POWIasVersion;
-}
-
-std::string Configure::getPOWServerIP()
-{
-    return _POWServerIp;
-}
-
-int Configure::getPOWServerPort()
-{
-    return _POWServerPort;
-}
-
-std::string Configure::getPOWEnclaveName()
-{
-    return _POWEnclaveName;
-}
-
-std::string Configure::getPOWSPID()
-{
-    return _POWSPID;
-}
-
-int Configure::getPOWIASServerType()
-{
-    return _POWIasServerType;
-}
-
-uint64_t Configure::getPOWBatchSize()
-{
-    return _POWBatchSize;
-}
-// km enclave settings
-int Configure::getKMQuoteType()
-{
-    return _KMQuoteType;
-}
-
-int Configure::getKMIASVersion()
-{
-    return _KMIasVersion;
-}
-
-std::string Configure::getKMServerIP()
-{
-    return _KMServerIp;
-}
-
-int Configure::getKMServerPort()
-{
-    return _KMServerPort;
-}
-
-std::string Configure::getKMEnclaveName()
-{
-    return _KMEnclaveName;
-}
-
-std::string Configure::getKMSPID()
-{
-    return _KMSPID;
-}
-
-int Configure::getKMIASServerType()
-{
-    return _KMIasServerType;
-}
-
 // client settings
 int Configure::getClientID()
 {
@@ -359,11 +252,6 @@ int Configure::getClientID()
 int Configure::getSendChunkBatchSize()
 {
     return _sendChunkBatchSize;
-}
-
-double Configure::getTimeOutScale()
-{
-    return _timeOutScale;
 }
 
 std::string Configure::getRecipeRootPath()
@@ -384,11 +272,6 @@ std::string Configure::getFp2ChunkDBName()
 std::string Configure::getFp2MetaDBame()
 {
     return _fp2MetaDBame;
-}
-
-uint64_t Configure::getRASessionKeylifeSpan()
-{
-    return _raSessionKeylifeSpan;
 }
 
 int Configure::getSenderThreadLimit()
