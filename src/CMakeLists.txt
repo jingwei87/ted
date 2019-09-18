@@ -6,8 +6,8 @@ if(Boost_FOUND)
   link_directories(${BOOST_LIBRARY_DIR})
 endif()
 
-set(OPENSSL_INCLUDE_PATH /usr/include/)
-set(OPENSSL_LIBRARY_PATH /usr/lib/x86_64-linux-gnu)
+set(OPENSSL_INCLUDE_PATH ../lib/openssl/include)
+set(OPENSSL_LIBRARY_PATH ../lib/openssl/)
 
 set(LEVELDB_INCLUDE_PATH ../lib/leveldb/include)
 set(LEVELDB_LIBRARY_PATH ../lib/leveldb/)
@@ -25,15 +25,13 @@ set(LINK_OBJ ${UTIL_OBJ} ${OPENSSL_LIBRARY_OBJ} ${LEVELDB_LIBRARY_OBJ}
         ${BOOST_LIBRARY_OBJ} ${UTIL_OBJ} ${SYSTEM_LIBRARY_OBJ})
 
 set(CLIENT_OBJ chunker keyClient sender  recvDecode  retriever)
-set(SERVER_OBJ dataSR  dedupCore powServer storage) 
+set(SERVER_OBJ dataSR  dedupCore storage) 
 set(KEYSERVER_OBJ keyServer)
 
 #-fno-builtin-memset
 # set(CMAKE_C_FLAGS "-g -O3") 
 # set(CMAKE_CXX_FLAGS "-g -O3 -fsanitize=address")
 set(CMAKE_MODULE_PATH /usr/share/cmake-3.10/Modules/)
-list(APPEND CMAKE_MODULE_PATH ${PATH_TO_FindSGX.cmake_FILE})
-find_package(SGX REQUIRED)
 
 set (CMAKE_SYSTEM_NAME Linux )
 SET (CMAKE_C_COMPILER             "/usr/bin/clang")

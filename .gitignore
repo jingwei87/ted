@@ -166,5 +166,4 @@ $RECYCLE.BIN/
 #Clion
 bin/
 cmake-build-debug/
-lib/
 .idea

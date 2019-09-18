@@ -31,7 +31,6 @@ Sender::Sender()
 {
     inputMQ_ = new messageQueue<Data_t>(config.get_Data_t_MQSize());
     socket_.init(CLIENT_TCP, config.getStorageServerIP(), config.getStorageServerPort());
-    socketPow_.init(CLIENT_TCP, config.getStorageServerIP(), config.getPOWServerPort());
     cryptoObj_ = new CryptoPrimitive();
     clientID_ = config.getClientID();
 }
@@ -39,7 +38,6 @@ Sender::Sender()
 Sender::~Sender()
 {
     socket_.finish();
-    socketPow_.finish();
     if (cryptoObj_ != NULL) {
         delete cryptoObj_;
     }
@@ -134,10 +132,6 @@ bool Sender::sendEndFlag()
     requestBody.dataSize = 0;
     u_char requestBuffer[sendSize];
     memcpy(requestBuffer, &requestBody, sizeof(NetworkHeadStruct_t));
-    if (!socketPow_.Send(requestBuffer, sendSize)) {
-        cerr << "Sender : send data error peer closed" << endl;
-        return false;
-    }
     if (!socket_.Send(requestBuffer, sendSize)) {
         cerr << "Sender : send data error peer closed" << endl;
         return false;
@@ -163,7 +157,7 @@ void Sender::run()
         if (inputMQ_->done_ && inputMQ_->isEmpty()) {
             jobDoneFlag = true;
         }
-        if (extractMQFromPow(tempChunk)) {
+        if (extractMQFromKeyClient(tempChunk)) {
             if (tempChunk.dataType == DATA_TYPE_RECIPE) {
                 // cout << "Sender : get file recipe head, file size = " << tempChunk.recipe.fileRecipeHead.fileSize << " file chunk number = " << tempChunk.recipe.fileRecipeHead.totalChunkNumber << endl;
                 // PRINT_BYTE_ARRAY_SENDER(stderr, tempChunk.recipe.fileRecipeHead.fileNameHash, FILE_NAME_HASH_SIZE);
@@ -226,12 +220,12 @@ void Sender::run()
     return;
 }
 
-bool Sender::insertMQFromPow(Data_t& newChunk)
+bool Sender::insertMQFromKeyClient(Data_t& newChunk)
 {
     return inputMQ_->push(newChunk);
 }
 
-bool Sender::extractMQFromPow(Data_t& newChunk)
+bool Sender::extractMQFromKeyClient(Data_t& newChunk)
 {
     return inputMQ_->pop(newChunk);
 }

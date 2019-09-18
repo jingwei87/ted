@@ -3,7 +3,6 @@
 
 #include "configure.hpp"
 #include "dataStructure.hpp"
-#include "kmClient.hpp"
 #include "messageQueue.hpp"
 #include "openssl/bn.h"
 #include "socket.hpp"
@@ -15,17 +14,12 @@
 
 class keyServer {
 private:
-    RSA* rsa_;
-    BIO* key_;
-    const BIGNUM *keyN_, *keyD_;
-    kmClient* client;
     std::mutex multiThreadMutex_;
     std::mutex multiThreadCountMutex_;
     std::mutex clientThreadNumberCountMutex_;
     uint64_t keyGenerateCount;
     uint64_t clientThreadCount;
     uint64_t keyGenLimitPerSessionKey_;
-    bool raRequestFlag;
 
 public:
     keyServer();
