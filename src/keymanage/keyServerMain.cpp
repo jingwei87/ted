@@ -10,7 +10,7 @@ int main()
     keyServer* server = new keyServer(keySecurityChannelTemp);
     th = new boost::thread(boost::bind(&keyServer::runOptimalSolver, server));
     while (true) {
-        std::pair<int, SSL*> sslConnection = keySecurityChannelTemp->sslListen();
+        SSL* sslConnection = keySecurityChannelTemp->sslListen().second;
         th = new boost::thread(boost::bind(&keyServer::runKeyGen, server, sslConnection));
         th->detach();
     }

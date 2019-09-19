@@ -32,7 +32,7 @@ private:
 public:
     keyServer(ssl* keySecurityChannelTemp);
     ~keyServer();
-    void runKeyGen(std::pair<int, SSL*> connection);
+    void runKeyGen(SSL* connection);
     void runOptimalSolver();
 };
 

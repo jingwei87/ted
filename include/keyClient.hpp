@@ -18,7 +18,7 @@ private:
     CryptoPrimitive* cryptoObj_;
     int keyBatchSize_;
     ssl* keySecurityChannel_;
-    std::pair<int, SSL*> sslConnection_;
+    SSL* sslConnection_;
     int sendShortHashMaskBitNumber;
 
 public:
