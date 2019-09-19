@@ -6,7 +6,7 @@
 		"_avgChunkSize": 8192,
 		"_maxChunkSize": 16384,
 		"_slidingWinSize": 256,
-		"_ReadSize": 256,
+		"_ReadSize": 128,
 		"_segmentSize": 0
 	},
 	"KeyServerConfig": {
@@ -30,7 +30,7 @@
 		"_storageServerPort": [
 			6668
 		],
-		"_maxContainerSize": 16384
+		"_maxContainerSize": 8388608
 	},
 	"messageQueue": {
 		"_Data_t_MQSize": 10000,

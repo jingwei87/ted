@@ -32,7 +32,8 @@ keyClient::keyClient(Sender* senderObjTemp)
     senderObj_ = senderObjTemp;
     cryptoObj_ = new CryptoPrimitive();
     keyBatchSize_ = (int)config.getKeyBatchSize();
-    socket_.init(CLIENT_TCP, config.getKeyServerIP(), config.getKeyServerPort());
+    keySecurityChannel_ = new ssl(config.getKeyServerIP(), config.getKeyServerPort(), CLIENTSIDE);
+    sslConnection_ = keySecurityChannel_->sslConnect();
     sendShortHashMaskBitNumber = config.getSendShortHashMaskBitNumber();
 }
 
@@ -42,6 +43,7 @@ keyClient::~keyClient()
         delete cryptoObj_;
     }
     inputMQ_->~messageQueue();
+    delete keySecurityChannel_;
     delete inputMQ_;
 }
 
@@ -54,10 +56,10 @@ void keyClient::run()
     int singleChunkHashSize = 4 * sizeof(int);
     u_char chunkHash[singleChunkHashSize * keyBatchSize_];
     bool JobDoneFlag = false;
-    uint32_t seed1 = 1;
-    uint32_t seed2 = 2;
-    uint32_t seed3 = 3;
-    uint32_t seed4 = 4;
+    uint32_t maskInt = 0;
+    for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
+        maskInt &= ~(1 << (32 - i));
+    }
     int hashInt[4];
     while (true) {
 
@@ -74,18 +76,16 @@ void keyClient::run()
             batchList.push_back(tempChunk);
 
             char hash[16];
-            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, seed1, (void*)hash);
+            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 1, (void*)hash);
             memcpy(&hashInt[0], hash, sizeof(int));
-            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, seed2, (void*)hash);
+            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 2, (void*)hash);
             memcpy(&hashInt[1], hash, sizeof(int));
-            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, seed3, (void*)hash);
+            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 3, (void*)hash);
             memcpy(&hashInt[2], hash, sizeof(int));
-            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, seed4, (void*)hash);
+            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 4, (void*)hash);
             memcpy(&hashInt[3], hash, sizeof(int));
             for (int i = 0; i < 4; i++) {
-                for (int j = 0; j < sendShortHashMaskBitNumber; j++) {
-                    hashInt[i] &= ~(1 << (32 - j));
-                }
+                hashInt[i] &= maskInt;
                 memcpy(chunkHash + batchNumber * singleChunkHashSize + i * sizeof(int), &hashInt[i], sizeof(int));
             }
             batchNumber++;
@@ -138,13 +138,13 @@ void keyClient::run()
 bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber)
 {
 
-    if (!socket_.Send(batchHashList, 4 * sizeof(int) * batchNumber)) {
+    if (!keySecurityChannel->send(sslConnection_, (char*)batchHashList, 4 * sizeof(uint32_t) * batchNumber)) {
         cerr << "keyClient: send socket error" << endl;
         return false;
     }
-    u_char recvBuffer[CHUNK_ENCRYPT_KEY_SIZE * batchNumber];
+    char recvBuffer[CHUNK_ENCRYPT_KEY_SIZE * batchNumber];
     int recvSize;
-    if (!socket_.Recv(recvBuffer, recvSize)) {
+    if (!keySecurityChannel->recv(sslConnection_, recvBuffer, recvSize)) {
         cerr << "keyClient: recv socket error" << endl;
         return false;
     }

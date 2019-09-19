@@ -216,7 +216,7 @@ void Sender::run()
     gettimeofday(&timeendSender, NULL);
     long diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
     double second = diff / 1000000.0;
-    printf("Sender thread work time is %ld us = %lf s\n", diff, second);
+    cout << "Sender thread work time is " << diff << " us = " << second << " s" << endl;
     return;
 }
 

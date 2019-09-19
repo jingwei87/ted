@@ -81,9 +81,6 @@ void Chunker::ChunkerInit(string path)
     cryptoObj->generateHash((u_char*)&path[0], path.length(), filePathHash);
     memcpy(recipe.recipe.fileRecipeHead.fileNameHash, filePathHash, FILE_NAME_HASH_SIZE);
     memcpy(recipe.recipe.keyRecipeHead.fileNameHash, filePathHash, FILE_NAME_HASH_SIZE);
-    // ifstream fin(path, ifstream::binary);
-    // recipe.recipe.fileRecipeHead.fileSize = fin.tellg();
-    // fin.close();
 
     ChunkerType = (int)config.getChunkingType();
 
@@ -146,16 +143,6 @@ void Chunker::ChunkerInit(string path)
         anchorMask = (1 << numOfMaskBits) - 1;
         /*initialize the value for depolytermining an anchor*/
         anchorValue = 0;
-        // cout << "A variable size Chunker has been constructed!" << endl;
-        // cout << "Parameters: " << endl;
-        // cout << setw(6) << "avgChunkSize: " << avgChunkSize << endl;
-        // cout << setw(6) << "minChunkSize: " << minChunkSize << endl;
-        // cout << setw(6) << "maxChunkSize: " << maxChunkSize << endl;
-        // cout << setw(6) << "slidingWinSize: " << slidingWinSize << endl;
-        // cout << setw(6) << "polyBase: 0x" << hex << polyBase << endl;
-        // cout << setw(6) << "polyMOD: 0x" << hex << polyMOD << endl;
-        // cout << setw(6) << "_anchoranchorMask: 0x" << hex << anchorMask << endl;
-        // cout << setw(6) << "anchorValue: 0x" << hex << anchorValue << endl;
     } else if (ChunkerType == CHUNKER_FIX_SIZE_TYPE) {
 
         avgChunkSize = (int)config.getAverageChunkSize();
@@ -177,9 +164,6 @@ void Chunker::ChunkerInit(string path)
         if (ReadSize % avgChunkSize != 0) {
             cerr << "Chunker : Setting fixed size chunking error : ReadSize not compat with average chunk size" << endl;
         }
-        // cout << "A fixed size Chunker has been constructed!" << endl;
-        // cout << "Parameters: " << endl;
-        // cout << setw(6) << "ChunkSize: " << avgChunkSize << endl;
     }
 }
 
@@ -333,11 +317,6 @@ void Chunker::varSizeChunking()
                     cerr << "Chunker : error insert chunk to keyClient MQ for chunk ID = " << tempChunk.chunk.ID << endl;
                     return;
                 }
-
-                // cout << "Chunker : Chunk ID = " << tempChunk.chunk.ID << " size = " << tempChunk.chunk.logicDataSize << endl;
-                // PRINT_BYTE_ARRAY_CHUNKER(stdout, tempChunk.chunk.chunkHash, CHUNK_HASH_SIZE);
-                // PRINT_BYTE_ARRAY_CHUNKER(stdout, tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize);
-
                 chunkIDCnt++;
                 chunkBufferCnt = winFp = 0;
             }
@@ -361,9 +340,6 @@ void Chunker::varSizeChunking()
                 }
                 chunkIDCnt++;
                 chunkBufferCnt = winFp = 0;
-                // cout << "Chunker : Chunk ID = " << tempChunk.chunk.ID << " size = " << tempChunk.chunk.logicDataSize << endl;
-                // PRINT_BYTE_ARRAY_CHUNKER(stdout, tempChunk.chunk.chunkHash, CHUNK_HASH_SIZE);
-                // PRINT_BYTE_ARRAY_CHUNKER(stdout, tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize);
             }
         }
         if (fin.eof()) {
@@ -388,10 +364,6 @@ void Chunker::varSizeChunking()
             cerr << "Chunker : error insert chunk to keyClient MQ for chunk ID = " << tempChunk.chunk.ID << endl;
             return;
         }
-        // cout << "Chunker : Chunk ID = " << tempChunk.chunk.ID << " size = " << tempChunk.chunk.logicDataSize << endl;
-        // PRINT_BYTE_ARRAY_CHUNKER(stdout, tempChunk.chunk.chunkHash, CHUNK_HASH_SIZE);
-        // PRINT_BYTE_ARRAY_CHUNKER(stdout, tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize);
-
         chunkIDCnt++;
         chunkBufferCnt = winFp = 0;
     }

@@ -7,7 +7,7 @@
 #include "messageQueue.hpp"
 #include "openssl/bn.h"
 #include "optimalSolver.hpp"
-#include "socket.hpp"
+#include "ssl.hpp"
 #include <bits/stdc++.h>
 
 #define KEYMANGER_PRIVATE_KEY "key/server.key"
@@ -27,11 +27,12 @@ private:
     mt19937_64 gen_;
     u_char keyServerPrivate_[64];
     int optimalSolverComputeItemNumberThreshold_;
+    ssl* keySecurityChannel_;
 
 public:
-    keyServer();
+    keyServer(ssl* keySecurityChannelTemp);
     ~keyServer();
-    void runKeyGen(Socket socket);
+    void runKeyGen(std::pair<int, SSL*> connection);
     void runOptimalSolver();
 };
 

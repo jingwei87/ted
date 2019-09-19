@@ -7,7 +7,7 @@
 #include "messageQueue.hpp"
 #include "murmurHash3.hpp"
 #include "sender.hpp"
-#include "socket.hpp"
+#include "ssl.hpp"
 
 #define KEYMANGER_PUBLIC_KEY_FILE "key/serverpub.key"
 
@@ -17,7 +17,8 @@ private:
     Sender* senderObj_;
     CryptoPrimitive* cryptoObj_;
     int keyBatchSize_;
-    Socket socket_;
+    ssl* keySecurityChannel_;
+    std::pair<int, SSL*> sslConnection_;
     int sendShortHashMaskBitNumber;
 
 public:

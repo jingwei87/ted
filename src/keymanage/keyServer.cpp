@@ -24,8 +24,9 @@ void PRINT_BYTE_ARRAY_KEY_SERVER(
     fprintf(file, "\n}\n");
 }
 
-keyServer::keyServer()
+keyServer::keyServer(ssl* keyServerSecurityChannelTemp)
 {
+    keySecurityChannel_ = keyServerSecurityChannelTemp;
     sketchTableWidith_ = config.getSketchTableWidth();
     sketchTable_ = (u_int**)malloc(sizeof(u_int*) * 4);
     for (int i = 0; i < 4; i++) {
@@ -46,16 +47,17 @@ keyServer::~keyServer()
         free(sketchTable_[i]);
     }
     free(sketchTable_);
+    delete keySecurityChannel_;
 }
 
-void keyServer::runKeyGen(Socket socket)
+void keyServer::runKeyGen(std::pair<int, SSL*> connection)
 {
-    u_char hash[config.getKeyBatchSize() * 4 * sizeof(int)];
+    char hash[config.getKeyBatchSize() * 4 * sizeof(uint32_t)];
     u_int hashNumber[4];
-    u_char newKeyBuffer[64 + 4 * sizeof(int) + sizeof(int)];
+    u_char newKeyBuffer[64 + 4 * sizeof(uint32_t) + sizeof(int)];
     while (true) {
         int recvSize = 0;
-        if (!socket.Recv(hash, recvSize)) {
+        if (!keySecurityChannel_.recv(connection, hash, recvSize)) {
             socket.finish();
             cerr << "KeyServer : client exit" << endl;
             multiThreadEditSketchTableMutex_.lock();
@@ -72,14 +74,14 @@ void keyServer::runKeyGen(Socket socket)
             return;
         }
 
-        int recvNumber = recvSize / (4 * sizeof(int));
+        int recvNumber = recvSize / (4 * sizeof(uint32_t));
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
         u_char key[recvNumber * CHUNK_ENCRYPT_KEY_SIZE];
         multiThreadEditSketchTableMutex_.lock();
         for (int i = 0; i < recvNumber; i++) {
             int sketchTableSearchCompareNumber = 0;
             for (int j = 0; j < 4; j++) {
-                memcpy(&hashNumber[j], hash + i * 4 * sizeof(int) + j * sizeof(int), sizeof(int));
+                memcpy(&hashNumber[j], hash + i * 4 * sizeof(uint32_t) + j * sizeof(uint32_t), sizeof(uint32_t));
                 sketchTable_[j][hashNumber[j] % sketchTableWidith_]++;
             }
             sketchTableSearchCompareNumber = sketchTable_[0][hashNumber[0] % sketchTableWidith_];
@@ -118,16 +120,16 @@ void keyServer::runKeyGen(Socket socket)
                     param = result;
             }
             memcpy(newKeyBuffer, keyServerPrivate_, 64);
-            memcpy(newKeyBuffer + 64, hash + i * 4 * sizeof(int), 4 * sizeof(int));
-            memcpy(newKeyBuffer + 64 + 4 * sizeof(int), &param, sizeof(int));
+            memcpy(newKeyBuffer + 64, hash + i * 4 * sizeof(uint32_t), 4 * sizeof(uint32_t));
+            memcpy(newKeyBuffer + 64 + 4 * sizeof(uint32_t), &param, sizeof(int));
             unsigned char currentKeySeed[32];
-            SHA256(newKeyBuffer, 64 + 4 * sizeof(int) + sizeof(int), currentKeySeed);
+            SHA256(newKeyBuffer, 64 + 4 * sizeof(uint32_t) + sizeof(int), currentKeySeed);
             memcpy(key + i * 32, currentKeySeed, 32);
         }
         sketchTableCounter_ += recvNumber;
         multiThreadEditSketchTableMutex_.unlock();
 
-        if (!socket.Send(key, recvNumber * CHUNK_ENCRYPT_KEY_SIZE)) {
+        if (!keySecurityChannel_.send(connection, (char*)key, recvNumber * CHUNK_ENCRYPT_KEY_SIZE)) {
             cerr << "KeyServer : error send back chunk key to client" << endl;
             socket.finish();
             multiThreadEditSketchTableMutex_.lock();
