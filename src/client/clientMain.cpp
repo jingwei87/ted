@@ -86,6 +86,6 @@ int main(int argv, char* argc[])
     gettimeofday(&timeend, NULL);
     long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
     double second = diff / 1000000.0;
-    printf("the total work time is %ld us = %lf s\n", diff, second);
+    cout << "the total work time is " << diff << " us = " << second << " s" << endl;
     return 0;
 }

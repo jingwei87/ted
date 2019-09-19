@@ -23,20 +23,14 @@ public:
     int fd_;
     sockaddr_in addr_;
     Socket(const int type, string ip, int port);
-
     Socket(int fd, sockaddr_in addr);
-
     Socket(){};
-
     ~Socket(){};
-
     void init(const int type, string ip, int port);
     void finish();
 
-    // void setNonBlock();
     bool Send(u_char* buffer, int sendSize);
     bool Recv(u_char* buffer, int& recvSize);
-
     Socket Listen();
 };
 
