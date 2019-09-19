@@ -107,7 +107,7 @@ bool ssl::recv(SSL* connection, char* data, int& dataSize)
         return false;
     }
     while (recvd < len) {
-        recvd += SSL_read(connection, data + recvd, 4096);
+        recvd += SSL_read(connection, data + recvd, len - recvd);
     }
     dataSize = len;
     return true;
@@ -120,7 +120,7 @@ bool ssl::send(SSL* connection, char* data, int dataSize)
     }
     int sendSize = 0;
     while (sendSize < dataSize) {
-        sendSize += SSL_write(connection, data + sendSize, 4096);
+        sendSize += SSL_write(connection, data + sendSize, dataSize - sendSize);
     }
     return true;
 }

@@ -29,6 +29,7 @@ set(SERVER_OBJ dataSR  dedupCore storage)
 set(KEYSERVER_OBJ keyServer)
 
 set(CMAKE_BUILD_TYPE "Release")
+# set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_C_FLAGS_DEBUG "-Wall -std=c1x -g -ggdb -g2") 
 set(CMAKE_CXX_FLAGS_DEBUG "-Wall -std=c++17 -g -ggdb -g2 -fsanitize=address")
 set(CMAKE_C_FLAGS_RELEASE "-O3 -std=c1x") 
