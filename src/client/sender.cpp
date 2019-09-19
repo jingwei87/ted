@@ -48,7 +48,7 @@ Sender::~Sender()
 bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
 {
     int totalRecipeNumber = recipeList.size();
-    cout << "Sender : Start sending file recipes, total recipe entry = " << totalRecipeNumber << endl;
+    // cout << "Sender : Start sending file recipes, total recipe entry = " << totalRecipeNumber << endl;
     int sendRecipeNumber = 0;
     int sendRecipeBatchNumber = config.getSendRecipeBatchSize();
     int currentSendRecipeNumber = 0;
@@ -78,7 +78,7 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
             cerr << "Sender : error sending file resipces, peer may close" << endl;
             return false;
         }
-        cout << "Sender : send file reipce number = " << currentSendRecipeNumber << " done" << endl;
+        // cout << "Sender : send file reipce number = " << currentSendRecipeNumber << " done" << endl;
         sendRecipeNumber += currentSendRecipeNumber;
         currentSendRecipeNumber = 0;
     }
@@ -203,8 +203,15 @@ void Sender::run()
     // printf("Sender send chunk list time is %lf s\n", totalSendTime);
 
     // gettimeofday(&timestartSenderRecipe, NULL);
-    if (this->sendRecipe(fileRecipe, recipeList, status)) {
-        cout << "Sender : send recipe list success" << endl;
+    if (!this->sendRecipe(fileRecipe, recipeList, status)) {
+        cout << "Sender : send recipe list error, upload fail " << endl;
+        free(sendChunkBatchBuffer);
+        sendEndFlag();
+        gettimeofday(&timeendSender, NULL);
+        long diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
+        double second = diff / 1000000.0;
+        cout << "Sender thread work time is " << diff << " us = " << second << " s" << endl;
+        return;
     }
     // gettimeofday(&timeendSenderRecipe, NULL);
     // long diff = 1000000 * (timeendSenderRecipe.tv_sec - timestartSenderRecipe.tv_sec) + timeendSenderRecipe.tv_usec - timestartSenderRecipe.tv_usec;
