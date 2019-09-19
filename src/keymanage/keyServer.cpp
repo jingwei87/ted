@@ -57,8 +57,7 @@ void keyServer::runKeyGen(std::pair<int, SSL*> connection)
     u_char newKeyBuffer[64 + 4 * sizeof(uint32_t) + sizeof(int)];
     while (true) {
         int recvSize = 0;
-        if (!keySecurityChannel_.recv(connection, hash, recvSize)) {
-            socket.finish();
+        if (!keySecurityChannel_->recv(connection, hash, recvSize)) {
             cerr << "KeyServer : client exit" << endl;
             multiThreadEditSketchTableMutex_.lock();
             for (int i = 0; i < sketchTableWidith_; i++) {
@@ -129,9 +128,8 @@ void keyServer::runKeyGen(std::pair<int, SSL*> connection)
         sketchTableCounter_ += recvNumber;
         multiThreadEditSketchTableMutex_.unlock();
 
-        if (!keySecurityChannel_.send(connection, (char*)key, recvNumber * CHUNK_ENCRYPT_KEY_SIZE)) {
+        if (!keySecurityChannel_->send(connection, (char*)key, recvNumber * CHUNK_ENCRYPT_KEY_SIZE)) {
             cerr << "KeyServer : error send back chunk key to client" << endl;
-            socket.finish();
             multiThreadEditSketchTableMutex_.lock();
             for (int i = 0; i < sketchTableWidith_; i++) {
                 sketchTable_[0][i] = 0;

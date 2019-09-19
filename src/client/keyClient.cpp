@@ -138,13 +138,13 @@ void keyClient::run()
 bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber)
 {
 
-    if (!keySecurityChannel->send(sslConnection_, (char*)batchHashList, 4 * sizeof(uint32_t) * batchNumber)) {
+    if (!keySecurityChannel_->send(sslConnection_, (char*)batchHashList, 4 * sizeof(uint32_t) * batchNumber)) {
         cerr << "keyClient: send socket error" << endl;
         return false;
     }
     char recvBuffer[CHUNK_ENCRYPT_KEY_SIZE * batchNumber];
     int recvSize;
-    if (!keySecurityChannel->recv(sslConnection_, recvBuffer, recvSize)) {
+    if (!keySecurityChannel_->recv(sslConnection_, recvBuffer, recvSize)) {
         cerr << "keyClient: recv socket error" << endl;
         return false;
     }
