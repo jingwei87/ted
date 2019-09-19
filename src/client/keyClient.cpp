@@ -51,6 +51,7 @@ void keyClient::run()
 {
     gettimeofday(&timestartKey, NULL);
     vector<Data_t> batchList;
+    batchList.reserve(keyBatchSize_);
     int batchNumber = 0;
     u_char chunkKey[CHUNK_ENCRYPT_KEY_SIZE * keyBatchSize_];
     int singleChunkHashSize = 4 * sizeof(int);
