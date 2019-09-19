@@ -10,7 +10,7 @@
 		"_segmentSize": 0
 	},
 	"KeyServerConfig": {
-		"_keyBatchSize": 2000,
+		"_keyBatchSize": 3000,
 		"_keyServerNumber": 1,
 		"_keyServerIP": [
 			"127.0.0.1"
