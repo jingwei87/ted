@@ -33,7 +33,7 @@ keyClient::keyClient(Sender* senderObjTemp)
     cryptoObj_ = new CryptoPrimitive();
     keyBatchSize_ = (int)config.getKeyBatchSize();
     keySecurityChannel_ = new ssl(config.getKeyServerIP(), config.getKeyServerPort(), CLIENTSIDE);
-    sslConnection_ = keySecurityChannel_->sslConnect();
+    sslConnection_ = keySecurityChannel_->sslConnect().second;
     sendShortHashMaskBitNumber = config.getSendShortHashMaskBitNumber();
 }
 

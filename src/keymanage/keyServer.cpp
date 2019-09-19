@@ -50,7 +50,7 @@ keyServer::~keyServer()
     delete keySecurityChannel_;
 }
 
-void keyServer::runKeyGen(std::pair<int, SSL*> connection)
+void keyServer::runKeyGen(SSL* connection)
 {
     char hash[config.getKeyBatchSize() * 4 * sizeof(uint32_t)];
     u_int hashNumber[4];
