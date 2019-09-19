@@ -1,8 +1,6 @@
 #ifndef GENERALDEDUPSYSTEM_SSL_HPP
 #define GENERALDEDUPSYSTEM_SSL_HPP
 
-#include <iostream>
-
 #include "openssl/bio.h"
 #include "openssl/err.h"
 #include "openssl/ssl.h"
@@ -19,6 +17,8 @@
 #define CLCRT "key/clientcert.pem"
 #define CLKEY "key/client.key"
 #define CACRT "key/cacert.pem"
+
+using namespace std;
 
 class ssl {
 private:
