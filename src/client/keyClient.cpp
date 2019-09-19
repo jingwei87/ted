@@ -103,9 +103,6 @@ void keyClient::run()
                     memcpy(newKeyBuffer, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
                     memcpy(newKeyBuffer + CHUNK_HASH_SIZE, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
                     SHA256(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.encryptKey);
-                    // cerr << "KeyClient : chunk hash & key for chunk " << i << " = " << endl;
-                    // PRINT_BYTE_ARRAY_KEY_CLIENT(stderr, chunkHash + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
-                    // PRINT_BYTE_ARRAY_KEY_CLIENT(stderr, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
                     if (encodeChunk(batchList[i])) {
                         insertMQToSender(batchList[i]);
                     } else {
@@ -121,9 +118,9 @@ void keyClient::run()
         }
         if (JobDoneFlag) {
             if (!senderObj_->editJobDoneFlag()) {
-                cerr << "KeyClient : error to set job done flag for encoder" << endl;
+                cerr << "KeyClient : error to set job done flag for sender" << endl;
             } else {
-                cerr << "KeyClient : key exchange thread job done, set job done flag for encoder done, exit now" << endl;
+                cerr << "KeyClient : key exchange thread job done, exit now" << endl;
             }
             break;
         }

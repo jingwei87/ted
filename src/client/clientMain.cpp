@@ -43,8 +43,6 @@ int main(int argv, char* argc[])
         recvDecodeObj = new RecvDecode(fileName);
         retrieverObj = new Retriever(fileName, recvDecodeObj);
 
-        gettimeofday(&timestart, NULL);
-
         for (int i = 0; i < config.getRecvDecodeThreadLimit(); i++) {
             th = new boost::thread(attrs, boost::bind(&RecvDecode::run, recvDecodeObj));
             thList.push_back(th);
@@ -59,7 +57,6 @@ int main(int argv, char* argc[])
         string inputFile(argc[2]);
         chunkerObj = new Chunker(inputFile, keyClientObj);
 
-        gettimeofday(&timestart, NULL);
         //start chunking thread
         th = new boost::thread(attrs, boost::bind(&Chunker::chunking, chunkerObj));
         thList.push_back(th);
@@ -79,6 +76,8 @@ int main(int argv, char* argc[])
         usage();
         return 0;
     }
+
+    gettimeofday(&timestart, NULL);
 
     for (auto it : thList) {
         it->join();
