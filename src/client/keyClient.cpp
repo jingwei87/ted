@@ -75,24 +75,19 @@ void keyClient::run()
             JobDoneFlag = true;
         }
         if (extractMQFromChunker(tempChunk)) {
-            if (BREAK_DOWN_DEFINE) {
-                gettimeofday(&timestartKey, NULL);
-            }
             if (tempChunk.dataType == DATA_TYPE_RECIPE) {
                 insertMQToSender(tempChunk);
                 continue;
             }
+            if (BREAK_DOWN_DEFINE) {
+                gettimeofday(&timestartKey, NULL);
+            }
             batchList.push_back(tempChunk);
-
             char hash[16];
-            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 1, (void*)hash);
-            memcpy(&hashInt[0], hash, sizeof(int));
-            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 2, (void*)hash);
-            memcpy(&hashInt[1], hash, sizeof(int));
-            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 3, (void*)hash);
-            memcpy(&hashInt[2], hash, sizeof(int));
-            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 4, (void*)hash);
-            memcpy(&hashInt[3], hash, sizeof(int));
+            MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 0, (void*)hash);
+            for (int i = 0; i < 4; i++) {
+                memcpy(&hashInt[i], hash + i * sizeof(int), sizeof(int));
+            }
             for (int i = 0; i < 4; i++) {
                 hashInt[i] &= maskInt;
                 memcpy(chunkHash + batchNumber * singleChunkHashSize + i * sizeof(int), &hashInt[i], sizeof(int));
