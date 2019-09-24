@@ -6,6 +6,8 @@ extern Configure config;
 
 struct timeval timestartKey;
 struct timeval timeendKey;
+struct timeval timestartKey_Insert;
+struct timeval timeendKey_Insert;
 
 void PRINT_BYTE_ARRAY_KEY_CLIENT(
     FILE* file, void* mem, uint32_t len)
@@ -49,7 +51,10 @@ keyClient::~keyClient()
 
 void keyClient::run()
 {
-    gettimeofday(&timestartKey, NULL);
+    double keyGenTime = 0;
+    double insertTime = 0;
+    long diff;
+    double second;
     vector<Data_t> batchList;
     batchList.reserve(keyBatchSize_);
     int batchNumber = 0;
@@ -70,6 +75,9 @@ void keyClient::run()
             JobDoneFlag = true;
         }
         if (extractMQFromChunker(tempChunk)) {
+            if (BREAK_DOWN_DEFINE) {
+                gettimeofday(&timestartKey, NULL);
+            }
             if (tempChunk.dataType == DATA_TYPE_RECIPE) {
                 insertMQToSender(tempChunk);
                 continue;
@@ -90,8 +98,17 @@ void keyClient::run()
                 memcpy(chunkHash + batchNumber * singleChunkHashSize + i * sizeof(int), &hashInt[i], sizeof(int));
             }
             batchNumber++;
+            if (BREAK_DOWN_DEFINE) {
+                gettimeofday(&timeendKey, NULL);
+                diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+                second = diff / 1000000.0;
+                keyGenTime += second;
+            }
         }
         if (batchNumber == keyBatchSize_ || JobDoneFlag) {
+            if (BREAK_DOWN_DEFINE) {
+                gettimeofday(&timestartKey, NULL);
+            }
             int batchedKeySize = 0;
 
             if (!keyExchange(chunkHash, batchNumber, chunkKey, batchedKeySize)) {
@@ -104,7 +121,16 @@ void keyClient::run()
                     memcpy(newKeyBuffer + CHUNK_HASH_SIZE, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
                     SHA256(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.encryptKey);
                     if (encodeChunk(batchList[i])) {
+                        if (BREAK_DOWN_DEFINE) {
+                            gettimeofday(&timestartKey_Insert, NULL);
+                        }
                         insertMQToSender(batchList[i]);
+                        if (BREAK_DOWN_DEFINE) {
+                            gettimeofday(&timeendKey_Insert, NULL);
+                            diff = 1000000 * (timeendKey_Insert.tv_sec - timestartKey_Insert.tv_sec) + timeendKey_Insert.tv_usec - timestartKey_Insert.tv_usec;
+                            second = diff / 1000000.0;
+                            insertTime += second;
+                        }
                     } else {
                         cerr << "KeyClient : encode chunk error, exiting" << endl;
                         return;
@@ -114,6 +140,12 @@ void keyClient::run()
                 memset(chunkHash, 0, CHUNK_HASH_SIZE * keyBatchSize_);
                 memset(chunkKey, 0, CHUNK_ENCRYPT_KEY_SIZE * keyBatchSize_);
                 batchNumber = 0;
+            }
+            if (BREAK_DOWN_DEFINE) {
+                gettimeofday(&timeendKey, NULL);
+                diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+                second = diff / 1000000.0;
+                keyGenTime += second;
             }
         }
         if (JobDoneFlag) {
@@ -125,11 +157,9 @@ void keyClient::run()
             break;
         }
     }
-
-    gettimeofday(&timeendKey, NULL);
-    long diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
-    double second = diff / 1000000.0;
-    printf("Key client thread work time is %ld us = %lf s\n", diff, second);
+    if (BREAK_DOWN_DEFINE) {
+        cout << "Key client thread work time is " < < keyGenTime - insertTime < < " s" << endl;
+    }
     return;
 }
 
