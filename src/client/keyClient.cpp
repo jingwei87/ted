@@ -153,7 +153,7 @@ void keyClient::run()
         }
     }
     if (BREAK_DOWN_DEFINE) {
-        cout << "Key client thread work time is " < < keyGenTime - insertTime < < " s" << endl;
+        cout << "Key client thread work time is " << keyGenTime - insertTime << " s" << endl;
     }
     return;
 }
