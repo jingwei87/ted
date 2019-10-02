@@ -94,7 +94,7 @@ bool Socket::Send(u_char* buffer, int sendSize)
 {
     int sentSize = 0;
     int len;
-    size_t s = write(this->fd_, (char*)&sendSize, sizeof(int));
+    int s = write(this->fd_, (char*)&sendSize, sizeof(int));
     if (s < 0) {
         cerr << "Socket : send errno: " << errno << endl;
         this->finish();
@@ -117,8 +117,8 @@ bool Socket::Send(u_char* buffer, int sendSize)
 
 bool Socket::Recv(u_char* buffer, int& recvSize)
 {
-    size_t recvedSize = 0;
-    size_t readByteCount;
+    int recvedSize = 0;
+    int readByteCount;
     readByteCount = read(this->fd_, (char*)&recvSize, sizeof(int));
     if (readByteCount == 0) {
         this->finish();
