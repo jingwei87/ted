@@ -1,3 +1,4 @@
+./clean.sh
 cd ./lib/openssl
 ./config
 JOBS := $(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)
@@ -11,7 +12,6 @@ fi
 if [ ! -d "build" ]; then
  mkdir build
 fi
-./clean.sh
 cd ./build
 rm -rf ./*
 cmake ..
