@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define BREAK_DOWN_DEFINE 1
+#define BREAK_DOWN_DEFINE 0
 #define CHUNKER_FIX_SIZE_TYPE 0 //macro for the type of fixed-size chunker
 #define CHUNKER_VAR_SIZE_TYPE 1 //macro for the type of variable-size chunker
 #define MIN_CHUNK_SIZE 4096 //macro for the min size of variable-size chunker
