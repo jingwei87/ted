@@ -13,7 +13,7 @@
 		"_keyBatchSize": 3000,
 		"_keyServerNumber": 1,
 		"_keyServerIP": [
-			"127.0.0.1"
+			"192.168.10.103"
 		],
 		"_keyServerPort": [
 			6666
@@ -25,7 +25,7 @@
 	"SPConfig": {
 		"_storageServerNumber": 1,
 		"_storageServerIP": [
-			"127.0.0.1"
+			"192.168.10.103"
 		],
 		"_storageServerPort": [
 			6668
