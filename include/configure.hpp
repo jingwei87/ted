@@ -10,6 +10,7 @@ using namespace std;
 #define BREAK_DOWN_DEFINE 0
 #define CHUNKER_FIX_SIZE_TYPE 0 //macro for the type of fixed-size chunker
 #define CHUNKER_VAR_SIZE_TYPE 1 //macro for the type of variable-size chunker
+#define CHUNKER_TRACE_DRIVEN_TYPE 2 //macro for the type of variable-size chunker
 #define MIN_CHUNK_SIZE 4096 //macro for the min size of variable-size chunker
 #define AVG_CHUNK_SIZE 8192 //macro for the average size of variable-size chunker
 #define MAX_CHUNK_SIZE 16384 //macro for the max size of variable-size chunker
