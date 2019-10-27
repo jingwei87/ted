@@ -30,7 +30,7 @@ void PRINT_BYTE_ARRAY_KEY_CLIENT(
 
 keyClient::keyClient(Sender* senderObjTemp)
 {
-    inputMQ_ = new messageQueue<Data_t>(config.get_Data_t_MQSize());
+    inputMQ_ = new messageQueue<Data_t>;
     senderObj_ = senderObjTemp;
     cryptoObj_ = new CryptoPrimitive();
     keyBatchSize_ = (int)config.getKeyBatchSize();

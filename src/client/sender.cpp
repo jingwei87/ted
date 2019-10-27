@@ -29,7 +29,7 @@ void PRINT_BYTE_ARRAY_SENDER(
 
 Sender::Sender()
 {
-    inputMQ_ = new messageQueue<Data_t>(config.get_Data_t_MQSize());
+    inputMQ_ = new messageQueue<Data_t>;
     socket_.init(CLIENT_TCP, config.getStorageServerIP(), config.getStorageServerPort());
     cryptoObj_ = new CryptoPrimitive();
     clientID_ = config.getClientID();
@@ -195,7 +195,7 @@ void Sender::run()
                 gettimeofday(&timestartSender, NULL);
             }
             if (this->sendChunkList(sendChunkBatchBuffer, currentSendChunkBatchBufferSize, currentChunkNumber, status)) {
-                // cout << "Sender : sent " << setbase(10) << currentChunkNumber << " chunk" << endl;
+                cout << "Sender : sent " << setbase(10) << currentChunkNumber << " chunk" << endl;
                 currentSendChunkBatchBufferSize = sizeof(NetworkHeadStruct_t) + sizeof(int);
                 memset(sendChunkBatchBuffer, 0, sizeof(NetworkHeadStruct_t) + sizeof(int) + sizeof(char) * sendBatchSize * (CHUNK_HASH_SIZE + MAX_CHUNK_SIZE + sizeof(int)));
                 currentChunkNumber = 0;
