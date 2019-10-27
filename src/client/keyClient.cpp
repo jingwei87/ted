@@ -120,7 +120,7 @@ void keyClient::run()
                             gettimeofday(&timestartKey_Insert, NULL);
                         }
                         insertMQToSender(batchList[i]);
-                        cout << " key for " << batchList[i].chunk.ID << " done" << endl;
+                        // cout << " key for " << batchList[i].chunk.ID << " done" << endl;
                         if (BREAK_DOWN_DEFINE) {
                             gettimeofday(&timeendKey_Insert, NULL);
                             diff = 1000000 * (timeendKey_Insert.tv_sec - timestartKey_Insert.tv_sec) + timeendKey_Insert.tv_usec - timestartKey_Insert.tv_usec;

@@ -47,7 +47,7 @@ void DataSR::run(Socket socket)
     while (true) {
         // memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
         // memset(recvBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
-        cout << "DataSR : waiting for recv" << endl;
+        // cout << "DataSR : waiting for recv" << endl;
         if (!socket.Recv(recvBuffer, recvSize)) {
             cerr << "DataSR : client closed socket connect, fd = " << socket.fd_ << " Thread exit now" << endl;
             // printf("server save all chunk time is %lf s\n", totalSaveChunkTime);
