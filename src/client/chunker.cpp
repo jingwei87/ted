@@ -166,8 +166,6 @@ void Chunker::ChunkerInit(string path)
         if (ReadSize % avgChunkSize != 0) {
             cerr << "Chunker : Setting fixed size chunking error : ReadSize not compat with average chunk size" << endl;
         }
-    } else if (ChunkerType == CHUNKER_TRACE_DRIVEN_TYPE) {
-        maxChunkSize = (int)config.getMaxChunkSize();
     } else if (ChunkerType == CHUNKER_FIX_SIZE_TYPE) {
 
         avgChunkSize = (int)config.getAverageChunkSize();
@@ -191,7 +189,7 @@ void Chunker::ChunkerInit(string path)
         }
     } else if (ChunkerType == CHUNKER_TRACE_DRIVEN_TYPE) {
         maxChunkSize = (int)config.getMaxChunkSize();
-        chunkBuffer = new u_char[avgChunkSize];
+        chunkBuffer = new u_char[maxChunkSize + 6];
     }
 }
 
@@ -318,35 +316,46 @@ void Chunker::fixSizeChunking()
 void Chunker::traceDrivenChunking()
 {
     char* readFlag;
-    char* item;
-    u_char chunkFp[7];
-    memset(chunkFp, 0, 7);
     double chunkTime = 0;
     long diff;
     double second;
     std::ifstream& fin = getChunkingFile();
     uint64_t chunkIDCounter = 0;
-    memset(chunkBuffer, 0, sizeof(char) * maxChunkSize);
     uint64_t fileSize = 0;
     u_char hash[CHUNK_HASH_SIZE];
     char readLineBuffer[256];
+    string readLineStr;
     /*start chunking*/
+    getline(fin, readLineStr);
     while (true) {
-        getline(fin, readLineBuffer);
+        getline(fin, readLineStr);
+        if (fin.eof()) {
+            break;
+        }
+        memset(readLineBuffer, 0, 256);
+        memcpy(readLineBuffer, (char*)readLineStr.c_str(),readLineStr.length());
+        // cout << readLineBuffer << endl;
         if (BREAK_DOWN_DEFINE) {
             gettimeofday(&timestartChunker, NULL);
         }
+        u_char chunkFp[7];
+        memset(chunkFp, 0, 7);
+        char* item;
         item = strtok(readLineBuffer, ":\t\n ");
         for (int index = 0; item != NULL && index < 6; index++) {
             chunkFp[index] = strtol(item, NULL, 16);
             item = strtok(NULL, ":\t\n");
         }
         chunkFp[6] = '\0';
-
         /* increment size */
-        int size = atoi((const char*)item);
+        // cout << item << endl;
+        auto size = atoi(item);
         int copySize = 0;
-        memset(chunkBuffer, 0, sizeof(char) * maxChunkSize);
+        memset(chunkBuffer, 0, sizeof(char) * maxChunkSize + 6);
+        // cout << "Chunk : " << chunkIDCounter << size <<endl;
+        if(size > maxChunkSize) {
+            continue;
+        }
         while (copySize < size) {
             memcpy(chunkBuffer + copySize, chunkFp, 6);
             copySize += 6;
@@ -369,9 +378,6 @@ void Chunker::traceDrivenChunking()
         insertMQToKeyClient(tempChunk);
         chunkIDCounter++;
         fileSize += size;
-        if (fin.eof()) {
-            break;
-        }
     }
     recipe.recipe.fileRecipeHead.totalChunkNumber = chunkIDCounter;
     recipe.recipe.keyRecipeHead.totalChunkKeyNumber = chunkIDCounter;
@@ -382,7 +388,7 @@ void Chunker::traceDrivenChunking()
     if (setJobDoneFlag() == false) {
         cerr << "Chunker : set chunking done flag error" << endl;
     }
-    cout << "Chunker : Fixed chunking over:\nTotal file size = " << recipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << recipe.recipe.fileRecipeHead.totalChunkNumber << endl;
+    cout << "Chunker : trace gen over:\nTotal file size = " << recipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << recipe.recipe.fileRecipeHead.totalChunkNumber << endl;
     if (BREAK_DOWN_DEFINE) {
         cout << "Chunker : total work time is" << chunkTime << " s" << endl;
     }

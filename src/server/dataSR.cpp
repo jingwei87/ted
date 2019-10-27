@@ -45,7 +45,9 @@ void DataSR::run(Socket socket)
     Recipe_t restoredFileRecipe;
     uint32_t totalRestoredChunkNumber = 0;
     while (true) {
-
+        // memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
+        // memset(recvBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
+        cout << "DataSR : waiting for recv" << endl;
         if (!socket.Recv(recvBuffer, recvSize)) {
             cerr << "DataSR : client closed socket connect, fd = " << socket.fd_ << " Thread exit now" << endl;
             // printf("server save all chunk time is %lf s\n", totalSaveChunkTime);
@@ -66,6 +68,7 @@ void DataSR::run(Socket socket)
                 break;
             }
             case CLIENT_UPLOAD_RECIPE: {
+                cout << "DataSR : recv file recipe" << endl;
                 Recipe_t tempRecipeHead;
                 memcpy(&tempRecipeHead, recvBuffer + sizeof(NetworkHeadStruct_t), sizeof(Recipe_t));
                 int currentRecipeEntryNumber = (netBody.dataSize - sizeof(Recipe_t)) / sizeof(RecipeEntry_t);

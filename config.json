@@ -13,7 +13,7 @@
 		"_keyBatchSize": 3000,
 		"_keyServerNumber": 1,
 		"_keyServerIP": [
-			"192.168.10.103"
+			"127.0.0.1"
 		],
 		"_keyServerPort": [
 			6666
@@ -25,7 +25,7 @@
 	"SPConfig": {
 		"_storageServerNumber": 1,
 		"_storageServerIP": [
-			"192.168.10.103"
+			"127.0.0.1"
 		],
 		"_storageServerPort": [
 			6668
@@ -33,7 +33,7 @@
 		"_maxContainerSize": 8388608
 	},
 	"messageQueue": {
-		"_Data_t_MQSize": 10000,
+		"_Data_t_MQSize": 5000,
 		"_RetrieverData_t_MQSize": 10000,
 		"_StorageData_t_MQSize": 10000
 	},

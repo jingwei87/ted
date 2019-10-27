@@ -142,6 +142,8 @@ void keyServer::runKeyGen(SSL* connection)
             T_ = 1;
             multiThreadEditTMutex_.unlock();
             return;
+        } else {
+            cout << "KeyServer : send back " << recvNumber << " chunks key done" << endl;
         }
         if (sketchTableCounter_ >= optimalSolverComputeItemNumberThreshold_) {
             multiThreadEditTMutex_.lock();
