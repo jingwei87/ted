@@ -47,7 +47,9 @@ private:
 
     void varSizeChunking();
     
-    void traceDrivenChunking();
+    void traceDrivenChunkingFSL();
+
+    void traceDrivenChunkingUBC();
 
     void ChunkerInit(string path);
 
