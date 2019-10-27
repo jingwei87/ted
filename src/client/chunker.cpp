@@ -187,9 +187,12 @@ void Chunker::ChunkerInit(string path)
         if (ReadSize % avgChunkSize != 0) {
             cerr << "Chunker : Setting fixed size chunking error : ReadSize not compat with average chunk size" << endl;
         }
-    } else if (ChunkerType == CHUNKER_TRACE_DRIVEN_TYPE) {
+    } else if (ChunkerType == CHUNKER_TRACE_DRIVEN_TYPE_FSL) {
         maxChunkSize = (int)config.getMaxChunkSize();
         chunkBuffer = new u_char[maxChunkSize + 6];
+    } else if (ChunkerType == CHUNKER_TRACE_DRIVEN_TYPE_UBC) {
+        maxChunkSize = (int)config.getMaxChunkSize();
+        chunkBuffer = new u_char[maxChunkSize + 5];
     }
 }
 
@@ -204,8 +207,12 @@ bool Chunker::chunking()
         varSizeChunking();
     }
 
-    if (ChunkerType == CHUNKER_TRACE_DRIVEN_TYPE) {
-        traceDrivenChunking();
+    if (ChunkerType == CHUNKER_TRACE_DRIVEN_TYPE_FSL) {
+        traceDrivenChunkingFSL();
+    }
+
+    if (ChunkerType == CHUNKER_TRACE_DRIVEN_TYPE_UBC) {
+        traceDrivenChunkingUBC();
     }
 
     return true;
@@ -313,7 +320,7 @@ void Chunker::fixSizeChunking()
     }
 }
 
-void Chunker::traceDrivenChunking()
+void Chunker::traceDrivenChunkingFSL()
 {
     char* readFlag;
     double chunkTime = 0;
@@ -359,6 +366,87 @@ void Chunker::traceDrivenChunking()
         while (copySize < size) {
             memcpy(chunkBuffer + copySize, chunkFp, 6);
             copySize += 6;
+        }
+        Data_t tempChunk;
+        if (!cryptoObj->generateHash(chunkBuffer, size, hash)) {
+            cerr << "Chunker : trace driven chunking: compute hash error" << endl;
+        }
+        tempChunk.chunk.ID = chunkIDCounter;
+        tempChunk.chunk.logicDataSize = size;
+        memcpy(tempChunk.chunk.logicData, chunkBuffer, size);
+        memcpy(tempChunk.chunk.chunkHash, hash, CHUNK_HASH_SIZE);
+        tempChunk.dataType = DATA_TYPE_CHUNK;
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timeendChunker, NULL);
+            diff = 1000000 * (timeendChunker.tv_sec - timestartChunker.tv_sec) + timeendChunker.tv_usec - timestartChunker.tv_usec;
+            second = diff / 1000000.0;
+            chunkTime += second;
+        }
+        insertMQToKeyClient(tempChunk);
+        chunkIDCounter++;
+        fileSize += size;
+    }
+    recipe.recipe.fileRecipeHead.totalChunkNumber = chunkIDCounter;
+    recipe.recipe.keyRecipeHead.totalChunkKeyNumber = chunkIDCounter;
+    recipe.recipe.fileRecipeHead.fileSize = fileSize;
+    recipe.recipe.keyRecipeHead.fileSize = recipe.recipe.fileRecipeHead.fileSize;
+    recipe.dataType = DATA_TYPE_RECIPE;
+    insertMQToKeyClient(recipe);
+    if (setJobDoneFlag() == false) {
+        cerr << "Chunker : set chunking done flag error" << endl;
+    }
+    cout << "Chunker : trace gen over:\nTotal file size = " << recipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << recipe.recipe.fileRecipeHead.totalChunkNumber << endl;
+    if (BREAK_DOWN_DEFINE) {
+        cout << "Chunker : total work time is" << chunkTime << " s" << endl;
+    }
+}
+
+void Chunker::traceDrivenChunkingUBC()
+{
+    char* readFlag;
+    double chunkTime = 0;
+    long diff;
+    double second;
+    std::ifstream& fin = getChunkingFile();
+    uint64_t chunkIDCounter = 0;
+    uint64_t fileSize = 0;
+    u_char hash[CHUNK_HASH_SIZE];
+    char readLineBuffer[256];
+    string readLineStr;
+    /*start chunking*/
+    getline(fin, readLineStr);
+    while (true) {
+        getline(fin, readLineStr);
+        if (fin.eof()) {
+            break;
+        }
+        memset(readLineBuffer, 0, 256);
+        memcpy(readLineBuffer, (char*)readLineStr.c_str(),readLineStr.length());
+        // cout << readLineBuffer << endl;
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timestartChunker, NULL);
+        }
+        u_char chunkFp[6];
+        memset(chunkFp, 0, 6);
+        char* item;
+        item = strtok(readLineBuffer, ":\t\n ");
+        for (int index = 0; item != NULL && index < 5; index++) {
+            chunkFp[index] = strtol(item, NULL, 16);
+            item = strtok(NULL, ":\t\n");
+        }
+        chunkFp[5] = '\0';
+        /* increment size */
+        // cout << item << endl;
+        auto size = atoi(item);
+        int copySize = 0;
+        memset(chunkBuffer, 0, sizeof(char) * maxChunkSize + 5);
+        // cout << "Chunk : " << chunkIDCounter << size <<endl;
+        if(size > maxChunkSize) {
+            continue;
+        }
+        while (copySize < size) {
+            memcpy(chunkBuffer + copySize, chunkFp, 5);
+            copySize += 5;
         }
         Data_t tempChunk;
         if (!cryptoObj->generateHash(chunkBuffer, size, hash)) {
