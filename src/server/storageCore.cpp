@@ -107,7 +107,7 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
             }
         }
     }
-    cout << "Save " << chunkNumber << " chunks done" << endl;
+    // cout << "Save " << chunkNumber << " chunks done" << endl;
     // cerr << "DedupCore : recv " << setbase(10) << chunkNumber << " chunk from client" << endl;
     // gettimeofday(&timeendStorage, NULL);
     // long diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
