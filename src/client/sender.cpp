@@ -87,19 +87,14 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
 
 bool Sender::sendChunkList(char* requestBufferIn, int sendBufferSize, int sendChunkNumber, int& status)
 {
-    NetworkHeadStruct_t requestBody, respondBody;
+    NetworkHeadStruct_t requestBody;
     requestBody.clientID = clientID_;
     requestBody.messageType = CLIENT_UPLOAD_CHUNK;
-    respondBody.clientID = 0;
-    respondBody.messageType = 0;
-    respondBody.dataSize = 0;
     u_char requestBuffer[NETWORK_MESSAGE_DATA_SIZE];
     int sendSize = sizeof(NetworkHeadStruct_t) + sizeof(int) + sendBufferSize;
     memcpy(requestBufferIn + sizeof(NetworkHeadStruct_t), &sendChunkNumber, sizeof(int));
     requestBody.dataSize = sendBufferSize + sizeof(int);
     memcpy(requestBufferIn, &requestBody, sizeof(NetworkHeadStruct_t));
-    u_char respondBuffer[sizeof(NetworkHeadStruct_t)];
-    int recvSize = 0;
     if (!socket_.Send((u_char*)requestBufferIn, sendSize)) {
         return false;
     } else {
@@ -149,7 +144,8 @@ void Sender::run()
     Recipe_t fileRecipe;
     int sendBatchSize = config.getSendChunkBatchSize();
     int status;
-    char* sendChunkBatchBuffer = (char*)malloc(sizeof(NetworkHeadStruct_t) + sizeof(int) + sizeof(char) * sendBatchSize * (CHUNK_HASH_SIZE + MAX_CHUNK_SIZE + sizeof(int)));
+    // char* sendChunkBatchBuffer = (char*)malloc(sizeof(NetworkHeadStruct_t) + sizeof(int) + sizeof(char) * sendBatchSize * (CHUNK_HASH_SIZE + MAX_CHUNK_SIZE + sizeof(int)));
+    char* sendChunkBatchBuffer = (char*)malloc(sizeof(NetworkHeadStruct_t) + sizeof(int) + sizeof(Chunk_t) * sendBatchSize);
     bool jobDoneFlag = false;
     int currentChunkNumber = 0;
     int currentSendRecipeNumber = 0;
@@ -169,13 +165,15 @@ void Sender::run()
                 continue;
             } else {
 
-                memcpy(sendChunkBatchBuffer + currentSendChunkBatchBufferSize, tempChunk.chunk.chunkHash, CHUNK_HASH_SIZE);
-                currentSendChunkBatchBufferSize += CHUNK_HASH_SIZE;
-                memcpy(sendChunkBatchBuffer + currentSendChunkBatchBufferSize, &tempChunk.chunk.logicDataSize, sizeof(int));
-                currentSendChunkBatchBufferSize += sizeof(int);
-                memcpy(sendChunkBatchBuffer + currentSendChunkBatchBufferSize, tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize);
-                currentSendChunkBatchBufferSize += tempChunk.chunk.logicDataSize;
+                // memcpy(sendChunkBatchBuffer + currentSendChunkBatchBufferSize, tempChunk.chunk.chunkHash, CHUNK_HASH_SIZE);
+                // currentSendChunkBatchBufferSize += CHUNK_HASH_SIZE;
+                // memcpy(sendChunkBatchBuffer + currentSendChunkBatchBufferSize, &tempChunk.chunk.logicDataSize, sizeof(int));
+                // currentSendChunkBatchBufferSize += sizeof(int);
+                // memcpy(sendChunkBatchBuffer + currentSendChunkBatchBufferSize, tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize);
+                // currentSendChunkBatchBufferSize += tempChunk.chunk.logicDataSize;
+                memcpy(sendChunkBatchBuffer + sizeof(NetworkHeadStruct_t) + sizeof(int) + currentChunkNumber * sizeof(Chunk_t), &tempChunk.chunk, sizeof(Chunk_t));
                 currentChunkNumber++;
+                currentSendChunkBatchBufferSize += sizeof(Chunk_t);
 
                 RecipeEntry_t newRecipeEntry;
                 newRecipeEntry.chunkID = tempChunk.chunk.ID;
@@ -217,6 +215,7 @@ void Sender::run()
     if (BREAK_DOWN_DEFINE) {
         gettimeofday(&timestartSenderRecipe, NULL);
     }
+    cout << "Sender : start send file recipes" << endl;
     if (!this->sendRecipe(fileRecipe, recipeList, status)) {
         cout << "Sender : send recipe list error, upload fail " << endl;
         free(sendChunkBatchBuffer);

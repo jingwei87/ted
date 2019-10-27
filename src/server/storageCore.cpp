@@ -75,23 +75,39 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
     int readSize = sizeof(int);
     u_char hash[CHUNK_HASH_SIZE];
     string tmpdata;
+    // for (int i = 0; i < chunkNumber; i++) {
+    //     int currentChunkSize;
+    //     string originHash(data + readSize, CHUNK_HASH_SIZE);
+    //     // cout << "save chunk hash" << endl;
+    //     // PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, &originHash[0], CHUNK_HASH_SIZE);
+    //     readSize += CHUNK_HASH_SIZE;
+    //     memcpy(&currentChunkSize, data + readSize, sizeof(int));
+    //     readSize += sizeof(int);
+    //     if (fp2ChunkDB.query(originHash, tmpdata)) {
+    //         continue;
+    //     } else {
+    //         if (!saveChunk(originHash, data + readSize, currentChunkSize)) {
+    //             return false;
+    //         }
+    //     }
+    //     readSize += currentChunkSize;
+    // }
+
     for (int i = 0; i < chunkNumber; i++) {
         int currentChunkSize;
-        string originHash(data + readSize, CHUNK_HASH_SIZE);
-        // cout << "save chunk hash" << endl;
-        // PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, &originHash[0], CHUNK_HASH_SIZE);
-        readSize += CHUNK_HASH_SIZE;
-        memcpy(&currentChunkSize, data + readSize, sizeof(int));
-        readSize += sizeof(int);
+        Chunk_t newChunk;
+        memcpy(&newChunk, data + sizeof(int) + i * sizeof(Chunk_t), sizeof(Chunk_t));
+        string originHash((char*)newChunk.chunkHash, CHUNK_HASH_SIZE);
+        cout << "chunk " << newChunk.ID << "\t" << newChunk.logicDataSize << endl;
         if (fp2ChunkDB.query(originHash, tmpdata)) {
             continue;
         } else {
-            if (!saveChunk(originHash, data + readSize, currentChunkSize)) {
+            if (!saveChunk(originHash, (char*)newChunk.logicData, newChunk.logicDataSize)) {
                 return false;
             }
         }
-        readSize += currentChunkSize;
     }
+    cout << "Save " << chunkNumber << " chunks done" << endl;
     // cerr << "DedupCore : recv " << setbase(10) << chunkNumber << " chunk from client" << endl;
     // gettimeofday(&timeendStorage, NULL);
     // long diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
@@ -311,6 +327,7 @@ bool StorageCore::writeContainer(keyForChunkHashDB_t& key, char* data)
         currentContainer_.saveTOFile(writeContainerName);
         next_permutation(lastContainerFileName_.begin(), lastContainerFileName_.end());
         currentContainer_.used_ = 0;
+        cout << "key.length = " << key.length << " data size " << strlen(data) << endl; 
         memcpy(&currentContainer_.body_[currentContainer_.used_], data, key.length);
         memcpy(key.containerName, &lastContainerFileName_[0], lastContainerFileName_.length());
     }

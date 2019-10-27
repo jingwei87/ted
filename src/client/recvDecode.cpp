@@ -105,7 +105,7 @@ bool RecvDecode::recvChunks(ChunkList_t& recvChunk, int& chunkNumber, uint32_t& 
     request.clientID = clientID_;
     int sendSize = sizeof(NetworkHeadStruct_t) + FILE_NAME_HASH_SIZE + 2 * sizeof(uint32_t);
     u_char requestBuffer[sendSize];
-    u_char respondBuffer[NETWORK_RESPOND_BUFFER_MAX_SIZE];
+    u_char respondBuffer[NETWORK_MESSAGE_DATA_SIZE];
     int recvSize;
     memcpy(requestBuffer, &request, sizeof(NetworkHeadStruct_t));
     memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), fileNameHash_, FILE_NAME_HASH_SIZE);
@@ -171,7 +171,7 @@ void RecvDecode::run()
     request.clientID = clientID_;
     int sendSize = sizeof(NetworkHeadStruct_t) + FILE_NAME_HASH_SIZE;
     u_char requestBuffer[sendSize];
-    u_char respondBuffer[NETWORK_RESPOND_BUFFER_MAX_SIZE];
+    u_char respondBuffer[NETWORK_MESSAGE_DATA_SIZE];
     int recvSize;
 
     memcpy(requestBuffer, &request, sizeof(NetworkHeadStruct_t));

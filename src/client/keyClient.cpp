@@ -120,6 +120,7 @@ void keyClient::run()
                             gettimeofday(&timestartKey_Insert, NULL);
                         }
                         insertMQToSender(batchList[i]);
+                        cout << " key for " << batchList[i].chunk.ID << " done" << endl;
                         if (BREAK_DOWN_DEFINE) {
                             gettimeofday(&timeendKey_Insert, NULL);
                             diff = 1000000 * (timeendKey_Insert.tv_sec - timestartKey_Insert.tv_sec) + timeendKey_Insert.tv_usec - timestartKey_Insert.tv_usec;
@@ -132,7 +133,7 @@ void keyClient::run()
                     }
                 }
                 batchList.clear();
-                memset(chunkHash, 0, CHUNK_HASH_SIZE * keyBatchSize_);
+                memset(chunkHash, 0, singleChunkHashSize * keyBatchSize_);
                 memset(chunkKey, 0, CHUNK_ENCRYPT_KEY_SIZE * keyBatchSize_);
                 batchNumber = 0;
             }
