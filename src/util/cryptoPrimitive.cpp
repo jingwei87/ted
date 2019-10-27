@@ -184,18 +184,21 @@ bool CryptoPrimitive::encryptWithKey(u_char* dataBuffer, const int dataSize, u_c
     if (EVP_EncryptInit_ex(ctx, EVP_aes_256_cfb(), nullptr, key, iv_) != 1) {
         cerr << "encrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
+        EVP_CIPHER_CTX_free(ctx);
         return false;
     }
 
     if (EVP_EncryptUpdate(ctx, ciphertext, &cipherlen, dataBuffer, dataSize) != 1) {
         cerr << "encrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
+        EVP_CIPHER_CTX_free(ctx);
         return false;
     }
 
     if (EVP_EncryptFinal_ex(ctx, ciphertext + cipherlen, &len) != 1) {
         cerr << "encrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
+        EVP_CIPHER_CTX_free(ctx);
         return false;
     }
     cipherlen += len;
@@ -204,6 +207,7 @@ bool CryptoPrimitive::encryptWithKey(u_char* dataBuffer, const int dataSize, u_c
         return false;
     }
     EVP_CIPHER_CTX_cleanup(ctx);
+    EVP_CIPHER_CTX_free(ctx);
     return true;
 }
 

@@ -98,7 +98,7 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
         Chunk_t newChunk;
         memcpy(&newChunk, data + sizeof(int) + i * sizeof(Chunk_t), sizeof(Chunk_t));
         string originHash((char*)newChunk.chunkHash, CHUNK_HASH_SIZE);
-        cout << "chunk " << newChunk.ID << "\t" << newChunk.logicDataSize << endl;
+        // cout << "chunk " << newChunk.ID << "\t" << newChunk.logicDataSize << endl;
         if (fp2ChunkDB.query(originHash, tmpdata)) {
             continue;
         } else {
@@ -327,7 +327,7 @@ bool StorageCore::writeContainer(keyForChunkHashDB_t& key, char* data)
         currentContainer_.saveTOFile(writeContainerName);
         next_permutation(lastContainerFileName_.begin(), lastContainerFileName_.end());
         currentContainer_.used_ = 0;
-        cout << "key.length = " << key.length << " data size " << strlen(data) << endl; 
+        // cout << "key.length = " << key.length << " data size " << strlen(data) << endl; 
         memcpy(&currentContainer_.body_[currentContainer_.used_], data, key.length);
         memcpy(key.containerName, &lastContainerFileName_[0], lastContainerFileName_.length());
     }
