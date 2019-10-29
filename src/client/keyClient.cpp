@@ -81,6 +81,8 @@ void keyClient::run()
             if (BREAK_DOWN_DEFINE) {
                 gettimeofday(&timestartKey, NULL);
             }
+            // key time
+            gettimeofday(&timestartKey, NULL);
             batchList.push_back(tempChunk);
             char hash[16];
             MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 0, (void*)hash);
@@ -92,6 +94,11 @@ void keyClient::run()
                 memcpy(chunkHash + batchNumber * singleChunkHashSize + i * sizeof(int), &hashInt[i], sizeof(int));
             }
             batchNumber++;
+            gettimeofday(&timeendKey, NULL);
+            diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+            second = diff / 1000000.0;
+            keyGenTime += second;
+            //key time
             if (BREAK_DOWN_DEFINE) {
                 gettimeofday(&timeendKey, NULL);
                 diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
@@ -104,6 +111,8 @@ void keyClient::run()
             if (BREAK_DOWN_DEFINE) {
                 gettimeofday(&timestartKey, NULL);
             }
+            //key time
+            gettimeofday(&timestartKey, NULL);
             int batchedKeySize = 0;
             bool keyExchangeStatus = keyExchange(chunkHash, batchNumber, chunkKey, batchedKeySize);
             if (BREAK_DOWN_DEFINE) {
@@ -112,6 +121,11 @@ void keyClient::run()
                 second = diff / 1000000.0;
                 keyGenTime += second;
             }
+            gettimeofday(&timeendKey, NULL);
+            diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+            second = diff / 1000000.0;
+            keyGenTime += second;
+            //key time
             if (!keyExchangeStatus) {
                 cerr << "KeyClient : error get key for " << setbase(10) << batchNumber << " chunks" << endl;
                 return;
@@ -121,6 +135,8 @@ void keyClient::run()
                     if (BREAK_DOWN_DEFINE) {
                         gettimeofday(&timestartKey, NULL);
                     }
+                    //key time
+                    gettimeofday(&timestartKey, NULL);
                     memcpy(newKeyBuffer, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
                     memcpy(newKeyBuffer + CHUNK_HASH_SIZE, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
 #ifdef HIGH_SECURITY
@@ -129,6 +145,11 @@ void keyClient::run()
                     MD5(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.encryptKey);
 #endif
                     memcpy(batchList[i].chunk.encryptKey, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
+                    gettimeofday(&timeendKey, NULL);
+                    diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+                    second = diff / 1000000.0;
+                    keyGenTime += second;
+                    //key time
                     if (BREAK_DOWN_DEFINE) {
                         gettimeofday(&timeendKey, NULL);
                         diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
@@ -168,6 +189,7 @@ void keyClient::run()
             break;
         }
     }
+    cout << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
     if (BREAK_DOWN_DEFINE) {
         cout << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
         cout << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
