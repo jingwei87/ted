@@ -195,7 +195,7 @@ void Sender::run()
                 gettimeofday(&timestartSender, NULL);
             }
             if (this->sendChunkList(sendChunkBatchBuffer, currentSendChunkBatchBufferSize, currentChunkNumber, status)) {
-                cerr << "Sender : sent " << setbase(10) << currentChunkNumber << " chunk" << endl;
+                // cerr << "Sender : sent " << setbase(10) << currentChunkNumber << " chunk" << endl;
                 currentSendChunkBatchBufferSize = sizeof(NetworkHeadStruct_t) + sizeof(int);
                 memset(sendChunkBatchBuffer, 0, sizeof(NetworkHeadStruct_t) + sizeof(int) + sizeof(char) * sendBatchSize * (CHUNK_HASH_SIZE + MAX_CHUNK_SIZE + sizeof(int)));
                 currentChunkNumber = 0;
@@ -215,9 +215,9 @@ void Sender::run()
     if (BREAK_DOWN_DEFINE) {
         gettimeofday(&timestartSenderRecipe, NULL);
     }
-    cout << "Sender : start send file recipes" << endl;
+    cerr << "Sender : start send file recipes" << endl;
     if (!this->sendRecipe(fileRecipe, recipeList, status)) {
-        cout << "Sender : send recipe list error, upload fail " << endl;
+        cerr << "Sender : send recipe list error, upload fail " << endl;
         free(sendChunkBatchBuffer);
         sendEndFlag();
         return;
@@ -226,8 +226,8 @@ void Sender::run()
         gettimeofday(&timeendSenderRecipe, NULL);
         diff = 1000000 * (timeendSenderRecipe.tv_sec - timestartSenderRecipe.tv_sec) + timeendSenderRecipe.tv_usec - timestartSenderRecipe.tv_usec;
         second = diff / 1000000.0;
-        cout << "Sender : send recipe list time is " << second << " s" << endl;
-        cout << "Sender : send chunk time is " << totalSendTime << " s" << endl;
+        cout << "Sender : send recipe list time = " << second << " s" << endl;
+        cout << "Sender : send chunk time = " << totalSendTime << " s" << endl;
     }
     free(sendChunkBatchBuffer);
     sendEndFlag();

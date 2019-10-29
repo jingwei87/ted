@@ -85,8 +85,8 @@ int main(int argv, char* argc[])
     gettimeofday(&timeend, NULL);
     long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
     double second = diff / 1000000.0;
-    cout << "the total work time is " << diff << " us = " << second << " s" << endl;
-    cout << "the start work time is " << timestart.tv_sec << " s = " << timestart.tv_usec << " us" << endl;
-    cout << "the end work time is " << timeend.tv_sec << " s = " << timeend.tv_usec << " us" << endl;
+    cout << "System : total work time is " << diff << " us = " << second << " s" << endl;
+    cout << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
+    cout << "System : end work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
     return 0;
 }

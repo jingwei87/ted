@@ -2,8 +2,8 @@
 #include <sys/time.h>
 extern Configure config;
 
-// struct timeval timestart;
-// struct timeval timeend;
+struct timeval timestartKeyServer;
+struct timeval timeendKeyServer;
 
 void PRINT_BYTE_ARRAY_KEY_SERVER(
     FILE* file, void* mem, uint32_t len)
@@ -52,6 +52,9 @@ keyServer::~keyServer()
 
 void keyServer::runKeyGen(SSL* connection)
 {
+    double keySeedGenTime = 0;
+    long diff;
+    double second;
     char hash[config.getKeyBatchSize() * 4 * sizeof(uint32_t)];
     u_int hashNumber[4];
     u_char newKeyBuffer[64 + 4 * sizeof(uint32_t) + sizeof(int)];
@@ -70,13 +73,16 @@ void keyServer::runKeyGen(SSL* connection)
             multiThreadEditTMutex_.lock();
             T_ = 1;
             multiThreadEditTMutex_.unlock();
+            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
             return;
         }
-
         int recvNumber = recvSize / (4 * sizeof(uint32_t));
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
         u_char key[recvNumber * CHUNK_ENCRYPT_KEY_SIZE];
         multiThreadEditSketchTableMutex_.lock();
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timestartKeyServer, NULL);
+        }
         for (int i = 0; i < recvNumber; i++) {
             int sketchTableSearchCompareNumber = 0;
             for (int j = 0; j < 4; j++) {
@@ -122,11 +128,20 @@ void keyServer::runKeyGen(SSL* connection)
             memcpy(newKeyBuffer + 64, hash + i * 4 * sizeof(uint32_t), 4 * sizeof(uint32_t));
             memcpy(newKeyBuffer + 64 + 4 * sizeof(uint32_t), &param, sizeof(int));
             unsigned char currentKeySeed[CHUNK_ENCRYPT_KEY_SIZE];
-
+#ifdef HIGH_SECURITY
             SHA256(newKeyBuffer, 64 + 4 * sizeof(uint32_t) + sizeof(int), currentKeySeed);
+#else
+            MD5(newKeyBuffer, 64 + 4 * sizeof(uint32_t) + sizeof(int), currentKeySeed);
+#endif
             memcpy(key + i * CHUNK_ENCRYPT_KEY_SIZE, currentKeySeed, CHUNK_ENCRYPT_KEY_SIZE);
         }
         sketchTableCounter_ += recvNumber;
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timeendKeyServer, NULL);
+            diff = 1000000 * (timeendKeyServer.tv_sec - timestartKeyServer.tv_sec) + timeendKeyServer.tv_usec - timestartKeyServer.tv_usec;
+            second = diff / 1000000.0;
+            keySeedGenTime += second;
+        }
         multiThreadEditSketchTableMutex_.unlock();
 
         if (!keySecurityChannel_->send(connection, (char*)key, recvNumber * CHUNK_ENCRYPT_KEY_SIZE)) {
@@ -142,9 +157,8 @@ void keyServer::runKeyGen(SSL* connection)
             multiThreadEditTMutex_.lock();
             T_ = 1;
             multiThreadEditTMutex_.unlock();
+            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
             return;
-        } else {
-            cout << "KeyServer : send back " << recvNumber << " chunks key done" << endl;
         }
         if (sketchTableCounter_ >= optimalSolverComputeItemNumberThreshold_) {
             multiThreadEditTMutex_.lock();
@@ -156,7 +170,7 @@ void keyServer::runKeyGen(SSL* connection)
                 string strTemp = ss.str();
                 opInput_.push_back(make_pair(strTemp, sketchTable_[0][i]));
             }
-            cout << "key server start optimization solver" << endl;
+            cerr << "keyServer : start optimization solver" << endl;
             sketchTableCounter_ = 0;
             opSolverFlag_ = true;
             multiThreadEditTMutex_.unlock();
