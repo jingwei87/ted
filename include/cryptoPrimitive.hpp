@@ -47,12 +47,9 @@ public:
     bool generateHash(u_char* dataBuffer, const int dataSize, u_char* hash);
     bool encryptWithKey(u_char* dataBuffer, const int dataSize, u_char* key, u_char* ciphertext);
     bool decryptWithKey(u_char* ciphertext, const int dataSize, u_char* key, u_char* dataBuffer);
-    bool keyExchangeEncrypt(u_char* dataBuffer, const int dataSize, u_char* key, u_char* iv, u_char* ciphertext);
-    bool keyExchangeDecrypt(u_char* ciphertext, const int dataSize, u_char* key, u_char* iv, u_char* dataBuffer);
     bool encryptChunk(Chunk_t& chunk);
     bool decryptChunk(Chunk_t& chunk);
     bool decryptChunk(u_char* chunkData, int chunkSize, u_char* key, u_char* plaintData);
-    bool cmac128(vector<string>& message, string& mac, u_char* key, int keyLen);
     void PRINT_BYTE_ARRAY(
         FILE* file, void* mem, uint32_t len)
     {

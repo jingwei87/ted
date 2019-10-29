@@ -195,7 +195,7 @@ void Sender::run()
                 gettimeofday(&timestartSender, NULL);
             }
             if (this->sendChunkList(sendChunkBatchBuffer, currentSendChunkBatchBufferSize, currentChunkNumber, status)) {
-                cout << "Sender : sent " << setbase(10) << currentChunkNumber << " chunk" << endl;
+                cerr << "Sender : sent " << setbase(10) << currentChunkNumber << " chunk" << endl;
                 currentSendChunkBatchBufferSize = sizeof(NetworkHeadStruct_t) + sizeof(int);
                 memset(sendChunkBatchBuffer, 0, sizeof(NetworkHeadStruct_t) + sizeof(int) + sizeof(char) * sendBatchSize * (CHUNK_HASH_SIZE + MAX_CHUNK_SIZE + sizeof(int)));
                 currentChunkNumber = 0;

@@ -149,12 +149,19 @@ bool CryptoPrimitive::generateHash(u_char* dataBuffer, const int dataSize, u_cha
         return false;
     }
 
+#ifdef(HIGH_SECURITY == 1)
     if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1) {
         cerr << "hash error\n";
         EVP_MD_CTX_free(ctx);
         return false;
     }
-
+#else
+    if (EVP_DigestInit_ex(ctx, EVP_md5(), nullptr) != 1) {
+        cerr << "hash error\n";
+        EVP_MD_CTX_free(ctx);
+        return false;
+    }
+#endif
     if (EVP_DigestUpdate(ctx, dataBuffer, dataSize) != 1) {
         cerr << "hash error\n";
         EVP_MD_CTX_free(ctx);
@@ -180,14 +187,23 @@ bool CryptoPrimitive::encryptWithKey(u_char* dataBuffer, const int dataSize, u_c
         cerr << "can not initial cipher ctx\n";
         return false;
     }
+
     EVP_CIPHER_CTX_set_padding(ctx, 0);
-    if (EVP_EncryptInit_ex(ctx, EVP_aes_256_cfb(), nullptr, key, iv_) != 1) {
+#ifdef(HIGH_SECURITY == 1)
+    if (EVP_EncryptInit_ex(ctx, EVP_aes_256_cfb(), nullptr, key, key) != 1) {
         cerr << "encrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
         EVP_CIPHER_CTX_free(ctx);
         return false;
     }
-
+#else
+    if (EVP_EncryptInit_ex(ctx, EVP_aes_128_cfb(), nullptr, key, key) != 1) {
+        cerr << "encrypt error\n";
+        EVP_CIPHER_CTX_cleanup(ctx);
+        EVP_CIPHER_CTX_free(ctx);
+        return false;
+    }
+#endif
     if (EVP_EncryptUpdate(ctx, ciphertext, &cipherlen, dataBuffer, dataSize) != 1) {
         cerr << "encrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
@@ -222,12 +238,19 @@ bool CryptoPrimitive::decryptWithKey(u_char* ciphertext, const int dataSize, u_c
         return false;
     }
     EVP_CIPHER_CTX_set_padding(ctx, 0);
-    if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cfb(), nullptr, key, iv_) != 1) {
+#ifdef(HIGH_SECURITY == 1)
+    if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cfb(), nullptr, key, key) != 1) {
         cerr << "decrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
         return false;
     }
-
+#else
+    if (EVP_DecryptInit_ex(ctx, EVP_aes_128_cfb(), nullptr, key, key) != 1) {
+        cerr << "decrypt error\n";
+        EVP_CIPHER_CTX_cleanup(ctx);
+        return false;
+    }
+#endif
     if (EVP_DecryptUpdate(ctx, dataBuffer, &plaintlen, ciphertext, dataSize) != 1) {
         cerr << "decrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
@@ -300,113 +323,4 @@ bool CryptoPrimitive::decryptChunk(u_char* chunkData, int chunkSize, u_char* key
             return true;
         }
     }
-}
-
-bool CryptoPrimitive::keyExchangeDecrypt(u_char* ciphertext, const int dataSize, u_char* key, u_char* iv, u_char* dataBuffer)
-{
-    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-    int plaintlen, len;
-
-    if (ctx == nullptr) {
-        cerr << "can not initial cipher ctx\n";
-        return false;
-    }
-    EVP_CIPHER_CTX_set_padding(ctx, 0);
-    if (EVP_DecryptInit_ex(ctx, EVP_aes_128_cfb(), nullptr, key, iv) != 1) {
-        cerr << "decrypt error\n";
-        EVP_CIPHER_CTX_cleanup(ctx);
-        return false;
-    }
-
-    if (EVP_DecryptUpdate(ctx, dataBuffer, &plaintlen, ciphertext, dataSize) != 1) {
-        cerr << "decrypt error\n";
-        EVP_CIPHER_CTX_cleanup(ctx);
-        return false;
-    }
-
-    if (EVP_DecryptFinal_ex(ctx, dataBuffer + plaintlen, &len) != 1) {
-        cerr << "decrypt error\n";
-        EVP_CIPHER_CTX_cleanup(ctx);
-        return false;
-    }
-
-    plaintlen += len;
-    if (plaintlen != dataSize) {
-        cerr << "CryptoPrimitive : decrypt output size not equal to origin size" << endl;
-        return false;
-    }
-    EVP_CIPHER_CTX_cleanup(ctx);
-    return true;
-}
-
-bool CryptoPrimitive::keyExchangeEncrypt(u_char* dataBuffer, const int dataSize, u_char* key, u_char* iv, u_char* ciphertext)
-{
-    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-    int cipherlen, len;
-
-    if (ctx == nullptr) {
-        cerr << "can not initial cipher ctx\n";
-        return false;
-    }
-    EVP_CIPHER_CTX_set_padding(ctx, 0);
-    if (EVP_EncryptInit_ex(ctx, EVP_aes_128_cfb(), nullptr, key, iv) != 1) {
-        cerr << "encrypt error\n";
-        EVP_CIPHER_CTX_cleanup(ctx);
-        return false;
-    }
-
-    if (EVP_EncryptUpdate(ctx, ciphertext, &cipherlen, dataBuffer, dataSize) != 1) {
-        cerr << "encrypt error\n";
-        EVP_CIPHER_CTX_cleanup(ctx);
-        return false;
-    }
-
-    if (EVP_EncryptFinal_ex(ctx, ciphertext + cipherlen, &len) != 1) {
-        cerr << "encrypt error\n";
-        EVP_CIPHER_CTX_cleanup(ctx);
-        return false;
-    }
-    cipherlen += len;
-    if (cipherlen != dataSize) {
-        cerr << "CryptoPrimitive : encrypt output size not equal to origin size" << endl;
-        return false;
-    }
-    EVP_CIPHER_CTX_cleanup(ctx);
-    return true;
-
-    int ciphertextSize, ciphertextTailSize;
-}
-
-bool CryptoPrimitive::cmac128(vector<string>& message, string& mac, u_char* key, int keyLen)
-{
-    CMAC_CTX* ctx = CMAC_CTX_new();
-
-    if (ctx == nullptr) {
-        cerr << "error initial cmac ctx\n";
-        return false;
-    }
-
-    if (CMAC_Init(ctx, key, keyLen, EVP_aes_128_cbc(), nullptr) != 1) {
-        cerr << "cmac error\n";
-        CMAC_CTX_cleanup(ctx);
-        return false;
-    }
-
-    for (auto it : message) {
-        CMAC_Update(ctx, (void*)&it[0], it.length());
-    }
-
-    mac.clear();
-    mac.resize(16);
-    size_t maclen;
-
-    if (CMAC_Final(ctx, (unsigned char*)&mac[0], &maclen) != 1) {
-        cerr << "cmac error" << endl;
-        CMAC_CTX_cleanup(ctx);
-        return false;
-    }
-
-    mac.resize(maclen);
-    CMAC_CTX_cleanup(ctx);
-    return true;
 }
