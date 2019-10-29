@@ -120,6 +120,7 @@ void DataSR::run(Socket socket)
                 }
                 while (totalRestoredChunkNumber != restoredFileRecipe.fileRecipeHead.totalChunkNumber) {
                     ChunkList_t restoredChunkList;
+                    gettimeofday(&timestartDataSR, NULL);
                     if (storageObj_->restoreRecipeAndChunk((char*)recvBuffer + sizeof(NetworkHeadStruct_t), startID, endID, restoredChunkList)) {
                         netBody.messageType = SUCCESS;
                         int currentChunkNumber = restoredChunkList.size();
@@ -152,6 +153,10 @@ void DataSR::run(Socket socket)
                         sendSize = sizeof(NetworkHeadStruct_t);
                         return;
                     }
+                    gettimeofday(&timeendDataSR, NULL);
+                    int diff = 1000000 * (timeendDataSR.tv_sec - timestartDataSR.tv_sec) + timeendDataSR.tv_usec - timestartDataSR.tv_usec;
+                    double second = diff / 1000000.0;
+                    cout << "DataSR : restore chunk time  = " << second << endl;
                     socket.Send(sendBuffer, sendSize);
                 }
                 break;

@@ -233,6 +233,7 @@ bool StorageCore::restoreRecipeAndChunk(char* fileNameHash, uint32_t startID, ui
                 return false;
             }
         }
+        cout << "Restore chunks DB time = " << queryDBTime << " s, Read Container time = " << readContainerTime << " s, Current read container number = " << readContainerNumber << endl;
         return true;
     } else {
         return false;
@@ -270,11 +271,22 @@ bool StorageCore::restoreChunk(std::string chunkHash, std::string& chunkDataStr)
 {
     keyForChunkHashDB_t key;
     string ans;
+    gettimeofday(&timestartStorage, NULL);
     bool status = fp2ChunkDB.query(chunkHash, ans);
+    gettimeofday(&timeendStorage, NULL);
+    int diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
+    double second = diff / 1000000.0;
+    queryDBTime += second;
     if (status) {
         memcpy(&key, &ans[0], sizeof(keyForChunkHashDB_t));
         char chunkData[key.length];
-        if (readContainer(key, chunkData)) {
+        gettimeofday(&timestartStorage, NULL);
+        bool readContainerStatus = readContainer(key, chunkData);
+        gettimeofday(&timeendStorage, NULL);
+        diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
+        second = diff / 1000000.0;
+        readContainerTime += second;
+        if (readContainerStatus) {
             chunkDataStr.resize(key.length);
             memcpy(&chunkDataStr[0], chunkData, key.length);
             return true;
@@ -327,7 +339,7 @@ bool StorageCore::writeContainer(keyForChunkHashDB_t& key, char* data)
         currentContainer_.saveTOFile(writeContainerName);
         next_permutation(lastContainerFileName_.begin(), lastContainerFileName_.end());
         currentContainer_.used_ = 0;
-        // cout << "key.length = " << key.length << " data size " << strlen(data) << endl; 
+        // cout << "key.length = " << key.length << " data size " << strlen(data) << endl;
         memcpy(&currentContainer_.body_[currentContainer_.used_], data, key.length);
         memcpy(key.containerName, &lastContainerFileName_[0], lastContainerFileName_.length());
     }
@@ -347,6 +359,7 @@ bool StorageCore::readContainer(keyForChunkHashDB_t key, char* data)
         memcpy(data, currentContainer_.body_ + key.offset, key.length);
         return true;
     } else {
+        readContainerNumber++;
         containerIn.open(readName, std::ifstream::in | std::ifstream::binary);
         if (!containerIn.is_open()) {
             std::cerr << "StorageCore : Can not open Container: " << readName << endl;

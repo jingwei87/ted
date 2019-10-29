@@ -35,6 +35,9 @@ private:
     uint64_t maxContainerSize_;
     bool writeContainer(keyForChunkHashDB_t& key, char* data);
     bool readContainer(keyForChunkHashDB_t key, char* data);
+    double queryDBTime = 0;
+    double readContainerTime = 0;
+    int readContainerNumber = 0; 
 
 public:
     StorageCore();
