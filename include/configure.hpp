@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define BREAK_DOWN_DEFINE 1
+#define BREAK_DOWN_DEFINE 0
 // #define HIGH_SECURITY
 #define CHUNKER_FIX_SIZE_TYPE 0 //macro for the type of fixed-size chunker
 #define CHUNKER_VAR_SIZE_TYPE 1 //macro for the type of variable-size chunker
@@ -39,7 +39,7 @@ using namespace std;
 #define KEY_SERVER_NORMAL_RAND 3
 #define KEY_SERVER_GEOMETRIC_RAND 4
 #define KEY_SERVER_NO_RAND 5
-#define KEY_SERVER_RANDOM_TYPE KEY_SERVER_NO_RAND
+#define KEY_SERVER_RANDOM_TYPE KEY_SERVER_UNIFORM_INT_RAND
 
 class Configure {
 private:
