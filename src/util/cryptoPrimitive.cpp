@@ -149,7 +149,7 @@ bool CryptoPrimitive::generateHash(u_char* dataBuffer, const int dataSize, u_cha
         return false;
     }
 
-#ifdef(HIGH_SECURITY == 1)
+#ifdef HIGH_SECURITY
     if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1) {
         cerr << "hash error\n";
         EVP_MD_CTX_free(ctx);
@@ -189,15 +189,15 @@ bool CryptoPrimitive::encryptWithKey(u_char* dataBuffer, const int dataSize, u_c
     }
 
     EVP_CIPHER_CTX_set_padding(ctx, 0);
-#ifdef(HIGH_SECURITY == 1)
-    if (EVP_EncryptInit_ex(ctx, EVP_aes_256_cfb(), nullptr, key, key) != 1) {
+#ifdef HIGH_SECURITY
+    if (EVP_EncryptInit_ex(ctx, EVP_aes_256_cfb(), nullptr, key, iv_) != 1) {
         cerr << "encrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
         EVP_CIPHER_CTX_free(ctx);
         return false;
     }
 #else
-    if (EVP_EncryptInit_ex(ctx, EVP_aes_128_cfb(), nullptr, key, key) != 1) {
+    if (EVP_EncryptInit_ex(ctx, EVP_aes_128_cfb(), nullptr, key, iv_) != 1) {
         cerr << "encrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
         EVP_CIPHER_CTX_free(ctx);
@@ -238,14 +238,14 @@ bool CryptoPrimitive::decryptWithKey(u_char* ciphertext, const int dataSize, u_c
         return false;
     }
     EVP_CIPHER_CTX_set_padding(ctx, 0);
-#ifdef(HIGH_SECURITY == 1)
-    if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cfb(), nullptr, key, key) != 1) {
+#ifdef HIGH_SECURITY
+    if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cfb(), nullptr, key, iv_) != 1) {
         cerr << "decrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
         return false;
     }
 #else
-    if (EVP_DecryptInit_ex(ctx, EVP_aes_128_cfb(), nullptr, key, key) != 1) {
+    if (EVP_DecryptInit_ex(ctx, EVP_aes_128_cfb(), nullptr, key, iv_) != 1) {
         cerr << "decrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
         return false;

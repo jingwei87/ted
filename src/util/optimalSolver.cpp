@@ -24,11 +24,11 @@ OpSolver::OpSolver(int m, vector<pair<string, int>> inputDistribution)
 
     /**Initialization */
     double average = static_cast<double>(sum_) / m_;
-    if (sum_ % m_ != 0) {
-        printf("the output maybe double\n");
-        printf("current sum = %d\n", sum_);
-    }
-    printf("the initialized average: %lf\n", average);
+    // if (sum_ % m_ != 0) {
+    //     printf("the output maybe double\n");
+    //     printf("current sum = %d\n", sum_);
+    // }
+    // printf("the initialized average: %lf\n", average);
 
     for (int i = 0; i < m; i++) {
         outputFeqDistr_.push_back(average);
@@ -44,8 +44,8 @@ OpSolver::OpSolver(int m, vector<pair<string, int>> inputDistribution)
         freq = static_cast<double>(iter->second) / sum_;
         originalEntropy_ -= freq * Log2(freq);
     }
-    printf("The maximum entropy of this workload: %f\n", maxEntropy_);
-    printf("The original entropy of this workload: %f\n", originalEntropy_);
+    // printf("The maximum entropy of this workload: %f\n", maxEntropy_);
+    // printf("The original entropy of this workload: %f\n", originalEntropy_);
 }
 
 OpSolver::~OpSolver()
@@ -105,9 +105,9 @@ double OpSolver::GetOptimal()
     int startIndex = 0;
     while (1) {
         if (CheckConstrain(startIndex)) {
-            printf("newAverage: %f\n", newAverage);
-            printf("currentIndex:%d, Value: %d\n", currentIndex_,
-                inputFeqDistr_[currentIndex_].second);
+            // printf("newAverage: %f\n", newAverage);
+            // printf("currentIndex:%d, Value: %d\n", currentIndex_,
+            //     inputFeqDistr_[currentIndex_].second);
             break;
         } else {
             outputFeqDistr_[currentIndex_] = inputFeqDistr_[currentIndex_].second;
