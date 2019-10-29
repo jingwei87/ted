@@ -121,9 +121,10 @@ void keyServer::runKeyGen(SSL* connection)
             memcpy(newKeyBuffer, keyServerPrivate_, 64);
             memcpy(newKeyBuffer + 64, hash + i * 4 * sizeof(uint32_t), 4 * sizeof(uint32_t));
             memcpy(newKeyBuffer + 64 + 4 * sizeof(uint32_t), &param, sizeof(int));
-            unsigned char currentKeySeed[32];
+            unsigned char currentKeySeed[CHUNK_ENCRYPT_KEY_SIZE];
+
             SHA256(newKeyBuffer, 64 + 4 * sizeof(uint32_t) + sizeof(int), currentKeySeed);
-            memcpy(key + i * 32, currentKeySeed, 32);
+            memcpy(key + i * CHUNK_ENCRYPT_KEY_SIZE, currentKeySeed, CHUNK_ENCRYPT_KEY_SIZE);
         }
         sketchTableCounter_ += recvNumber;
         multiThreadEditSketchTableMutex_.unlock();

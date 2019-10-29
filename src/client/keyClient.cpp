@@ -114,7 +114,12 @@ void keyClient::run()
                 for (int i = 0; i < batchNumber; i++) {
                     memcpy(newKeyBuffer, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
                     memcpy(newKeyBuffer + CHUNK_HASH_SIZE, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
+#ifdef(HIGH_SECURITY == 1)
                     SHA256(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.encryptKey);
+#else
+                    MD5(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.encryptKey);
+#endif
+                    memcpy(batchList[i].chunk.encryptKey, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
                     if (encodeChunk(batchList[i])) {
                         if (BREAK_DOWN_DEFINE) {
                             gettimeofday(&timestartKey_Insert, NULL);
