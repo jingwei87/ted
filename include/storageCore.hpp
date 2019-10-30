@@ -37,7 +37,9 @@ private:
     bool readContainer(keyForChunkHashDB_t key, char* data);
     double queryDBTime = 0;
     double readContainerTime = 0;
-    int readContainerNumber = 0; 
+    int readContainerNumber = 0;
+    double queryDBTimeUpload = 0;
+    double writeContainerTime = 0;
 
 public:
     StorageCore();

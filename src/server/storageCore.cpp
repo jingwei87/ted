@@ -63,7 +63,10 @@ StorageCore::~StorageCore()
 
     string writeContainerName = containerNamePrefix_ + lastContainerFileName_ + containerNameTail_;
     currentContainer_.saveTOFile(writeContainerName);
-
+    if (BREAK_DOWN_DEFINE) {
+        cout << "Upload query DB time = " << queryDBTimeUpload << " s, write Container time = " << writeContainerTime << " s" << endl;
+        cout << "Restore chunks DB time = " << queryDBTime << " s, Read Container time = " << readContainerTime << " s, Current read container number = " << readContainerNumber << endl;
+    }
     delete cryptoObj_;
 }
 
@@ -99,7 +102,15 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
         memcpy(&newChunk, data + sizeof(int) + i * sizeof(Chunk_t), sizeof(Chunk_t));
         string originHash((char*)newChunk.chunkHash, CHUNK_HASH_SIZE);
         // cout << "chunk " << newChunk.ID << "\t" << newChunk.logicDataSize << endl;
-        if (fp2ChunkDB.query(originHash, tmpdata)) {
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timestartStorage, NULL);
+        }
+        bool chunkStatus = fp2ChunkDB.query(originHash, tmpdata);
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timeendStorage, NULL);
+            queryDBTimeUpload += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
+        }
+        if (chunkStatus) {
             continue;
         } else {
             if (!saveChunk(originHash, (char*)newChunk.logicData, newChunk.logicDataSize)) {
@@ -233,7 +244,6 @@ bool StorageCore::restoreRecipeAndChunk(char* fileNameHash, uint32_t startID, ui
                 return false;
             }
         }
-        cout << "Restore chunks DB time = " << queryDBTime << " s, Read Container time = " << readContainerTime << " s, Current read container number = " << readContainerNumber << endl;
         return true;
     } else {
         return false;
@@ -248,16 +258,31 @@ bool StorageCore::saveChunk(std::string chunkHash, char* chunkData, int chunkSiz
 
     keyForChunkHashDB_t key;
     key.length = chunkSize;
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timestartStorage, NULL);
+    }
     bool status = writeContainer(key, chunkData);
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timeendStorage, NULL);
+        writeContainerTime += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
+    }
     if (!status) {
         std::cerr << "Error write container" << endl;
         return status;
     }
 
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timestartStorage, NULL);
+    }
     string dbValue;
     dbValue.resize(sizeof(keyForChunkHashDB_t));
     memcpy(&dbValue[0], &key, sizeof(keyForChunkHashDB_t));
     status = fp2ChunkDB.insert(chunkHash, dbValue);
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timeendStorage, NULL);
+        queryDBTimeUpload += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
+    }
+
     if (!status) {
         std::cerr << "Can't insert chunk to database" << endl;
         return false;
@@ -271,21 +296,29 @@ bool StorageCore::restoreChunk(std::string chunkHash, std::string& chunkDataStr)
 {
     keyForChunkHashDB_t key;
     string ans;
-    gettimeofday(&timestartStorage, NULL);
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timestartStorage, NULL);
+    }
     bool status = fp2ChunkDB.query(chunkHash, ans);
-    gettimeofday(&timeendStorage, NULL);
-    int diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
-    double second = diff / 1000000.0;
-    queryDBTime += second;
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timeendStorage, NULL);
+        int diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
+        double second = diff / 1000000.0;
+        queryDBTime += second;
+    }
     if (status) {
         memcpy(&key, &ans[0], sizeof(keyForChunkHashDB_t));
         char chunkData[key.length];
-        gettimeofday(&timestartStorage, NULL);
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timestartStorage, NULL);
+        }
         bool readContainerStatus = readContainer(key, chunkData);
-        gettimeofday(&timeendStorage, NULL);
-        diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
-        second = diff / 1000000.0;
-        readContainerTime += second;
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timeendStorage, NULL);
+            diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
+            second = diff / 1000000.0;
+            readContainerTime += second;
+        }
         if (readContainerStatus) {
             chunkDataStr.resize(key.length);
             memcpy(&chunkDataStr[0], chunkData, key.length);
