@@ -152,6 +152,7 @@ void keyClient::run()
                     }
                 }
                 batchList.clear();
+                batchList.reserve(keyBatchSize_);
                 memset(chunkHash, 0, singleChunkHashSize * keyBatchSize_);
                 memset(chunkKey, 0, CHUNK_ENCRYPT_KEY_SIZE * keyBatchSize_);
                 batchNumber = 0;

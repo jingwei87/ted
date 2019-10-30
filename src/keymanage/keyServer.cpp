@@ -4,6 +4,10 @@ extern Configure config;
 
 struct timeval timestartKeyServer;
 struct timeval timeendKeyServer;
+struct timeval timestartKeyServerTotal;
+struct timeval timeendKeyServerTotal;
+struct timeval timestartKeyServerRecv;
+struct timeval timeendKeyServerRecv;
 
 void PRINT_BYTE_ARRAY_KEY_SERVER(
     FILE* file, void* mem, uint32_t len)
@@ -57,15 +61,30 @@ keyServer::~keyServer()
 void keyServer::runKeyGen(SSL* connection)
 {
     double keySeedGenTime = 0;
+    double totalThreadTime = 0;
     double optimalComputeTime = 0;
+    double totalRecvTime = 0;
     long diff;
     double second;
     char hash[config.getKeyBatchSize() * 4 * sizeof(uint32_t)];
     u_int hashNumber[4];
     u_char newKeyBuffer[64 + 4 * sizeof(uint32_t) + sizeof(int)];
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timestartKeyServerTotal, NULL);
+    }
     while (true) {
         int recvSize = 0;
-        if (!keySecurityChannel_->recv(connection, hash, recvSize)) {
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timestartKeyServerRecv, NULL);
+        }
+        bool recvStatus = keySecurityChannel_->recv(connection, hash, recvSize);
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timeendKeyServerRecv, NULL);
+            diff = 1000000 * (timeendKeyServerRecv.tv_sec - timestartKeyServerRecv.tv_sec) + timeendKeyServerRecv.tv_usec - timestartKeyServerRecv.tv_usec;
+            second = diff / 1000000.0;
+            totalRecvTime += second;
+        }
+        if (!recvStatus) {
             cerr << "KeyServer : client exit" << endl;
             multiThreadEditSketchTableMutex_.lock();
             for (int i = 0; i < sketchTableWidith_; i++) {
@@ -79,8 +98,13 @@ void keyServer::runKeyGen(SSL* connection)
             T_ = 1;
             multiThreadEditTMutex_.unlock();
             if (BREAK_DOWN_DEFINE) {
+                gettimeofday(&timeendKeyServerTotal, NULL);
+                diff = 1000000 * (timeendKeyServerTotal.tv_sec - timestartKeyServerTotal.tv_sec) + timeendKeyServerTotal.tv_usec - timestartKeyServerTotal.tv_usec;
+                second = diff / 1000000.0;
                 cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
                 cout << "keyServer : compute optimal time = " << optimalComputeTime << " s" << endl;
+                cout << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
+                cout << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
             }
             return;
         }
@@ -162,8 +186,13 @@ void keyServer::runKeyGen(SSL* connection)
             T_ = 1;
             multiThreadEditTMutex_.unlock();
             if (BREAK_DOWN_DEFINE) {
+                gettimeofday(&timeendKeyServerTotal, NULL);
+                diff = 1000000 * (timeendKeyServerTotal.tv_sec - timestartKeyServerTotal.tv_sec) + timeendKeyServerTotal.tv_usec - timestartKeyServerTotal.tv_usec;
+                second = diff / 1000000.0;
                 cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
                 cout << "keyServer : compute optimal time = " << optimalComputeTime << " s" << endl;
+                cout << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
+                cout << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
             }
             return;
         }
