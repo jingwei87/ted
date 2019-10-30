@@ -6,6 +6,9 @@ extern Configure config;
 
 struct timeval timestartKey;
 struct timeval timeendKey;
+struct timeval timestartKeySocket;
+struct timeval timeendKeySocket;
+
 void PRINT_BYTE_ARRAY_KEY_CLIENT(
     FILE* file, void* mem, uint32_t len)
 {
@@ -44,6 +47,8 @@ keyClient::~keyClient()
     inputMQ_->~messageQueue();
     delete keySecurityChannel_;
     delete inputMQ_;
+    cout << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
+    cout << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
 }
 
 void keyClient::run()
@@ -179,16 +184,29 @@ void keyClient::run()
 
 bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber)
 {
-
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timestartKeySocket, NULL);
+    }
     if (!keySecurityChannel_->send(sslConnection_, (char*)batchHashList, 4 * sizeof(uint32_t) * batchNumber)) {
         cerr << "keyClient: send socket error" << endl;
         return false;
     }
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timeendKeySocket, NULL);
+        keySocketSendTime + = (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
+    }
     char recvBuffer[CHUNK_ENCRYPT_KEY_SIZE * batchNumber];
     int recvSize;
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timestartKeySocket, NULL);
+    }
     if (!keySecurityChannel_->recv(sslConnection_, recvBuffer, recvSize)) {
         cerr << "keyClient: recv socket error" << endl;
         return false;
+    }
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timeendKeySocket, NULL);
+        keySocketRecvTime + = (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
     }
     if (recvSize % CHUNK_ENCRYPT_KEY_SIZE != 0) {
         cerr << "keyClient: recv size % CHUNK_ENCRYPT_KEY_SIZE not equal to 0" << endl;
