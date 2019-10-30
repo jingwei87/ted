@@ -20,6 +20,8 @@ private:
     ssl* keySecurityChannel_;
     SSL* sslConnection_;
     int sendShortHashMaskBitNumber;
+    double keySocketRecvTime = 0;
+    double keySocketSendTime = 0;
 
 public:
     keyClient(Sender* senderObjTemp);
