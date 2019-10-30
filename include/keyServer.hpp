@@ -14,6 +14,7 @@
 
 class keyServer {
 private:
+    CryptoPrimitive* cryptoObj_;
     u_int** sketchTable_;
     uint64_t sketchTableCounter_;
     double T_;

@@ -7,8 +7,9 @@
 
 using namespace std;
 
-#define BREAK_DOWN_DEFINE 0
-// #define HIGH_SECURITY
+#define BREAK_DOWN_DEFINE 1
+#define SINGLE_THREAD_KEY_MANAGER
+#define HIGH_SECURITY
 #define CHUNKER_FIX_SIZE_TYPE 0 //macro for the type of fixed-size chunker
 #define CHUNKER_VAR_SIZE_TYPE 1 //macro for the type of variable-size chunker
 #define CHUNKER_TRACE_DRIVEN_TYPE_FSL 2

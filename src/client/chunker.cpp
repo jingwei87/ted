@@ -721,7 +721,7 @@ void Chunker::varSizeChunking()
         gettimeofday(&timeendChunker, NULL);
         diff = 1000000 * (timeendChunker.tv_sec - timestartChunker.tv_sec) + timeendChunker.tv_usec - timestartChunker.tv_usec;
         second = diff / 1000000.0;
-        cout << "Chunker : total chunking time = " << second - (insertTime + hashTime) << " s" << endl;
+        cout << "Chunker : total chunking time = " << setbase(10) << second - (insertTime + hashTime) << " s" << endl;
         cout << "Chunker : total hashing time = " << hashTime << " s" << endl;
     }
     return;
