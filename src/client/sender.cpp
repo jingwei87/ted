@@ -5,6 +5,8 @@ extern Configure config;
 
 struct timeval timestartSender;
 struct timeval timeendSender;
+struct timeval timestartSenderReadMQ;
+struct timeval timeendSenderReadMQ;
 struct timeval timestartSenderRecipe;
 struct timeval timeendSenderRecipe;
 
@@ -137,6 +139,7 @@ bool Sender::sendEndFlag()
 void Sender::run()
 {
     double totalSendTime = 0;
+    double totalExtractMQTime = 0;
     long diff;
     double second;
     Data_t tempChunk;
@@ -150,14 +153,26 @@ void Sender::run()
     int currentChunkNumber = 0;
     int currentSendRecipeNumber = 0;
     int currentSendChunkBatchBufferSize = sizeof(NetworkHeadStruct_t) + sizeof(int);
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timestartSender, NULL);
+    }
     while (!jobDoneFlag) {
         if (inputMQ_->done_ && inputMQ_->isEmpty()) {
             jobDoneFlag = true;
         }
-        if (extractMQFromKeyClient(tempChunk)) {
-            if (BREAK_DOWN_DEFINE) {
-                gettimeofday(&timestartSender, NULL);
-            }
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timestartSenderReadMQ, NULL);
+        }
+        bool extractChunkStatus = extractMQFromKeyClient(tempChunk);
+        if (BREAK_DOWN_DEFINE) {
+            gettimeofday(&timeendSenderReadMQ, NULL);
+            diff = 1000000 * (timeendSenderReadMQ.tv_sec - timestartSenderReadMQ.tv_sec) + timeendSenderReadMQ.tv_usec - timestartSenderReadMQ.tv_usec;
+            second = diff / 1000000.0;
+            totalExtractMQTime += second;
+        }
+
+        if (extractChunkStatus) {
+
             if (tempChunk.dataType == DATA_TYPE_RECIPE) {
                 // cout << "Sender : get file recipe head, file size = " << tempChunk.recipe.fileRecipeHead.fileSize << " file chunk number = " << tempChunk.recipe.fileRecipeHead.totalChunkNumber << endl;
                 // PRINT_BYTE_ARRAY_SENDER(stderr, tempChunk.recipe.fileRecipeHead.fileNameHash, FILE_NAME_HASH_SIZE);
@@ -183,17 +198,8 @@ void Sender::run()
                 recipeList.push_back(newRecipeEntry);
                 currentSendRecipeNumber++;
             }
-            if (BREAK_DOWN_DEFINE) {
-                gettimeofday(&timeendSender, NULL);
-                diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
-                second = diff / 1000000.0;
-                totalSendTime += second;
-            }
         }
         if (currentChunkNumber == sendBatchSize || jobDoneFlag) {
-            if (BREAK_DOWN_DEFINE) {
-                gettimeofday(&timestartSender, NULL);
-            }
             if (this->sendChunkList(sendChunkBatchBuffer, currentSendChunkBatchBufferSize, currentChunkNumber, status)) {
                 // cerr << "Sender : sent " << setbase(10) << currentChunkNumber << " chunk" << endl;
                 currentSendChunkBatchBufferSize = sizeof(NetworkHeadStruct_t) + sizeof(int);
@@ -203,13 +209,13 @@ void Sender::run()
                 cerr << "Sender : send " << setbase(10) << currentChunkNumber << " chunk error" << endl;
                 break;
             }
-            if (BREAK_DOWN_DEFINE) {
-                gettimeofday(&timeendSender, NULL);
-                diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
-                second = diff / 1000000.0;
-                totalSendTime += second;
-            }
         }
+    }
+    if (BREAK_DOWN_DEFINE) {
+        gettimeofday(&timeendSender, NULL);
+        diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
+        second = diff / 1000000.0;
+        cout << "Sender : send chunk time = " << second - totalExtractMQTime << " s" << endl;
     }
     // printf("Sender send chunk list time is %lf s\n", totalSendTime);
     if (BREAK_DOWN_DEFINE) {
@@ -227,7 +233,6 @@ void Sender::run()
         diff = 1000000 * (timeendSenderRecipe.tv_sec - timestartSenderRecipe.tv_sec) + timeendSenderRecipe.tv_usec - timestartSenderRecipe.tv_usec;
         second = diff / 1000000.0;
         cout << "Sender : send recipe list time = " << second << " s" << endl;
-        cout << "Sender : send chunk time = " << totalSendTime << " s" << endl;
     }
     free(sendChunkBatchBuffer);
     sendEndFlag();

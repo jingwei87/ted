@@ -13,19 +13,19 @@
 		"_keyBatchSize": 3000,
 		"_keyServerNumber": 1,
 		"_keyServerIP": [
-			"192.168.10.53"
+			"127.0.0.1"
 		],
 		"_keyServerPort": [
 			6666
 		],
 		"_sketchTableWidth": 1048576,
-		"_optimalSolverComputeItemNumberThreshold": 48000,
+		"_optimalSolverComputeItemNumberThreshold": 3000,
 		"_storageBlowPercent": 0.005
 	},
 	"SPConfig": {
 		"_storageServerNumber": 1,
 		"_storageServerIP": [
-			"192.168.10.69"
+			"127.0.0.1"
 		],
 		"_storageServerPort": [
 			6668

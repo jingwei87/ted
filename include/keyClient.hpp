@@ -13,9 +13,9 @@
 
 class keyClient {
 private:
+    CryptoPrimitive* cryptoObj_;
     messageQueue<Data_t>* inputMQ_;
     Sender* senderObj_;
-    CryptoPrimitive* cryptoObj_;
     int keyBatchSize_;
     ssl* keySecurityChannel_;
     SSL* sslConnection_;
