@@ -18,6 +18,7 @@ typedef struct {
     u_char chunkHash[CHUNK_HASH_SIZE];
     u_char encryptKey[CHUNK_ENCRYPT_KEY_SIZE];
 } Chunk_t;
+// HIGH - 16460 LOW - 16428
 
 typedef struct {
     int logicDataSize;
