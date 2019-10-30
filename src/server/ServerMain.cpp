@@ -19,13 +19,10 @@ vector<boost::thread*> thList;
 void CTRLC(int s)
 {
     cerr << "server close" << endl;
-
     if (storageObj != nullptr)
         delete storageObj;
-
     if (dataSRObj != nullptr)
         delete dataSRObj;
-
     if (dedupCoreObj != nullptr)
         delete dedupCoreObj;
     for (auto it : thList) {

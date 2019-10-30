@@ -47,8 +47,6 @@ keyClient::~keyClient()
     inputMQ_->~messageQueue();
     delete keySecurityChannel_;
     delete inputMQ_;
-    cout << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
-    cout << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
 }
 
 void keyClient::run()
@@ -178,6 +176,8 @@ void keyClient::run()
         cout << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
         cout << "KeyClient : key derviation work time = " << keyDerivationTime << " s" << endl;
         cout << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
+        cout << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
+        cout << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
     }
     return;
 }
