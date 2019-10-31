@@ -64,7 +64,7 @@ StorageCore::~StorageCore()
     string writeContainerName = containerNamePrefix_ + lastContainerFileName_ + containerNameTail_;
     currentContainer_.saveTOFile(writeContainerName);
     if (BREAK_DOWN_DEFINE) {
-        cout << "Upload query DB time = " << queryDBTimeUpload << " s, write Container time = " << writeContainerTime << " s, insert DB time = " << insertDBTimeUpload << " s" << endl;
+        cout << "Upload query DB time = " << queryDBTimeUpload << " s, write Container time = " << writeContainerTime << " s, insert DB time = " << insertDBTimeUpload << " s, unique chunk number = " << uniqueChunkNumber << endl;
         cout << "Restore chunks DB time = " << queryDBTime << " s, Read Container time = " << readContainerTime << " s, Current read container number = " << readContainerNumber << endl;
     }
     delete cryptoObj_;
@@ -113,6 +113,7 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
         if (chunkStatus) {
             continue;
         } else {
+            uniqueChunkNumber++;
             if (!saveChunk(originHash, (char*)newChunk.logicData, newChunk.logicDataSize)) {
                 return false;
             }

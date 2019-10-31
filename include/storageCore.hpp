@@ -41,6 +41,7 @@ private:
     double queryDBTimeUpload = 0;
     double insertDBTimeUpload = 0;
     double writeContainerTime = 0;
+    int uniqueChunkNumber = 0;
 
 public:
     StorageCore();
