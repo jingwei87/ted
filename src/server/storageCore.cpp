@@ -64,7 +64,7 @@ StorageCore::~StorageCore()
     string writeContainerName = containerNamePrefix_ + lastContainerFileName_ + containerNameTail_;
     currentContainer_.saveTOFile(writeContainerName);
     if (BREAK_DOWN_DEFINE) {
-        cout << "Upload query DB time = " << queryDBTimeUpload << " s, write Container time = " << writeContainerTime << " s" << endl;
+        cout << "Upload query DB time = " << queryDBTimeUpload << " s, write Container time = " << writeContainerTime << " s, insert DB time = " << insertDBTimeUpload << " s" << endl;
         cout << "Restore chunks DB time = " << queryDBTime << " s, Read Container time = " << readContainerTime << " s, Current read container number = " << readContainerNumber << endl;
     }
     delete cryptoObj_;
@@ -280,7 +280,7 @@ bool StorageCore::saveChunk(std::string chunkHash, char* chunkData, int chunkSiz
     status = fp2ChunkDB.insert(chunkHash, dbValue);
     if (BREAK_DOWN_DEFINE) {
         gettimeofday(&timeendStorage, NULL);
-        queryDBTimeUpload += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
+        insertDBTimeUpload += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
     }
 
     if (!status) {
