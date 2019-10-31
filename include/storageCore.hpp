@@ -39,6 +39,7 @@ private:
     double readContainerTime = 0;
     int readContainerNumber = 0;
     double queryDBTimeUpload = 0;
+    double insertDBTimeUpload = 0;
     double writeContainerTime = 0;
 
 public:
