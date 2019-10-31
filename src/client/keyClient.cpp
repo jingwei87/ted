@@ -193,7 +193,7 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
     }
     if (BREAK_DOWN_DEFINE) {
         gettimeofday(&timeendKeySocket, NULL);
-        keySocketSendTime + = (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
+        keySocketSendTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
     }
     char recvBuffer[CHUNK_ENCRYPT_KEY_SIZE * batchNumber];
     int recvSize;
@@ -206,7 +206,7 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
     }
     if (BREAK_DOWN_DEFINE) {
         gettimeofday(&timeendKeySocket, NULL);
-        keySocketRecvTime + = (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
+        keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
     }
     if (recvSize % CHUNK_ENCRYPT_KEY_SIZE != 0) {
         cerr << "keyClient: recv size % CHUNK_ENCRYPT_KEY_SIZE not equal to 0" << endl;
