@@ -315,9 +315,7 @@ bool StorageCore::restoreChunk(std::string chunkHash, std::string& chunkDataStr)
         bool readContainerStatus = readContainer(key, chunkData);
         if (BREAK_DOWN_DEFINE) {
             gettimeofday(&timeendStorage, NULL);
-            diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
-            second = diff / 1000000.0;
-            readContainerTime += second;
+            readContainerTime += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
         }
         if (readContainerStatus) {
             chunkDataStr.resize(key.length);
