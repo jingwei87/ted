@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_SIME_OP_SOLVER_HPP_
-#define GENERALDEDUPSYSTEM_SIME_OP_SOLVER_HPP_
+#ifndef TEDSTORE_SIME_OP_SOLVER_HPP_
+#define TEDSTORE_SIME_OP_SOLVER_HPP_
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -38,4 +38,4 @@ private:
     vector<double> outputFeqDistr_;
 };
 
-#endif // GENERALDEDUPSYSTEM_SIME_OP_SOLVER_HPP_
+#endif // TEDSTORE_SIME_OP_SOLVER_HPP_

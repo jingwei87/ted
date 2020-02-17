@@ -7,25 +7,6 @@ struct timeval timeendDataSR;
 
 extern Configure config;
 
-void PRINT_BYTE_ARRAY_DATA_SR(
-    FILE* file, void* mem, uint32_t len)
-{
-    if (!mem || !len) {
-        fprintf(file, "\n( null )\n");
-        return;
-    }
-    uint8_t* array = (uint8_t*)mem;
-    fprintf(file, "%u bytes:\n{\n", len);
-    uint32_t i = 0;
-    for (i = 0; i < len - 1; i++) {
-        fprintf(file, "0x%x, ", array[i]);
-        if (i % 8 == 7)
-            fprintf(file, "\n");
-    }
-    fprintf(file, "0x%x ", array[i]);
-    fprintf(file, "\n}\n");
-}
-
 DataSR::DataSR(StorageCore* storageObj, DedupCore* dedupCoreObj)
 {
     restoreChunkBatchSize = config.getSendChunkBatchSize();
@@ -45,17 +26,13 @@ void DataSR::run(Socket socket)
     Recipe_t restoredFileRecipe;
     uint32_t totalRestoredChunkNumber = 0;
     while (true) {
-        // memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
-        // memset(recvBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
-        // cout << "DataSR : waiting for recv" << endl;
         if (!socket.Recv(recvBuffer, recvSize)) {
             cerr << "DataSR : client closed socket connect, fd = " << socket.fd_ << " Thread exit now" << endl;
-            // printf("server save all chunk time is %lf s\n", totalSaveChunkTime);
             return;
         } else {
             NetworkHeadStruct_t netBody;
             memcpy(&netBody, recvBuffer, sizeof(NetworkHeadStruct_t));
-            cerr << "DataSR : recv message type " << netBody.messageType << ", message size = " << netBody.dataSize << endl;
+            cout << "DataSR : recv message type " << netBody.messageType << ", message size = " << netBody.dataSize << endl;
             switch (netBody.messageType) {
             case CLIENT_EXIT: {
                 return;
@@ -78,7 +55,7 @@ void DataSR::run(Socket socket)
                     memcpy(&tempRecipeEntry, recvBuffer + sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t) + i * sizeof(RecipeEntry_t), sizeof(RecipeEntry_t));
                     tempRecipeEntryList.push_back(tempRecipeEntry);
                 }
-                cerr << "StorageCore : recv Recipe from client" << endl;
+                cout << "StorageCore : recv Recipe from client" << endl;
 
                 if (!storageObj_->checkRecipeStatus(tempRecipeHead, tempRecipeEntryList)) {
                     cerr << "StorageCore : verify Recipe fail, send resend flag" << endl;
@@ -87,7 +64,7 @@ void DataSR::run(Socket socket)
                     memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
                     sendSize = sizeof(NetworkHeadStruct_t);
                 } else {
-                    cerr << "StorageCore : verify Recipe succes" << endl;
+                    cout << "StorageCore : verify Recipe succes" << endl;
                     netBody.messageType = SUCCESS;
                     netBody.dataSize = 0;
                     memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
@@ -99,7 +76,7 @@ void DataSR::run(Socket socket)
             case CLIENT_DOWNLOAD_FILEHEAD: {
 
                 if (storageObj_->restoreRecipeHead((char*)recvBuffer + sizeof(NetworkHeadStruct_t), restoredFileRecipe)) {
-                    cerr << "StorageCore : restore file size = " << restoredFileRecipe.fileRecipeHead.fileSize << " chunk number = " << restoredFileRecipe.fileRecipeHead.totalChunkNumber << endl;
+                    cout << "StorageCore : restore file size = " << restoredFileRecipe.fileRecipeHead.fileSize << " chunk number = " << restoredFileRecipe.fileRecipeHead.totalChunkNumber << endl;
                     netBody.messageType = SUCCESS;
                     netBody.dataSize = sizeof(Recipe_t);
                     memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));

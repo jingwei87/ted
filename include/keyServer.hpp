@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_KEYSERVER_HPP
-#define GENERALDEDUPSYSTEM_KEYSERVER_HPP
+#ifndef TEDSTORE_KEYSERVER_HPP
+#define TEDSTORE_KEYSERVER_HPP
 
 #include "configure.hpp"
 #include "cryptoPrimitive.hpp"
@@ -37,4 +37,4 @@ public:
     void runOptimalSolver();
 };
 
-#endif //GENERALDEDUPSYSTEM_KEYSERVER_HPP
+#endif //TEDSTORE_KEYSERVER_HPP

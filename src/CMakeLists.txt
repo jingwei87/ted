@@ -10,7 +10,7 @@ set(OPENSSL_INCLUDE_PATH ../lib/openssl/include)
 set(OPENSSL_LIBRARY_PATH ../lib/openssl/)
 
 set(LEVELDB_INCLUDE_PATH ../lib/leveldb/include)
-set(LEVELDB_LIBRARY_PATH ../lib/leveldb/)
+set(LEVELDB_LIBRARY_PATH ../lib/leveldb/build)
 
 include_directories(${BOOST_INCLUDE_DIR} ${LEVELDB_INCLUDE_PATH} ${OPENSSL_INCLUDE_PATH} ../include)
 link_directories(${BOOST_LIBRARY_DIR} ${LEVELDB_LIBRARY_PATH} ${OPENSSL_LIBRARY_PATH} util)
@@ -18,7 +18,7 @@ link_directories(${BOOST_LIBRARY_DIR} ${LEVELDB_LIBRARY_PATH} ${OPENSSL_LIBRARY_
 set(BOOST_LIBRARY_OBJ boost_thread boost_system boost_serialization)
 set(SYSTEM_LIBRARY_OBJ pthread rt dl)
 set(OPENSSL_LIBRARY_OBJ ssl crypto)
-set(LEVELDB_LIBRARY_OBJ pthread leveldb)
+set(LEVELDB_LIBRARY_OBJ pthread leveldb snappy)
 set(UTIL_OBJ configure cryptoPrimitive Sock database murmurHash3 optimalSolver SSL_TLS)
 
 set(LINK_OBJ ${UTIL_OBJ} ${OPENSSL_LIBRARY_OBJ} ${LEVELDB_LIBRARY_OBJ}

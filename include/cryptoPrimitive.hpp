@@ -1,5 +1,6 @@
-#ifndef GENERALDEDUPSYSTEM_CRYPTOPRIMITIVE_HPP
-#define GENERALDEDUPSYSTEM_CRYPTOPRIMITIVE_HPP
+#ifndef TEDSTORE_CRYPTOPRIMITIVE_HPP
+#define TEDSTORE_CRYPTOPRIMITIVE_HPP
+
 #include "configure.hpp"
 #include "dataStructure.hpp"
 #include <bits/stdc++.h>
@@ -26,11 +27,8 @@ typedef struct {
 class CryptoPrimitive {
 public:
     const EVP_MD* md_;
-
     int hashSize_;
-    //int keySize_ = CHUNK_ENCRYPT_KEY_SIZE;
     int blockSize_;
-
     EVP_CIPHER_CTX* cipherctx_;
     EVP_MD_CTX* mdctx_;
     const EVP_CIPHER* cipher_;
@@ -51,24 +49,6 @@ public:
     bool encryptChunk(Chunk_t& chunk);
     bool decryptChunk(Chunk_t& chunk);
     bool decryptChunk(u_char* chunkData, int chunkSize, u_char* key, u_char* plaintData);
-    void PRINT_BYTE_ARRAY(
-        FILE* file, void* mem, uint32_t len)
-    {
-        if (!mem || !len) {
-            fprintf(file, "\n( null )\n");
-            return;
-        }
-        uint8_t* array = (uint8_t*)mem;
-        fprintf(file, "%u bytes:\n{\n", len);
-        uint32_t i = 0;
-        for (i = 0; i < len - 1; i++) {
-            fprintf(file, "0x%x, ", array[i]);
-            if (i % 8 == 7)
-                fprintf(file, "\n");
-        }
-        fprintf(file, "0x%x ", array[i]);
-        fprintf(file, "\n}\n");
-    }
 };
 
-#endif //GENERALDEDUPSYSTEM_CRYPTOPRIMITIVE_HPP
+#endif //TEDSTORE_CRYPTOPRIMITIVE_HPP

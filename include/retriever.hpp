@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_RETRIEVER_HPP
-#define GENERALDEDUPSYSTEM_RETRIEVER_HPP
+#ifndef TEDSTORE_RETRIEVER_HPP
+#define TEDSTORE_RETRIEVER_HPP
 
 #include "configure.hpp"
 #include "cryptoPrimitive.hpp"
@@ -32,4 +32,4 @@ public:
     bool extractMQFromRecvDecode(RetrieverData_t& data);
 };
 
-#endif //GENERALDEDUPSYSTEM_RETRIEVER_HPP
+#endif //TEDSTORE_RETRIEVER_HPP

@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_CONFIGURE_HPP
-#define GENERALDEDUPSYSTEM_CONFIGURE_HPP
+#ifndef TEDSTORE_CONFIGURE_HPP
+#define TEDSTORE_CONFIGURE_HPP
 
 #include <bits/stdc++.h>
 #include <boost/property_tree/json_parser.hpp>
@@ -7,28 +7,26 @@
 
 using namespace std;
 
-#define BREAK_DOWN_DEFINE 1
-// #define SINGLE_THREAD_KEY_MANAGER
-#define HIGH_SECURITY
-#define CHUNKER_FIX_SIZE_TYPE 0 //macro for the type of fixed-size chunker
-#define CHUNKER_VAR_SIZE_TYPE 1 //macro for the type of variable-size chunker
+// macro for system running types
+#define BREAK_DOWN_DEFINE 0 // 0:breakdown disable| 1:breakdown enable
+#define SINGLE_THREAD_KEY_MANAGER 0 // 0:dual thread key server| 1:single thread key server
+#define SEND_CHUNK_LIST_METHOD 1 //0:reduce structure overhead | 1:fix second upload error on some platform
+
+//macro for the type of chunker
+#define CHUNKER_FIX_SIZE_TYPE 0
+#define CHUNKER_VAR_SIZE_TYPE 1
 #define CHUNKER_TRACE_DRIVEN_TYPE_FSL 2
 #define CHUNKER_TRACE_DRIVEN_TYPE_UBC 3
+
 #define MIN_CHUNK_SIZE 4096 //macro for the min size of variable-size chunker
 #define AVG_CHUNK_SIZE 8192 //macro for the average size of variable-size chunker
 #define MAX_CHUNK_SIZE 16384 //macro for the max size of variable-size chunker
 
-#ifdef HIGH_SECURITY
 #define CHUNK_FINGER_PRINT_SIZE 32
 #define CHUNK_HASH_SIZE 32
 #define CHUNK_ENCRYPT_KEY_SIZE 32
 #define FILE_NAME_HASH_SIZE 32
-#else
-#define CHUNK_FINGER_PRINT_SIZE 16
-#define CHUNK_HASH_SIZE 16
-#define CHUNK_ENCRYPT_KEY_SIZE 16
-#define FILE_NAME_HASH_SIZE 16
-#endif
+
 #define DATA_TYPE_RECIPE 1
 #define DATA_TYPE_CHUNK 2
 
@@ -58,33 +56,17 @@ private:
 
     // key management settings
     uint64_t _keyServerNumber;
-    std::vector<std::string> _keyServerIP;
-    std::vector<int> _keyServerPort;
+    std::string _keyServerIP;
+    int _keyServerPort;
     int _keyBatchSize;
     uint64_t _sketchTableWidth;
     double _storageBlowPercent;
     int _optimalSolverComputeItemNumberThreshold;
 
-    //message queue size settings
-    int _Data_t_MQSize;
-    int _RetrieverData_t_MQSize;
-    int _StorageData_t_MQSize;
-
-    //muti thread settings
-    int _encodeThreadLimit;
-    int _keyClientThreadLimit;
-    int _keyServerThreadLimit;
-    int _senderThreadLimit;
-    int _recvDecodeThreadLimit;
-    int _dataSRThreadLimit;
-    int _retriverThreadLimit;
-    int _dedupCoreThreadLimit;
-    int _storageCoreThreadLimit;
-
     // storage management settings
     uint64_t _storageServerNumber;
-    std::vector<std::string> _storageServerIP;
-    std::vector<int> _storageServerPort;
+    std::string _storageServerIP;
+    int _storageServerPort;
     uint64_t _maxContainerSize;
 
     //server setting
@@ -121,11 +103,8 @@ public:
     uint64_t getReadSize();
 
     // key management settings
-    uint64_t getKeyServerNumber();
     std::string getKeyServerIP();
-    //std::vector<std::string> getkeyServerIP();
     int getKeyServerPort();
-    //std::vector<int> getKeyServerPort();
     int getkeyServerRArequestPort();
     int getKeyBatchSize();
     uint64_t getSketchTableWidth();
@@ -137,29 +116,10 @@ public:
     int get_RetrieverData_t_MQSize();
     int get_StorageData_t_MQSize();
 
-    //muti thread settings
-    int getEncoderThreadLimit();
-    int getKeyClientThreadLimit();
-    int getKeyServerThreadLimit();
-    int getSenderThreadLimit();
-    int getRecvDecodeThreadLimit();
-    int getDecoderThreadLimit();
-    int getDataSRThreadLimit();
-    int getRetriverThreadLimit();
-    int getDedupCoreThreadLimit();
-    int getStorageCoreThreadLimit();
-
     // storage management settings
-    uint64_t getStorageServerNumber();
     std::string getStorageServerIP();
-    //std::vector<std::string> getStorageServerIP();
-
     int getStorageServerPort();
-    //std::vector<int> getStorageServerPort();
-
     uint64_t getMaxContainerSize();
-
-    //server settings
     std::string getRecipeRootPath();
     std::string getContainerRootPath();
     std::string getFp2ChunkDBName();
@@ -172,4 +132,4 @@ public:
     int getSendShortHashMaskBitNumber();
 };
 
-#endif //GENERALDEDUPSYSTEM_CONFIGURE_HPP
+#endif //TEDSTORE_CONFIGURE_HPP
