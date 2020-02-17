@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_KEYCLIENT_HPP
-#define GENERALDEDUPSYSTEM_KEYCLIENT_HPP
+#ifndef TEDSTORE_KEYCLIENT_HPP
+#define TEDSTORE_KEYCLIENT_HPP
 
 #include "configure.hpp"
 #include "cryptoPrimitive.hpp"
@@ -36,4 +36,4 @@ public:
     bool keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber);
 };
 
-#endif //GENERALDEDUPSYSTEM_KEYCLIENT_HPP
+#endif //TEDSTORE_KEYCLIENT_HPP

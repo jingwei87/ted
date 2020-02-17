@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_SSL_HPP
-#define GENERALDEDUPSYSTEM_SSL_HPP
+#ifndef TEDSTORE_SSL_HPP
+#define TEDSTORE_SSL_HPP
 
 #include "openssl/bio.h"
 #include "openssl/err.h"
@@ -37,4 +37,4 @@ public:
     bool recv(SSL* connection, char* data, int& dataSize);
 };
 
-#endif //GENERALDEDUPSYSTEM_SSL_HPP
+#endif //TEDSTORE_SSL_HPP

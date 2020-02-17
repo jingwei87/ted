@@ -2,25 +2,6 @@
 
 extern Configure config;
 
-void PRINT_BYTE_ARRAY_RECV(
-    FILE* file, void* mem, uint32_t len)
-{
-    if (!mem || !len) {
-        fprintf(file, "\n( null )\n");
-        return;
-    }
-    uint8_t* array = (uint8_t*)mem;
-    fprintf(file, "%u bytes:\n{\n", len);
-    uint32_t i = 0;
-    for (i = 0; i < len - 1; i++) {
-        fprintf(file, "0x%x, ", array[i]);
-        if (i % 8 == 7)
-            fprintf(file, "\n");
-    }
-    fprintf(file, "0x%x ", array[i]);
-    fprintf(file, "\n}\n");
-}
-
 RecvDecode::RecvDecode(string fileName)
 {
     clientID_ = config.getClientID();
@@ -220,6 +201,6 @@ void RecvDecode::run()
             totalRecvChunks += chunkNumber;
         }
     }
-    cerr << "RecvDecode : download job done, exit now" << endl;
+    cout << "RecvDecode : download job done, exit now" << endl;
     return;
 }

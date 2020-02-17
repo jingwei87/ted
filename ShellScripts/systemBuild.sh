@@ -1,16 +1,10 @@
-./clean.sh
-# cd ./lib/openssl
-# ./config
-# JOBS := 
-# make -j$(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)
-# cd ../leveldb
-# make -j$(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)
-# cd ../../
+#!/bin/bash
+./ShellScripts/systemCleanup.sh
 if [ ! -d "bin" ]; then
- mkdir bin
+    mkdir bin
 fi
 if [ ! -d "build" ]; then
- mkdir build
+    mkdir build
 fi
 cd ./build
 rm -rf ./*

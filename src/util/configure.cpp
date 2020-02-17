@@ -1,7 +1,3 @@
-//
-// Created by a on 11/17/18.
-//
-
 #include "configure.hpp"
 
 Configure::~Configure() {}
@@ -29,46 +25,17 @@ void Configure::readConf(std::string path)
     _ReadSize = root.get<uint64_t>("ChunkerConfig._ReadSize");
 
     //Key Server Congigure
-    _keyServerNumber = root.get<uint64_t>("KeyServerConfig._keyServerNumber");
     _keyBatchSize = root.get<uint64_t>("KeyServerConfig._keyBatchSize");
-    _keyServerIP.clear();
-    for (ptree::value_type& it : root.get_child("KeyServerConfig._keyServerIP")) {
-        _keyServerIP.push_back(it.second.data());
-    }
-    _keyServerPort.clear();
-    for (ptree::value_type& it : root.get_child("KeyServerConfig._keyServerPort")) {
-        _keyServerPort.push_back(it.second.get_value<int>());
-    }
+    _keyServerIP = root.get<string>("KeyServerConfig._keyServerIP");
+    _keyServerPort = root.get<int>("KeyServerConfig._keyServerPort");
     _sketchTableWidth = root.get<uint64_t>("KeyServerConfig._sketchTableWidth");
     _optimalSolverComputeItemNumberThreshold = root.get<int>("KeyServerConfig._optimalSolverComputeItemNumberThreshold");
     _storageBlowPercent = root.get<double>("KeyServerConfig._storageBlowPercent");
-    //SP Configure
-    _storageServerNumber = root.get<uint64_t>("SPConfig._storageServerNumber");
+
+    //Storage Server Configure
     _maxContainerSize = root.get<uint64_t>("SPConfig._maxContainerSize");
-    _storageServerIP.clear();
-    for (ptree::value_type& it : root.get_child("SPConfig._storageServerIP")) {
-        _storageServerIP.push_back(it.second.data());
-    }
-
-    _storageServerPort.clear();
-    for (ptree::value_type& it : root.get_child("SPConfig._storageServerPort")) {
-        _storageServerPort.push_back(it.second.get_value<int>());
-    }
-
-    _Data_t_MQSize = root.get<int>("messageQueue._Data_t_MQSize");
-    _RetrieverData_t_MQSize = root.get<int>("messageQueue._RetrieverData_t_MQSize");
-    _StorageData_t_MQSize = root.get<int>("messageQueue._StorageData_t_MQSize");
-
-    //muti thread settings;
-    _encodeThreadLimit = root.get<int>("mutiThread._encodeThreadLimit");
-    _keyClientThreadLimit = root.get<int>("mutiThread._keyClientThreadLimit");
-    _keyServerThreadLimit = root.get<int>("mutiThread._keyServerThreadLimit");
-    _senderThreadLimit = root.get<int>("mutiThread._senderThreadLimit");
-    _recvDecodeThreadLimit = root.get<int>("mutiThread._recvDecodeThreadLimit");
-    _dataSRThreadLimit = root.get<int>("mutiThread._dataSRThreadLimit");
-    _retriverThreadLimit = root.get<int>("mutiThread._retriverThreadLimit");
-    _dedupCoreThreadLimit = root.get<int>("mutiThread._dedupCoreThreadLimit");
-    _storageCoreThreadLimit = root.get<int>("mutiThread._storageCoreThreadLimit");
+    _storageServerIP = root.get<string>("SPConfig._storageServerIP");
+    _storageServerPort = root.get<int>("SPConfig._storageServerPort");
 
     //server Configure
     _RecipeRootPath = root.get<std::string>("server._RecipeRootPath");
@@ -132,12 +99,6 @@ uint64_t Configure::getReadSize()
 }
 
 // key management settings
-uint64_t Configure::getKeyServerNumber()
-{
-
-    return _keyServerNumber;
-}
-
 int Configure::getKeyBatchSize()
 {
 
@@ -152,27 +113,14 @@ double Configure::getStorageBlowPercent()
 {
     return _storageBlowPercent;
 }
-
-/*
-std::vector<std::string> Configure::getkeyServerIP() {
-
-    return _keyServerIP;
-}
-
-std::vector<int> Configure::getKeyServerPort() {
-
-    return _keyServerPort;
-}
-
-*/
 std::string Configure::getKeyServerIP()
 {
-    return _keyServerIP[0];
+    return _keyServerIP;
 }
 
 int Configure::getKeyServerPort()
 {
-    return _keyServerPort[0];
+    return _keyServerPort;
 }
 
 int Configure::getOptimalSolverComputeItemNumberThreshold()
@@ -180,66 +128,17 @@ int Configure::getOptimalSolverComputeItemNumberThreshold()
     return _optimalSolverComputeItemNumberThreshold;
 }
 
-// message queue size setting
-int Configure::get_Data_t_MQSize()
-{
-    return _Data_t_MQSize;
-}
-
-int Configure::get_RetrieverData_t_MQSize()
-{
-    return _RetrieverData_t_MQSize;
-}
-int Configure::get_StorageData_t_MQSize()
-{
-    return _StorageData_t_MQSize;
-}
-
-//muti thread settings
-int Configure::getEncoderThreadLimit()
-{
-    return _encodeThreadLimit;
-}
-
-int Configure::getKeyClientThreadLimit()
-{
-    return _keyClientThreadLimit;
-}
-
-int Configure::getKeyServerThreadLimit()
-{
-    return _keyServerThreadLimit;
-}
-
-// storage management settings
-uint64_t Configure::getStorageServerNumber()
-{
-
-    return _storageServerNumber;
-}
-
 std::string Configure::getStorageServerIP()
 {
 
-    return _storageServerIP[0];
-}
-/*
-std::vector<std::string> Configure::getStorageServerIP() {
-
     return _storageServerIP;
-}*/
+}
 
 int Configure::getStorageServerPort()
 {
 
-    return _storageServerPort[0];
-}
-
-/*
-std::vector<int> Configure::getStorageServerPort() {
-
     return _storageServerPort;
-}*/
+}
 
 uint64_t Configure::getMaxContainerSize()
 {
@@ -276,36 +175,6 @@ std::string Configure::getFp2ChunkDBName()
 std::string Configure::getFp2MetaDBame()
 {
     return _fp2MetaDBame;
-}
-
-int Configure::getSenderThreadLimit()
-{
-    return _senderThreadLimit;
-}
-
-int Configure::getRecvDecodeThreadLimit()
-{
-    return _recvDecodeThreadLimit;
-}
-
-int Configure::getDataSRThreadLimit()
-{
-    return _dataSRThreadLimit;
-}
-
-int Configure::getRetriverThreadLimit()
-{
-    return _retriverThreadLimit;
-}
-
-int Configure::getDedupCoreThreadLimit()
-{
-    return _dedupCoreThreadLimit;
-}
-
-int Configure::getStorageCoreThreadLimit()
-{
-    return _storageCoreThreadLimit;
 }
 
 int Configure::getSendRecipeBatchSize()

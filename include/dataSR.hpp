@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_DATASR_HPP
-#define GENERALDEDUPSYSTEM_DATASR_HPP
+#ifndef TEDSTORE_DATASR_HPP
+#define TEDSTORE_DATASR_HPP
 
 #include "boost/bind.hpp"
 #include "boost/thread.hpp"
@@ -21,10 +21,11 @@ private:
     StorageCore* storageObj_;
     DedupCore* dedupCoreObj_;
     uint32_t restoreChunkBatchSize;
+
 public:
     DataSR(StorageCore* storageObj, DedupCore* dedupCoreObj);
     ~DataSR(){};
     void run(Socket socket);
 };
 
-#endif //GENERALDEDUPSYSTEM_DATASR_HPP
+#endif //TEDSTORE_DATASR_HPP

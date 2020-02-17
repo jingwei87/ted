@@ -42,11 +42,8 @@ int main(int argv, char* argc[])
 
         recvDecodeObj = new RecvDecode(fileName);
         retrieverObj = new Retriever(fileName, recvDecodeObj);
-
-        for (int i = 0; i < config.getRecvDecodeThreadLimit(); i++) {
-            th = new boost::thread(attrs, boost::bind(&RecvDecode::run, recvDecodeObj));
-            thList.push_back(th);
-        }
+        th = new boost::thread(attrs, boost::bind(&RecvDecode::run, recvDecodeObj));
+        thList.push_back(th);
         th = new boost::thread(attrs, boost::bind(&Retriever::recvThread, retrieverObj));
         thList.push_back(th);
 
@@ -57,21 +54,13 @@ int main(int argv, char* argc[])
         string inputFile(argc[2]);
         chunkerObj = new Chunker(inputFile, keyClientObj);
 
-        //start chunking thread
         th = new boost::thread(attrs, boost::bind(&Chunker::chunking, chunkerObj));
         thList.push_back(th);
+        th = new boost::thread(attrs, boost::bind(&keyClient::run, keyClientObj));
+        thList.push_back(th);
+        th = new boost::thread(attrs, boost::bind(&Sender::run, senderObj));
+        thList.push_back(th);
 
-        //start key client thread
-        for (int i = 0; i < config.getKeyClientThreadLimit(); i++) {
-            th = new boost::thread(attrs, boost::bind(&keyClient::run, keyClientObj));
-            thList.push_back(th);
-        }
-
-        // //start sender thread
-        for (int i = 0; i < config.getSenderThreadLimit(); i++) {
-            th = new boost::thread(attrs, boost::bind(&Sender::run, senderObj));
-            thList.push_back(th);
-        }
     } else {
         usage();
         return 0;

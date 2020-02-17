@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_STORAGECORE_HPP
-#define GENERALDEDUPSYSTEM_STORAGECORE_HPP
+#ifndef TEDSTORE_STORAGECORE_HPP
+#define TEDSTORE_STORAGECORE_HPP
 
 #include "configure.hpp"
 #include "cryptoPrimitive.hpp"
