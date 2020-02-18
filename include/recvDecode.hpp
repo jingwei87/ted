@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_RECIVER_HPP
-#define GENERALDEDUPSYSTEM_RECIVER_HPP
+#ifndef TEDSTORE_RECIVER_HPP
+#define TEDSTORE_RECIVER_HPP
 
 #include "configure.hpp"
 #include "cryptoPrimitive.hpp"
@@ -35,4 +35,4 @@ public:
     bool extractMQToRetriever(RetrieverData_t& newChunk);
 };
 
-#endif //GENERALDEDUPSYSTEM_RECIVER_HPP
+#endif //TEDSTORE_RECIVER_HPP

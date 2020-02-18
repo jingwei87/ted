@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_CHUNK_HPP
-#define GENERALDEDUPSYSTEM_CHUNK_HPP
+#ifndef TEDSTORE_CHUNK_HPP
+#define TEDSTORE_CHUNK_HPP
 
 #include "configure.hpp"
 #include <bits/stdc++.h>
@@ -38,9 +38,6 @@ typedef struct {
     u_char chunkHash[CHUNK_HASH_SIZE];
     u_char chunkKey[CHUNK_ENCRYPT_KEY_SIZE];
 } RecipeEntry_t;
-
-typedef vector<Chunk_t> ChunkList_t;
-typedef vector<RecipeEntry_t> RecipeList_t;
 
 typedef struct {
     uint64_t fileSize;
@@ -86,7 +83,6 @@ typedef struct {
 } NetworkHeadStruct_t;
 
 // database data structures
-
 typedef struct {
     u_char containerName[16];
     uint32_t offset;
@@ -100,4 +96,8 @@ typedef struct {
 
 typedef vector<uint32_t> RequiredChunk_t;
 
-#endif //GENERALDEDUPSYSTEM_CHUNK_HPP
+typedef vector<Chunk_t> ChunkList_t;
+
+typedef vector<RecipeEntry_t> RecipeList_t;
+
+#endif //TEDSTORE_CHUNK_HPP

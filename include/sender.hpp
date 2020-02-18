@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_SENDER_HPP
-#define GENERALDEDUPSYSTEM_SENDER_HPP
+#ifndef TEDSTORE_SENDER_HPP
+#define TEDSTORE_SENDER_HPP
 
 #include "configure.hpp"
 #include "cryptoPrimitive.hpp"
@@ -37,4 +37,4 @@ public:
     bool editJobDoneFlag();
 };
 
-#endif //GENERALDEDUPSYSTEM_SENDER_HPP
+#endif //TEDSTORE_SENDER_HPP

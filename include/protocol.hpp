@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_PROTOCOL_HPP
-#define GENERALDEDUPSYSTEM_PROTOCOL_HPP
+#ifndef TEDSTORE_PROTOCOL_HPP
+#define TEDSTORE_PROTOCOL_HPP
 
 #include <bits/stdc++.h>
 //client-server network protocol
@@ -41,4 +41,4 @@ typedef struct {
     vector<string> hash_;
 } powSignedHash_t;
 
-#endif //GENERALDEDUPSYSTEM_PROTOCOL_HPP
+#endif //TEDSTORE_PROTOCOL_HPP

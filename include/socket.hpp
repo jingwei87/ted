@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_NETWORK_HPP
-#define GENERALDEDUPSYSTEM_NETWORK_HPP
+#ifndef TEDSTORE_NETWORK_HPP
+#define TEDSTORE_NETWORK_HPP
 
 #include <arpa/inet.h>
 #include <bits/stdc++.h>
@@ -34,4 +34,4 @@ public:
     Socket Listen();
 };
 
-#endif //GENERALDEDUPSYSTEM_NETWORK_HPP
+#endif //TEDSTORE_NETWORK_HPP
