@@ -15,12 +15,10 @@ void Configure::readConf(std::string path)
     read_json<ptree>(path, root);
 
     //Chunker Configure
-    _runningType = root.get<uint64_t>("ChunkerConfig._runningType");
     _chunkingType = root.get<uint64_t>("ChunkerConfig._chunkingType");
     _maxChunkSize = root.get<uint64_t>("ChunkerConfig._maxChunkSize");
     _minChunkSize = root.get<uint64_t>("ChunkerConfig._minChunkSize");
     _slidingWinSize = root.get<uint64_t>("ChunkerConfig._slidingWinSize");
-    _segmentSize = root.get<uint64_t>("ChunkerConfig._segmentSize");
     _averageChunkSize = root.get<uint64_t>("ChunkerConfig._avgChunkSize");
     _ReadSize = root.get<uint64_t>("ChunkerConfig._ReadSize");
 
@@ -38,22 +36,16 @@ void Configure::readConf(std::string path)
     _storageServerPort = root.get<int>("SPConfig._storageServerPort");
 
     //server Configure
-    _RecipeRootPath = root.get<std::string>("server._RecipeRootPath");
-    _containerRootPath = root.get<std::string>("server._containerRootPath");
-    _fp2ChunkDBName = root.get<std::string>("server._fp2ChunkDBName");
-    _fp2MetaDBame = root.get<std::string>("server._fp2MetaDBame");
+    _RecipeRootPath = root.get<std::string>("SPConfig._RecipeRootPath");
+    _containerRootPath = root.get<std::string>("SPConfig._containerRootPath");
+    _fp2ChunkDBName = root.get<std::string>("SPConfig._fp2ChunkDBName");
+    _fp2MetaDBame = root.get<std::string>("SPConfig._fp2MetaDBame");
 
     //client Configure
     _clientID = root.get<int>("client._clientID");
     _sendChunkBatchSize = root.get<int>("client._sendChunkBatchSize");
     _sendRecipeBatchSize = root.get<int>("client._sendRecipeBatchSize");
     _sendShortHashMaskBitNumber = root.get<int>("client._sendShortHashMaskBitNumber");
-}
-
-uint64_t Configure::getRunningType()
-{
-
-    return _runningType;
 }
 
 // chunking settings
@@ -85,12 +77,6 @@ uint64_t Configure::getSlidingWinSize()
 {
 
     return _slidingWinSize;
-}
-
-uint64_t Configure::getSegmentSize()
-{
-
-    return _segmentSize;
 }
 
 uint64_t Configure::getReadSize()
