@@ -20,7 +20,7 @@ bool Database::openDB(std::string dbName)
     dbLock.open("." + dbName + ".lock", std::fstream::in);
     if (dbLock.is_open()) {
         dbLock.close();
-        std::cerr << "Database lock" << endl;
+        std::cerr << "Database locked" << endl;
         return false;
     }
     dbName_ = dbName;

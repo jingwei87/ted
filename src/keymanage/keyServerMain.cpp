@@ -3,7 +3,7 @@
 
 Configure config("config.json");
 
-#ifdef SINGLE_THREAD_KEY_MANAGER
+#if SINGLE_THREAD_KEY_MANAGER == 1
 int main()
 {
     ssl* keySecurityChannelTemp = new ssl(config.getKeyServerIP(), config.getKeyServerPort(), SERVERSIDE);

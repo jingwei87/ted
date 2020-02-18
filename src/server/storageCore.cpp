@@ -8,25 +8,6 @@ extern Configure config;
 extern Database fp2ChunkDB;
 extern Database fileName2metaDB;
 
-void PRINT_BYTE_ARRAY_STORAGE_CORE(
-    FILE* file, void* mem, uint32_t len)
-{
-    if (!mem || !len) {
-        fprintf(file, "\n( null )\n");
-        return;
-    }
-    uint8_t* array = (uint8_t*)mem;
-    fprintf(file, "%u bytes:\n{\n", len);
-    uint32_t i = 0;
-    for (i = 0; i < len - 1; i++) {
-        fprintf(file, "0x%x, ", array[i]);
-        if (i % 8 == 7)
-            fprintf(file, "\n");
-    }
-    fprintf(file, "0x%x ", array[i]);
-    fprintf(file, "\n}\n");
-}
-
 StorageCore::StorageCore()
 {
     RecipeNamePrefix_ = config.getRecipeRootPath();
@@ -63,10 +44,10 @@ StorageCore::~StorageCore()
 
     string writeContainerName = containerNamePrefix_ + lastContainerFileName_ + containerNameTail_;
     currentContainer_.saveTOFile(writeContainerName);
-    if (BREAK_DOWN_DEFINE) {
-        cout << "Upload query DB time = " << queryDBTimeUpload << " s, write Container time = " << writeContainerTime << " s, insert DB time = " << insertDBTimeUpload << " s, unique chunk number = " << uniqueChunkNumber << endl;
-        cout << "Restore chunks DB time = " << queryDBTime << " s, Read Container time = " << readContainerTime << " s, Current read container number = " << readContainerNumber << endl;
-    }
+#if BREAK_DOWN_DEFINE == 1
+    cout << "Upload query DB time = " << queryDBTimeUpload << " s, write Container time = " << writeContainerTime << " s, insert DB time = " << insertDBTimeUpload << " s, unique chunk number = " << uniqueChunkNumber << endl;
+    cout << "Restore chunks DB time = " << queryDBTime << " s, Read Container time = " << readContainerTime << " s, Current read container number = " << readContainerNumber << endl;
+#endif
     delete cryptoObj_;
 }
 
@@ -78,38 +59,37 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
     int readSize = sizeof(int);
     u_char hash[CHUNK_HASH_SIZE];
     string tmpdata;
-    // for (int i = 0; i < chunkNumber; i++) {
-    //     int currentChunkSize;
-    //     string originHash(data + readSize, CHUNK_HASH_SIZE);
-    //     // cout << "save chunk hash" << endl;
-    //     // PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, &originHash[0], CHUNK_HASH_SIZE);
-    //     readSize += CHUNK_HASH_SIZE;
-    //     memcpy(&currentChunkSize, data + readSize, sizeof(int));
-    //     readSize += sizeof(int);
-    //     if (fp2ChunkDB.query(originHash, tmpdata)) {
-    //         continue;
-    //     } else {
-    //         if (!saveChunk(originHash, data + readSize, currentChunkSize)) {
-    //             return false;
-    //         }
-    //     }
-    //     readSize += currentChunkSize;
-    // }
-
+#if SEND_CHUNK_LIST_METHOD == 0
+    for (int i = 0; i < chunkNumber; i++) {
+        int currentChunkSize;
+        string originHash(data + readSize, CHUNK_HASH_SIZE);
+        // cout << "save chunk hash" << endl;
+        readSize += CHUNK_HASH_SIZE;
+        memcpy(&currentChunkSize, data + readSize, sizeof(int));
+        readSize += sizeof(int);
+        if (fp2ChunkDB.query(originHash, tmpdata)) {
+            continue;
+        } else {
+            if (!saveChunk(originHash, data + readSize, currentChunkSize)) {
+                return false;
+            }
+        }
+        readSize += currentChunkSize;
+    }
+#else
     for (int i = 0; i < chunkNumber; i++) {
         int currentChunkSize;
         Chunk_t newChunk;
         memcpy(&newChunk, data + sizeof(int) + i * sizeof(Chunk_t), sizeof(Chunk_t));
         string originHash((char*)newChunk.chunkHash, CHUNK_HASH_SIZE);
-        // cout << "chunk " << newChunk.ID << "\t" << newChunk.logicDataSize << endl;
-        if (BREAK_DOWN_DEFINE) {
-            gettimeofday(&timestartStorage, NULL);
-        }
+#if BREAK_DOWN_DEFINE == 1
+        gettimeofday(&timestartStorage, NULL);
+#endif
         bool chunkStatus = fp2ChunkDB.query(originHash, tmpdata);
-        if (BREAK_DOWN_DEFINE) {
-            gettimeofday(&timeendStorage, NULL);
-            queryDBTimeUpload += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
-        }
+#if BREAK_DOWN_DEFINE == 1
+        gettimeofday(&timeendStorage, NULL);
+        queryDBTimeUpload += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
+#endif
         if (chunkStatus) {
             continue;
         } else {
@@ -119,12 +99,7 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
             }
         }
     }
-    // cout << "Save " << chunkNumber << " chunks done" << endl;
-    // cerr << "DedupCore : recv " << setbase(10) << chunkNumber << " chunk from client" << endl;
-    // gettimeofday(&timeendStorage, NULL);
-    // long diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
-    // double second = diff / 1000000.0;
-    // printf("save chunk list time is %ld us = %lf s\n", diff, second);
+#endif
     return true;
 }
 
@@ -144,15 +119,10 @@ bool StorageCore::restoreRecipeHead(char* fileNameHash, Recipe_t& restoreRecipe)
             Recipe_t tempRecipeHead;
             char recipeHeadBuffer[sizeof(Recipe_t)];
             memset(recipeHeadBuffer, 0, sizeof(Recipe_t));
-            // RecipeIn.seekg(0, ios_base::end);
-            // int nFileLen = RecipeIn.tellg();
-            // cerr << "StorageCore : current recipe file size = " << nFileLen << endl;
             RecipeIn.seekg(ios::beg);
             RecipeIn.read(recipeHeadBuffer, sizeof(Recipe_t));
             RecipeIn.close();
             memcpy(&restoreRecipe, recipeHeadBuffer, sizeof(Recipe_t));
-            // cerr << "StorageCore : restore file size = " << restoreRecipe.fileRecipeHead.fileSize << " total chunk number = " << restoreRecipe.fileRecipeHead.totalChunkNumber << endl;
-            // PRINT_BYTE_ARRAY_STORAGE_CORE(stderr, recipeHeadBuffer, sizeof(Recipe_t));
             return true;
         }
     } else {
@@ -174,20 +144,16 @@ bool StorageCore::saveRecipe(std::string recipeName, Recipe_t recipeHead, Recipe
     }
     int recipeListSize = recipeList.size();
     if (status) {
-        // char tempBuffer[sizeof(RecipeEntry_t)];
         for (int i = 0; i < recipeListSize; i++) {
-            // memcpy(tempBuffer, &recipeList[i], sizeof(RecipeEntry_t));
             RecipeOut.write((char*)&recipeList[i], sizeof(RecipeEntry_t));
         }
     } else {
         char tempHeadBuffer[sizeof(Recipe_t)];
         memcpy(tempHeadBuffer, &recipeHead, sizeof(Recipe_t));
         RecipeOut.write(tempHeadBuffer, sizeof(Recipe_t));
-        cerr << "StorageCore : save recipe head over, total chunk number = " << recipeHead.fileRecipeHead.totalChunkNumber << " file size = " << recipeHead.fileRecipeHead.fileSize << endl;
-        // PRINT_BYTE_ARRAY_STORAGE_CORE(stderr, tempHeadBuffer, sizeof(Recipe_t));
+        cout << "StorageCore : save recipe head over, total chunk number = " << recipeHead.fileRecipeHead.totalChunkNumber << " file size = " << recipeHead.fileRecipeHead.fileSize << endl;
         char tempBuffer[sizeof(RecipeEntry_t)];
         for (int i = 0; i < recipeListSize; i++) {
-            // memcpy(tempBuffer, &recipeList[i], sizeof(RecipeEntry_t));
             RecipeOut.write((char*)&recipeList[i], sizeof(RecipeEntry_t));
         }
     }
@@ -220,7 +186,6 @@ bool StorageCore::restoreRecipeAndChunk(char* fileNameHash, uint32_t startID, ui
             memcpy(&newRecipeEntry, readBuffer + i * sizeof(RecipeEntry_t), sizeof(RecipeEntry_t));
             string chunkHash((char*)newRecipeEntry.chunkHash, CHUNK_HASH_SIZE);
             string chunkData;
-            // PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, (char*)newRecipeEntry.chunkHash, CHUNK_HASH_SIZE);
             if (restoreChunk(chunkHash, chunkData)) {
                 if (chunkData.length() != newRecipeEntry.chunkSize) {
                     cerr << "StorageCore : restore chunk logic data size error" << endl;
@@ -233,11 +198,6 @@ bool StorageCore::restoreRecipeAndChunk(char* fileNameHash, uint32_t startID, ui
                     memcpy(newChunk.encryptKey, newRecipeEntry.chunkKey, CHUNK_ENCRYPT_KEY_SIZE);
                     memcpy(newChunk.logicData, &chunkData[0], newChunk.logicDataSize);
                     restoredChunkList.push_back(newChunk);
-                    // cerr << "StorageCore : restore chunk ID = " << newChunk.ID << endl;
-                    // cout << "StorageCore : Restore Chunk ID = " << newChunk.ID << " size = " << newChunk.logicDataSize << endl;
-                    // PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, newChunk.chunkHash, CHUNK_HASH_SIZE);
-                    // PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, newChunk.encryptKey, CHUNK_ENCRYPT_KEY_SIZE);
-                    // PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, newChunk.logicData, newChunk.logicDataSize);
                 }
 
             } else {
@@ -253,39 +213,34 @@ bool StorageCore::restoreRecipeAndChunk(char* fileNameHash, uint32_t startID, ui
 
 bool StorageCore::saveChunk(std::string chunkHash, char* chunkData, int chunkSize)
 {
-    // cout << "Save Chunk size = " << chunkSize << endl;
-    // PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, &chunkHash[0], CHUNK_HASH_SIZE);
-    // PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, chunkData, chunkSize);
-
     keyForChunkHashDB_t key;
     key.length = chunkSize;
-    if (BREAK_DOWN_DEFINE) {
-        gettimeofday(&timestartStorage, NULL);
-    }
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timestartStorage, NULL);
+#endif
     bool status = writeContainer(key, chunkData);
-    if (BREAK_DOWN_DEFINE) {
-        gettimeofday(&timeendStorage, NULL);
-        writeContainerTime += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
-    }
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timeendStorage, NULL);
+    writeContainerTime += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
+#endif
     if (!status) {
-        std::cerr << "Error write container" << endl;
+        std::cerr << "StorageCore : Error write container" << endl;
         return status;
     }
 
-    if (BREAK_DOWN_DEFINE) {
-        gettimeofday(&timestartStorage, NULL);
-    }
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timestartStorage, NULL);
+#endif
     string dbValue;
     dbValue.resize(sizeof(keyForChunkHashDB_t));
     memcpy(&dbValue[0], &key, sizeof(keyForChunkHashDB_t));
     status = fp2ChunkDB.insert(chunkHash, dbValue);
-    if (BREAK_DOWN_DEFINE) {
-        gettimeofday(&timeendStorage, NULL);
-        insertDBTimeUpload += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
-    }
-
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timeendStorage, NULL);
+    insertDBTimeUpload += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
+#endif
     if (!status) {
-        std::cerr << "Can't insert chunk to database" << endl;
+        std::cerr << "StorageCore : Can't insert chunk to database" << endl;
         return false;
     } else {
         currentContainer_.used_ += key.length;
@@ -297,27 +252,29 @@ bool StorageCore::restoreChunk(std::string chunkHash, std::string& chunkDataStr)
 {
     keyForChunkHashDB_t key;
     string ans;
-    if (BREAK_DOWN_DEFINE) {
-        gettimeofday(&timestartStorage, NULL);
-    }
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timestartStorage, NULL);
+#endif
+
     bool status = fp2ChunkDB.query(chunkHash, ans);
-    if (BREAK_DOWN_DEFINE) {
-        gettimeofday(&timeendStorage, NULL);
-        int diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
-        double second = diff / 1000000.0;
-        queryDBTime += second;
-    }
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timeendStorage, NULL);
+    int diff = 1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec;
+    double second = diff / 1000000.0;
+    queryDBTime += second;
+#endif
     if (status) {
         memcpy(&key, &ans[0], sizeof(keyForChunkHashDB_t));
         char chunkData[key.length];
-        if (BREAK_DOWN_DEFINE) {
-            gettimeofday(&timestartStorage, NULL);
-        }
+#if BREAK_DOWN_DEFINE == 1
+        gettimeofday(&timestartStorage, NULL);
+#endif
+
         bool readContainerStatus = readContainer(key, chunkData);
-        if (BREAK_DOWN_DEFINE) {
-            gettimeofday(&timeendStorage, NULL);
-            readContainerTime += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
-        }
+#if BREAK_DOWN_DEFINE == 1
+        gettimeofday(&timeendStorage, NULL);
+        readContainerTime += (1000000 * (timeendStorage.tv_sec - timestartStorage.tv_sec) + timeendStorage.tv_usec - timestartStorage.tv_usec) / 1000000.0;
+#endif
         if (readContainerStatus) {
             chunkDataStr.resize(key.length);
             memcpy(&chunkDataStr[0], chunkData, key.length);
@@ -336,10 +293,8 @@ bool StorageCore::checkRecipeStatus(Recipe_t recipeHead, RecipeList_t recipeList
 {
     string recipeName;
     string DBKey((char*)recipeHead.fileRecipeHead.fileNameHash, FILE_NAME_HASH_SIZE);
-    // cerr << "StorageCore : recv recpie head, file size = " << recipeHead.fileRecipeHead.fileSize << " total chunk number = " << recipeHead.fileRecipeHead.totalChunkNumber << endl;
-    // PRINT_BYTE_ARRAY_STORAGE_CORE(stderr, recipeHead.fileRecipeHead.fileNameHash, FILE_NAME_HASH_SIZE);
     if (fileName2metaDB.query(DBKey, recipeName)) {
-        cerr << "StorageCore : current file's recipe exist, add data back, recipe file name = " << recipeName << endl;
+        cout << "StorageCore : current file's recipe exist, add data back, recipe file name = " << recipeName << endl;
         if (!this->saveRecipe(recipeName, recipeHead, recipeList, true)) {
             std::cerr << "StorageCore : save recipe failed " << endl;
             return false;
@@ -349,7 +304,7 @@ bool StorageCore::checkRecipeStatus(Recipe_t recipeHead, RecipeList_t recipeList
         for (int i = 0; i < FILE_NAME_HASH_SIZE; i++) {
             sprintf(recipeNameBuffer + 2 * i, "%02X", recipeHead.fileRecipeHead.fileNameHash[i]);
         }
-        cerr << "StorageCore : current file's recipe not exist, new recipe file name = " << recipeNameBuffer << endl;
+        cout << "StorageCore : current file's recipe not exist, new recipe file name = " << recipeNameBuffer << endl;
         string recipeNameNew(recipeNameBuffer, FILE_NAME_HASH_SIZE * 2);
         fileName2metaDB.insert(DBKey, recipeNameNew);
         if (!this->saveRecipe(recipeNameNew, recipeHead, recipeList, false)) {
@@ -357,7 +312,7 @@ bool StorageCore::checkRecipeStatus(Recipe_t recipeHead, RecipeList_t recipeList
             return false;
         }
     }
-    cerr << "StorageCore : save recipe number = " << recipeList.size() << endl;
+    cout << "StorageCore : save recipe number = " << recipeList.size() << endl;
     return true;
 }
 
@@ -371,7 +326,6 @@ bool StorageCore::writeContainer(keyForChunkHashDB_t& key, char* data)
         currentContainer_.saveTOFile(writeContainerName);
         next_permutation(lastContainerFileName_.begin(), lastContainerFileName_.end());
         currentContainer_.used_ = 0;
-        // cout << "key.length = " << key.length << " data size " << strlen(data) << endl;
         memcpy(&currentContainer_.body_[currentContainer_.used_], data, key.length);
         memcpy(key.containerName, &lastContainerFileName_[0], lastContainerFileName_.length());
     }
@@ -422,7 +376,7 @@ bool Container::saveTOFile(string fileName)
         return false;
     }
     containerOut.write(this->body_, this->used_);
-    cerr << "Container : save " << setbase(10) << this->used_ << " bytes to file system" << endl;
+    cout << "Container : save " << setbase(10) << this->used_ << " bytes to file system" << endl;
     containerOut.close();
     return true;
 }

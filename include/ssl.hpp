@@ -1,5 +1,5 @@
-#ifndef GENERALDEDUPSYSTEM_SSL_HPP
-#define GENERALDEDUPSYSTEM_SSL_HPP
+#ifndef TEDSTORE_SSL_HPP
+#define TEDSTORE_SSL_HPP
 
 #include "openssl/bio.h"
 #include "openssl/err.h"
@@ -12,11 +12,11 @@
 #define SERVERSIDE 0
 #define CLIENTSIDE 1
 
-#define SECRT "key/servercert.pem"
-#define SEKEY "key/server.key"
-#define CLCRT "key/clientcert.pem"
-#define CLKEY "key/client.key"
-#define CACRT "key/cacert.pem"
+#define SECRT "key/server-cert.pem"
+#define SEKEY "key/server-key.pem"
+#define CLCRT "key/client-cert.pem"
+#define CLKEY "key/client-key.pem"
+#define CACRT "key/ca-cert.pem"
 
 using namespace std;
 
@@ -37,4 +37,4 @@ public:
     bool recv(SSL* connection, char* data, int& dataSize);
 };
 
-#endif //GENERALDEDUPSYSTEM_SSL_HPP
+#endif //TEDSTORE_SSL_HPP
