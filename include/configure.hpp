@@ -43,7 +43,6 @@ using namespace std;
 class Configure {
 private:
     // following settings configure by macro set
-    uint64_t _runningType; // localDedup \ serverDedup
 
     // chunking settings
     uint64_t _chunkingType; // varSize \ fixedSize \ simple
@@ -51,7 +50,6 @@ private:
     uint64_t _minChunkSize;
     uint64_t _averageChunkSize;
     uint64_t _slidingWinSize;
-    uint64_t _segmentSize; // if exist segment function
     uint64_t _ReadSize; //128M per time
 
     // key management settings
@@ -90,8 +88,6 @@ public:
     ~Configure();
 
     void readConf(std::string path);
-
-    uint64_t getRunningType();
 
     // chunking settings
     uint64_t getChunkingType();
