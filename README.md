@@ -172,7 +172,7 @@ Second Storage Saving: 0.280207
 ----------------Storage Efficiency--------------
 The amount of unique plaintext chunks: 740314
 The amount of unique ciphertext chunks: 769990
-Storage blowup rate: 0.040086
+Storage blowup rate: 1.040086
 The maximum count of plaintext chunks: 43592
 The amount of unique plaintext chunks: 740314
 Total Logical Plaintext Chunks: 1069738
