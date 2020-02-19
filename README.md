@@ -8,9 +8,7 @@ Conventional encrypted deduplication approaches retain the deduplication capabil
 
 * Jingwei Li, Zuoru Yang, Yanjing Ren, Patrick P. C. Lee, and Xiaosong Zhang. Balancing Storage Efficiency and Data Confidentiality with Tunable Encrypted Deduplication. Proceedings of the European Conference on Computer Systems (Eurosys 2020), Heraklion, Crete, Greece, Apr 2020
 
-## Build TED System Prototype
-
-### Prerequisites
+## Prerequisites
 
 TED supports CMake out of the box. The requirements of TED for the compilation system are as follows:
 
@@ -24,28 +22,182 @@ This prototype requires the following libraries:
 * Snappy: [libsnappy-1.1.8](https://github.com/google/snappy/archive/1.1.8.tar.gz)
 * Leveldb: [leveldb-1.22](https://github.com/google/leveldb/archive/1.22.tar.gz)
 
-Among them, Leveldb 1.22 and OpenSSL 1.1.1d has been packaged in  `lib/` to avoid compilation problems caused by different versions of the leveldb library paths and inconsistent default OpenSSL versions on different systems. And the other dependent packages can be easily installed through the package management tool. For example, in Ubuntu 18.04 LTS, you can execute the following command to complete the installation.
+Among them, Leveldb 1.22 and OpenSSL 1.1.1d package are required to avoid compilation problems caused by different versions of the leveldb library paths and inconsistent default OpenSSL versions on different systems. You can download the compressed files of the two packages via the above link and rename them to `openssl.tar.gz` and `leveldb.tar.gz`. Then you can configure and compile them with the following commands, and copy the two folders after compilation to `./Prototype/lib/` and `./Simulator/lib/` for compiling the prototype and the simulator.
+
+```shell
+tar -xpf leveldb.tar.gz
+cd ./leveldb/
+mkdir -p build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
+cp -r ./leveldb ${PATH_TO_TEDStore}/Prototype/lib/
+cp -r ./leveldb ${PATH_TO_TEDStore}/Simulator/lib/
+```
+
+```shell
+tar -xpf openssl.tar.gz
+cd ./openssl/
+./config && make
+cp -r ./openssl ${PATH_TO_TEDStore}/Prototype/lib/
+cp -r ./openssl ${PATH_TO_TEDStore}/Simulator/lib/
+```
+
+And the other dependent packages can be easily installed through the package management tool. For example, in Ubuntu 18.04 LTS, you can execute the following command to complete the installation.
 
 ```shell
 sudo apt install libboost-all-dev libsnappy-dev
 ```
 
-### Building
+## TED Simulator
 
-First, you need to complete the compilation of Leveldb and OpenSSL which packaged in `lib/`. You can quickly complete it by the following command:
+When using the simulator, first enter the `./Simulator/` folder directory.
 
-```shell
-cd lib/leveldb/
-mkdir -p build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
-```
+### Build TED Simulator
+
+We provide a simple script to build the simulator, please run:
 
 ```shell
-cd lib/openssl/
-./config && make
+bash ./script/setup.sh
 ```
 
-Then compile the TED prototype as shown below:
+The executable files are in *./bin*.
+
+### Configure TED simulator
+
+In TED simulator, you can configure the parameters of the sketch in *./include/define.h*
+
+```C++
+/**sketch configuration*/
+#define SKETCH_ENABLE 1  // 1: using sketch 0: using hash table
+#define SKETCH_DEPTH 4 // the depth of sketch
+#define SKETCH_WIDTH (2<<20) // the width of sketch
+```
+
+And you need to configure the size of the fingerprint of the input trace. For FSL trace, it is 6 bytes. For MS trace, it is 5 bytes.
+
+```c++
+#define FP_SIZE (6) // for FSL trace
+// if use MS trace, FP_SIZE = 5
+```
+
+### Usage
+
+TED simulator implements 5 kinds of secure deduplication encryption schemes, including bted (Basic TED), fted (Full TED), minhash (MinHash Encryption), mle (Message-locked Encryption), ske (Symmetric Key Encryption). Here, we show the command format of each scheme.
+
+```shell
+1. bted (Basic TED): ./TEDSim [inputfile] [outputfile] [threshold] [distribution-type]
+2, fted (Full TED):./TEDSim [inputfile] [outputfile] [batch-size] [storage blowup >=1] [distribution type]
+3, minhash: ./TEDSim [inputfile] [outputfile]
+4, mle: ./TEDSim [inputfile] [outputfile]
+5, ske: ./TEDSim [inputfile] [outputfile]
+[distribution-type: (0) Disable (1)uniform-distribution(2)poisson-distribution (3)normal-distribution (4)geo-distribution]
+```
+
+The input file should be a fingerprint list following the format in our example in *./example* folder.
+
+Note: for the case of probabilistic key generation, this simulator can support 4 types of probabilistic distributions, but we only consider the uniform distribution in our original paper (i.e., [distribution type]=1).
+
+After each run, it would generate two files:
+
+```shell
+[outputfile].pfreq: the frequency of each chunk in the original workload
+[outputfile].cfreq: the frequency of each encrypted chunk in encrypted workload
+```
+
+Then you can run the script to compare the original workload and encrypted workload in different dimensions
+
+```shell
+python3 ./script/analyze.py [outputfile].pfreq [outputfile].cfreq
+```
+
+### Demo
+
+Here, we provide a demo to show how to use this simulator, the FSL demo trace file cloud download via [FSL Traces and Snapshots Public Archive](http://tracer.filesystems.org/traces/fslhomes/) and the fingerprint list could be generated by the following commands with the help of [fs-hasher](http://tracer.filesystems.org/fs-hasher-0.9.5.tar.gz)
+
+```shell
+tar -jxvf ${compressed_hash_file_name}.tar.bz2
+./hf-stat -f ${Uncompressed_hash_file_name}
+```
+
+Then, you will need to remove the first line in the generated fingerprint list.
+
+Here we use Full-TED with probabilistic key generation and the batch size is 3000. Suppose the output file name is *test*, and we set the storage blowup factor as 1.05. Then the whole command is
+
+```shell
+cd bin;
+./TEDSim ../example/fslhomes-user004-2013-01-22 test fted 3000 1.05 1
+```
+
+After this, it would print out some statistic information and generates two files (i.e., test.pfreq, test.cfreq):
+
+```shell
+============== Original Backup =============
+Logical original chunks number: 1069738
+Logical original chunks size: 9.416790GB
+Unique original chunks number: 740314
+Unique original chunks size: 6.449752GB
+============== Encrypted Backup ============
+Logical encrypted chunks size: 10111200989
+Logical encrypted chunks number: 1069738
+Logical encrypted chunks size: 9.416790GB
+Unique encrypted chunks size: 7240790193
+Unique encrypted chunks number: 769990
+Unique encrypted chunks size: 6.743511GB
+============== Storage Saving Ratio ========
+Original Storage Saving (Size): 0.315080
+Original Storage Saving (Chunk): 0.307948
+Encrypted Storage Saving (Size): 0.283884
+Encrypted Storage Saving (Chunk): 0.280207
+```
+
+Then, it can use the following command to further see other statistic information (e.g KLD) 
+
+```shell
+python3 ../script/analyze.py test.pfreq test.cfreq
+```  
+
+After this, it shows
+
+```shell
+----------------Finish Reading Data------------
+The maximum count of plaintext chunks: 43592
+The amount of unique plaintext chunks: 740314
+Total Logical Plaintext Chunks: 1069738
+The maximum count of ciphertext chunks: 32
+The amount of unique ciphertext chunks: 769990
+Total Logical Ciphertext Chunks: 1069738
+First KLDivergence: 0.844787
+Second KLDivergence: 0.227477
+First Storage Saving: 0.307948
+Second Storage Saving: 0.280207
+----------------Storage Efficiency--------------
+The amount of unique plaintext chunks: 740314
+The amount of unique ciphertext chunks: 769990
+Storage blowup rate: 0.040086
+The maximum count of plaintext chunks: 43592
+The amount of unique plaintext chunks: 740314
+Total Logical Plaintext Chunks: 1069738
+The maximum count of ciphertext chunks: 32
+The amount of unique ciphertext chunks: 769990
+Total Logical Ciphertext Chunks: 1069738
+```
+
+We can see under this setting, Full-TED reduces the KLD from 0.844787 to 0.227477, while the storage blowup is around 1.04 which is close to the setting storage blowup factor of 1.05.
+
+### Limitations
+
+* In this simulator, we treat the fingerprint of each chunk as the corresponding chunk content. The reason is we can only get the chunk fingerprint in both FSL trace and MS trace. There may be some deviation compared with using the real chunk content.
+
+### Maintainers
+
+* Zuoru Yang, The Chinese University of Hong Kong (CUHK), zryang@cse.cuhk.edu.hk
+
+## TED System Prototype
+
+When using the prototype, first enter the `./Prototype/` folder directory.
+
+### Build TED System Prototype
+
+You cloud compile the TED prototype as shown below:
 
 ```shell
 mkdir -p bin
@@ -55,16 +207,16 @@ cmake -DCMAKE_BUILD_TYPE=Release .. && make
 
 After compiling, copy the `lib/*.a`, `config.json`, and `key/` folders to the `bin/` folder.
 
-To simplify the process, a quick build can be done through the script we provide. At the same time, the script will clear the compilation result of the original prototype at runtime (TED will be recompiled every time the script is used, and both leveldb and OpenSSL libraries are compiled only on first compilation)
+To simplify the process, a quick build can be done through the script we provide. At the same time, the script will clear the compilation result of the original prototype at runtime (TED will be recompiled every time the script is used)
 
 ```shell
 chmod +x ./ShellScripts/systemBuild.sh
 ./ShellScripts/systemBuild.sh
 ```
 
-## Configure TED System Prototype
+### Configure TED System Prototype
 
-When using this prototype after compilation is complete, we provide concise setting options based on json. Various parameters of the system can be set in `bin/config.json` according to the attribute name. For the attributes, we make the following comments:
+When using this prototype after compilation is complete, we provide concise setting options based on JSON. Various parameters of the system can be set in `bin/config.json` according to the attribute name. For the attributes, we make the following comments:
 
 ```json
 {
@@ -102,15 +254,15 @@ When using this prototype after compilation is complete, we provide concise sett
 }
 ```
 
-## Usage
+### Usage
 
 After compilation and configuration are completed, TED is available, and instructions for use are given next.
 
-### Start Servers
+#### Start Servers
 
 In the `bin/` folder, directly execute the `keymanager` and `server` executable files to start the service according to the settings of `config.json`
 
-### Start Client
+#### Start Client
 
 TED provides a simple file store and restores operation:
 
@@ -129,13 +281,13 @@ $ ./client -s test
 $ ./client -r test
 ```
 
-## Limitations
+### Limitations
 
 * TED focuses on only the deduplication of data chunks, but not metadata.
 * TED does not address the fault tolerance of the key manager and the provider.
 * TED focuses on confidentiality and does not support fine-grained access control.
 * TED has no optimization for file restore. As the number of stored files increases and fragmentation increases, the performance of restore decreases significantly.
 
-## Maintainers
+### Maintainers
 
 * Yanjing Ren, University of Electronic Science and Technology of China (UESTC), tinoryj@gmail.com

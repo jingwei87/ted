@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.1)
+project(TEDSim)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_VERBOSE_MAKEFILE TRUE)
+
+set(EXECUTABLE_OUTPUT_PATH ${TEDSim_SOURCE_DIR}/bin)
+set(LIBRARY_OUTPUT_DIRECTORY ${TEDSim_SOURCE_DIR}/bin)
+
+add_subdirectory(src)
