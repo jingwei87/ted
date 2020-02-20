@@ -234,7 +234,7 @@ When using this prototype after compilation is complete, we provide concise sett
         "_keyServerPort": 6666, // Key server host port
         "_sketchTableWidth": 1048576, // Number of columns in the sketch table
         "_optimalSolverComputeItemNumberThreshold": 48000, // After every set number of keys are generated, the optimization parameter t is solved
-        "_storageBlowPercent": 0.005 // Preset storage expansion coefficient b, Uint: 1
+        "_storageBlowPercent": 0.005 // Preset storage blowup factor b, Uint: 1
     },
     "SPConfig": {
         "_storageServerIP": "127.0.0.1", // Storage server host IP
