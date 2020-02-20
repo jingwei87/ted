@@ -10,35 +10,35 @@ Conventional encrypted deduplication approaches retain the deduplication capabil
 
 ## Prerequisites
 
-TED supports CMake out of the box. The requirements of TED for the compilation system are as follows:
+TED and TEDStore supports CMake out of the box. The requirements for the compilation system are as follows:
 
 * CMake version higher than 3.10 (Default CMake 3.17)
 * C/C++ compilation tools need to support C 11 and C++ 11 standards (Default GNU GCC 7.4.0)
 
-This prototype requires the following libraries:
+The TED and TEDStore require the following libraries:
 
 * OpenSSL: [openssl-1.1.1d](https://www.openssl.org/source/openssl-1.1.1d.tar.gz)
 * Boost C++ library: [libboost-1.72.0](https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.tar.gz)
 * Snappy: [libsnappy-1.1.8](https://github.com/google/snappy/archive/1.1.8.tar.gz)
 * Leveldb: [leveldb-1.22](https://github.com/google/leveldb/archive/1.22.tar.gz)
 
-Among them, Leveldb 1.22 and OpenSSL 1.1.1d package are required to avoid compilation problems caused by different versions of the leveldb library paths and inconsistent default OpenSSL versions on different systems. You can download the compressed files of the two packages via the above link and rename them to `openssl.tar.gz` and `leveldb.tar.gz`. Then you can configure and compile them with the following commands, and copy the two folders after compilation to `./Prototype/lib/` and `./Simulator/lib/` for compiling the prototype and the simulator.
+Among them, Leveldb 1.22 and OpenSSL 1.1.1d package are required to avoid compilation problems caused by different versions of the leveldb library paths and inconsistent default OpenSSL versions on different systems. You can download the compressed files of the two packages via the above link and rename them to `openssl.tar.gz` and `leveldb.tar.gz`. Then you can configure and compile them with the following commands, and copy the two folders after compilation to `./TEDStore/lib/` and `./TED/lib/` for compiling the prototype and the simulator.
 
 ```shell
 tar -xpf leveldb.tar.gz
 cd ./leveldb/
 mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
-cp -r ./leveldb ${PATH_TO_TEDStore}/Prototype/lib/
-cp -r ./leveldb ${PATH_TO_TEDStore}/Simulator/lib/
+cp -r ./leveldb ${PATH_TO_TEDStore}/TEDStore/lib/
+cp -r ./leveldb ${PATH_TO_TEDStore}/TED/lib/
 ```
 
 ```shell
 tar -xpf openssl.tar.gz
 cd ./openssl/
 ./config && make
-cp -r ./openssl ${PATH_TO_TEDStore}/Prototype/lib/
-cp -r ./openssl ${PATH_TO_TEDStore}/Simulator/lib/
+cp -r ./openssl ${PATH_TO_TEDStore}/TEDStore/lib/
+cp -r ./openssl ${PATH_TO_TEDStore}/TED/lib/
 ```
 
 And the other dependent packages can be easily installed through the package management tool. For example, in Ubuntu 18.04 LTS, you can execute the following command to complete the installation.
@@ -49,7 +49,7 @@ sudo apt install libboost-all-dev libsnappy-dev
 
 ## TED Simulator
 
-When using the simulator, first enter the `./Simulator/` folder directory.
+When using the simulator, first enter the `./TED/` folder directory.
 
 ### Build TED Simulator
 
@@ -193,11 +193,11 @@ We can see under this setting, Full-TED reduces the KLD from 0.844787 to 0.22747
 
 ## TED System Prototype
 
-When using the prototype, first enter the `./Prototype/` folder directory.
+When using the prototype, first enter the `./TEDStore/` folder directory.
 
-### Build TED System Prototype
+### Build TEDStore System Prototype
 
-You cloud compile the TED prototype as shown below:
+You cloud compile the TEDStore prototype as shown below:
 
 ```shell
 mkdir -p bin
@@ -214,11 +214,11 @@ chmod +x ./ShellScripts/systemBuild.sh
 ./ShellScripts/systemBuild.sh
 ```
 
-### Configure TED System Prototype
+### Configure TEDStore System Prototype
 
 When using this prototype after compilation is complete, we provide concise setting options based on JSON. Various parameters of the system can be set in `bin/config.json` according to the attribute name. For the attributes, we make the following comments:
 
-```json
+```
 {
     "ChunkerConfig": {
         "_chunkingType": 1, // 0: fixed size chunking; 1: variable size chunking
@@ -264,7 +264,7 @@ In the `bin/` folder, directly execute the `keymanager` and `server` executable 
 
 #### Start Client
 
-TED provides a simple file store and restores operation:
+TEDStore provides a simple file store and restores operation:
 
 ```
 [client -s filename] for store file
@@ -283,10 +283,10 @@ $ ./client -r test
 
 ### Limitations
 
-* TED focuses on only the deduplication of data chunks, but not metadata.
-* TED does not address the fault tolerance of the key manager and the provider.
-* TED focuses on confidentiality and does not support fine-grained access control.
-* TED has no optimization for file restore. As the number of stored files increases and fragmentation increases, the performance of restore decreases significantly.
+* TEDStore focuses on only the deduplication of data chunks, but not metadata.
+* TEDStore does not address the fault tolerance of the key manager and the provider.
+* TEDStore focuses on confidentiality and does not support fine-grained access control.
+* TEDStore has no optimization for file restore. As the number of stored files increases and fragmentation increases, the performance of restore decreases significantly.
 
 ### Maintainers
 
