@@ -129,7 +129,7 @@ tar -jxvf ${compressed_hash_file_name}.tar.bz2
 ./hf-stat -f ${Uncompressed_hash_file_name}
 ```
 
-Then, you will need to remove the first line in the generated fingerprint list.
+Then, you will need to remove the first line in the generated fingerprint list. We use the snapshot of user004 in 2013-01-22 as the demo example.
 
 Here we use Full-TED with probabilistic key generation and the batch size is 3000. Suppose the output file name is *test*, and we set the storage blowup factor as 1.05. Then the whole command is
 
