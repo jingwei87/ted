@@ -32,10 +32,12 @@ mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
 
 # for TEDStore
+mkdir -p ${PATH_TO_TEDStore}/TEDStore/lib/ 
 cp -r ./leveldb-1.22 ${PATH_TO_TEDStore}/TEDStore/lib/ 
 cd ${PATH_TO_TEDStore}/TEDStore/lib && mv leveldb-1.22 leveldb
 
 # for TED
+mkdir -p ${PATH_TO_TEDStore}/TED/ThirdPartyLib/
 cp -r ./leveldb-1.22 ${PATH_TO_TEDStore}/TED/ThirdPartyLib/
 ```
 For Openssl-1.1.1d
@@ -45,10 +47,12 @@ cd ./openssl-1.1.1d/
 ./config && make
 
 # for TEDStore
+mkdir -p ${PATH_TO_TEDStore}/TEDStore/lib/ 
 cp -r ./openssl-1.1.1d ${PATH_TO_TEDStore}/TEDStore/lib/
 cd ${PATH_TO_TEDStore}/TEDStore/lib && mv openssl-1.1.1d openssl
 
 # for TED
+mkdir -p ${PATH_TO_TEDStore}/TED/ThirdPartyLib/
 cp -r ./openssl-1.1.1d ${PATH_TO_TEDStore}/TED/ThirdPartyLib/
 ```
 
