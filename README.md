@@ -22,23 +22,34 @@ The TED and TEDStore require the following libraries:
 * Snappy: [libsnappy-1.1.8](https://github.com/google/snappy/archive/1.1.8.tar.gz)
 * Leveldb: [leveldb-1.22](https://github.com/google/leveldb/archive/1.22.tar.gz)
 
-Among them, Leveldb 1.22 and OpenSSL 1.1.1d package are required to avoid compilation problems caused by different versions of the leveldb library paths and inconsistent default OpenSSL versions on different systems. You can download the compressed files of the two packages via the above link and rename them to `openssl.tar.gz` and `leveldb.tar.gz`. Then you can configure and compile them with the following commands, and copy the two folders after compilation to `./TEDStore/lib/` and `./TED/lib/` for compiling the prototype and the simulator.
+Among them, Leveldb 1.22 and OpenSSL 1.1.1d package are required to avoid compilation problems caused by different versions of the leveldb library paths and inconsistent default OpenSSL versions on different systems. You can download the compressed files of the two packages via the above link and rename them to `openssl.tar.gz` and `leveldb.tar.gz`. Then you can configure and compile them with the following commands, and copy the two folders after compilation to `./TEDStore/lib/` and `./TED/ThirdPartyLib/` for compiling the prototype and the simulator.
 
+For Leveldb-1.22
 ```shell
 tar -xpf leveldb.tar.gz
-cd ./leveldb/
+cd ./leveldb-1.22/
 mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
-cp -r ./leveldb ${PATH_TO_TEDStore}/TEDStore/lib/
-cp -r ./leveldb ${PATH_TO_TEDStore}/TED/lib/
-```
 
+# for TEDStore
+cp -r ./leveldb-1.22 ${PATH_TO_TEDStore}/TEDStore/lib/ 
+cd ${PATH_TO_TEDStore}/TEDStore/lib && mv leveldb-1.22 leveldb
+
+# for TED
+cp -r ./leveldb-1.22 ${PATH_TO_TEDStore}/TED/ThirdPartyLib/
+```
+For Openssl-1.1.1d
 ```shell
 tar -xpf openssl.tar.gz
-cd ./openssl/
+cd ./openssl-1.1.1d/
 ./config && make
-cp -r ./openssl ${PATH_TO_TEDStore}/TEDStore/lib/
-cp -r ./openssl ${PATH_TO_TEDStore}/TED/lib/
+
+# for TEDStore
+cp -r ./openssl-1.1.1d ${PATH_TO_TEDStore}/TEDStore/lib/
+cd ${PATH_TO_TEDStore}/TEDStore/lib && mv openssl-1.1.1d openssl
+
+# for TED
+cp -r ./openssl-1.1.1d ${PATH_TO_TEDStore}/TED/ThirdPartyLib/
 ```
 
 And the other dependent packages can be easily installed through the package management tool. For example, in Ubuntu 18.04 LTS, you can execute the following command to complete the installation.
@@ -187,10 +198,6 @@ We can see under this setting, Full-TED reduces the KLD from 0.844787 to 0.22747
 
 * In this simulator, we treat the fingerprint of each chunk as the corresponding chunk content. The reason is we can only get the chunk fingerprint in both FSL trace and MS trace. There may be some deviation compared with using the real chunk content.
 
-### Maintainers
-
-* Zuoru Yang, The Chinese University of Hong Kong (CUHK), zryang@cse.cuhk.edu.hk
-
 ## TED System Prototype
 
 When using the prototype, first enter the `./TEDStore/` folder directory.
@@ -291,3 +298,4 @@ $ ./client -r test
 ### Maintainers
 
 * Yanjing Ren, University of Electronic Science and Technology of China (UESTC), tinoryj@gmail.com
+* Zuoru Yang, The Chinese University of Hong Kong (CUHK), zryang@cse.cuhk.edu.hk
