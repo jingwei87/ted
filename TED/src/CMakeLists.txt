@@ -1,11 +1,13 @@
-set(OPENSSL_INCLUDE_PATH ../lib/openssl/include)
-set(OPENSSL_LIBRARY_PATH ../lib/openssl/)
+set(LEVELDB_INCLUDE_PATH ${TEDSim_SOURCE_DIR}/ThirdPartyLib/leveldb-1.22/include)
+set(LEVELDB_LIBRARY_PATH ${TEDSim_SOURCE_DIR}/ThirdPartyLib/leveldb-1.22/build/libleveldb.a)
 
-set(LEVELDB_INCLUDE_PATH ../lib/leveldb/include)
-set(LEVELDB_LIBRARY_PATH ../lib/leveldb/build)
 
-include_directories(${LEVELDB_INCLUDE_PATH} ${OPENSSL_INCLUDE_PATH} ../include)
-link_directories(${LEVELDB_LIBRARY_PATH} ${OPENSSL_LIBRARY_PATH} ../lib)
+set(OPENSSL_INLCUDE_PATH ${TEDSim_SOURCE_DIR}/ThirdPartyLib/openssl-1.1.1d/include)
+set(OPENSSL_LIBRARY_PATH_CRY ${TEDSim_SOURCE_DIR}/ThirdPartyLib/openssl-1.1.1d/libcrypto.a)
+set(OPENSSL_LIBRARY_PATH_SSL ${TEDSim_SOURCE_DIR}/ThirdPartyLib/openssl-1.1.1d/libssl.a)
+
+include_directories(${LEVELDB_INCLUDE_PATH} ${OPENSSL_INLCUDE_PATH} ../include)
+link_directories(${LEVELDB_LIBRARY_PATH} ${OPENSSL_LIBRARY_PATH_CRY} ${OPENSSL_LIBRARY_PATH_SSL} ../lib)
 
 set(SYSTEM_LIBRARY_OBJ pthread rt dl snappy)
 set(OPENSSL_LIBRARY_OBJ ${OPENSSL_LIBRARY_PATH_SSL} ${OPENSSL_LIBRARY_PATH_CRY})
