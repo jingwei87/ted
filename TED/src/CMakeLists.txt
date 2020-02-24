@@ -1,17 +1,16 @@
-set(LEVELDB_INCLUDE_PATH ${TEDSim_SOURCE_DIR}/ThirdPartyLib/leveldb-1.22/include)
-set(LEVELDB_LIBRARY_PATH ${TEDSim_SOURCE_DIR}/ThirdPartyLib/leveldb-1.22/build/libleveldb.a)
+set(LEVELDB_INCLUDE_PATH ../lib/leveldb/include)
+set(LEVELDB_LIBRARY_PATH ../lib/leveldb/build/)
 
-
-set(OPENSSL_INLCUDE_PATH ${TEDSim_SOURCE_DIR}/ThirdPartyLib/openssl-1.1.1d/include)
-set(OPENSSL_LIBRARY_PATH_CRY ${TEDSim_SOURCE_DIR}/ThirdPartyLib/openssl-1.1.1d/libcrypto.a)
-set(OPENSSL_LIBRARY_PATH_SSL ${TEDSim_SOURCE_DIR}/ThirdPartyLib/openssl-1.1.1d/libssl.a)
+set(OPENSSL_INLCUDE_PATH ../lib/openssl/include)
+set(OPENSSL_LIBRARY_PATH ../lib/openssl/)
 
 include_directories(${LEVELDB_INCLUDE_PATH} ${OPENSSL_INLCUDE_PATH} ../include)
-link_directories(${LEVELDB_LIBRARY_PATH} ${OPENSSL_LIBRARY_PATH_CRY} ${OPENSSL_LIBRARY_PATH_SSL} ../lib)
+link_directories(${LEVELDB_LIBRARY_PATH} ${OPENSSL_LIBRARY_PATH} ../lib)
 
 set(SYSTEM_LIBRARY_OBJ pthread rt dl snappy)
-set(OPENSSL_LIBRARY_OBJ ${OPENSSL_LIBRARY_PATH_SSL} ${OPENSSL_LIBRARY_PATH_CRY})
-set(THIRD_OBJ ${OPENSSL_LIBRARY_OBJ} ${LEVELDB_LIBRARY_PATH} ${SYSTEM_LIBRARY_OBJ})
+set(LEVELDB_LIBRARY_OBJ pthread leveldb snappy)
+set(OPENSSL_LIBRARY_OBJ ssl crypto)
+set(THIRD_OBJ ${OPENSSL_LIBRARY_OBJ} ${LEVELDB_LIBRARY_OBJ} ${SYSTEM_LIBRARY_OBJ})
 
 
 set(CMAKE_BUILD_TYPE "Release")

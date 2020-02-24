@@ -21,5 +21,4 @@ fi
 cd ./build
 rm -rf ./*
 cmake ..
-#make -j$(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)
-make -j4
+make -j$(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)

@@ -7,7 +7,7 @@ fi
 
 if [ -d "lib" ]; then 
     echo "clean the library output directory"
-    rm -rf lib
+    rm -rf lib/*.a
     echo "Done!"
 fi
 

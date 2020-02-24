@@ -22,38 +22,39 @@ The TED and TEDStore require the following libraries:
 * Snappy: [libsnappy-1.1.8](https://github.com/google/snappy/archive/1.1.8.tar.gz)
 * Leveldb: [leveldb-1.22](https://github.com/google/leveldb/archive/1.22.tar.gz)
 
-Among them, Leveldb 1.22 and OpenSSL 1.1.1d package are required to avoid compilation problems caused by different versions of the leveldb library paths and inconsistent default OpenSSL versions on different systems. You can download the compressed files of the two packages via the above link and rename them to `openssl.tar.gz` and `leveldb.tar.gz`. Then you can configure and compile them with the following commands, and copy the two folders after compilation to `./TEDStore/lib/` and `./TED/ThirdPartyLib/` for compiling the prototype and the simulator.
+Among them, Leveldb 1.22 and OpenSSL 1.1.1d package are required to avoid compilation problems caused by different versions of the leveldb library paths and inconsistent default OpenSSL versions on different systems. You can download the compressed files of the two packages via the above link. Then you can configure and compile them with the following commands, and copy the two folders after compilation to `./TEDStore/lib/` and `./TED/ThirdPartyLib/` for compiling the prototype and the simulator.
 
-For Leveldb-1.22
+For Leveldb
+
 ```shell
-tar -xpf leveldb.tar.gz
+tar -xpf leveldb-1.22.tar.gz
 cd ./leveldb-1.22/
 mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
 
 # for TEDStore
-mkdir -p ${PATH_TO_TEDStore}/TEDStore/lib/ 
-cp -r ./leveldb-1.22 ${PATH_TO_TEDStore}/TEDStore/lib/ 
-cd ${PATH_TO_TEDStore}/TEDStore/lib && mv leveldb-1.22 leveldb
+mkdir -p ${PATH_TO_TEDStore}/lib/
+cp -r ./leveldb-1.22 ${PATH_TO_TEDStore}/lib/leveldb
 
 # for TED
-mkdir -p ${PATH_TO_TEDStore}/TED/ThirdPartyLib/
-cp -r ./leveldb-1.22 ${PATH_TO_TEDStore}/TED/ThirdPartyLib/
+mkdir -p ${PATH_TO_TED}/lib/
+cp -r ./leveldb-1.22 ${PATH_TO_TED}/lib/leveldb
 ```
-For Openssl-1.1.1d
+
+For Openssl
+
 ```shell
-tar -xpf openssl.tar.gz
+tar -xpf openssl-1.1.1d.tar.gz
 cd ./openssl-1.1.1d/
 ./config && make
 
 # for TEDStore
-mkdir -p ${PATH_TO_TEDStore}/TEDStore/lib/ 
-cp -r ./openssl-1.1.1d ${PATH_TO_TEDStore}/TEDStore/lib/
-cd ${PATH_TO_TEDStore}/TEDStore/lib && mv openssl-1.1.1d openssl
+mkdir -p ${PATH_TO_TEDStore}/lib/
+cp -r ./openssl-1.1.1d ${PATH_TO_TEDStore}/lib/openssl
 
 # for TED
-mkdir -p ${PATH_TO_TEDStore}/TED/ThirdPartyLib/
-cp -r ./openssl-1.1.1d ${PATH_TO_TEDStore}/TED/ThirdPartyLib/
+mkdir -p ${PATH_TO_TED}/lib/
+cp -r ./openssl-1.1.1d ${PATH_TO_TED}/lib/openssl
 ```
 
 And the other dependent packages can be easily installed through the package management tool. For example, in Ubuntu 18.04 LTS, you can execute the following command to complete the installation.
