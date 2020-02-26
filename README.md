@@ -165,7 +165,7 @@ Encrypted Storage Saving (Size): 0.283884
 Encrypted Storage Saving (Chunk): 0.280207
 ```
 
-Then, it can use the following command to further see other statistic information, including maximum chunk frequency, amount of unique chunks, amount of logical chunks, storage saving rate, KLD, and storage blowup rate. 
+Then, it can use the following command to further see other statistic information of plaintext chunk frequency distribution and ciphertext chunk frequency distribution, including maximum chunk frequencies, amount of unique chunks, amount of logical chunks, storage saving rate, KLD, and storage blowup rate. 
 
 ```shell
 python3 ../script/analyze.py test.pfreq test.cfreq
