@@ -226,7 +226,7 @@ chmod +x ./ShellScripts/systemCleanup.sh
 
 TEDStore is configured based on json. You can change its configuration without rebuilding. We show the default
 configuration (`./bin/config.json`) of TEDStore as follows.
-```json
+```
 {
     "ChunkerConfig": {
         "_chunkingType": 1, // 0: fixed size chunking; 1: variable size chunking
@@ -266,10 +266,10 @@ configuration (`./bin/config.json`) of TEDStore as follows.
 
 You can test TEDStore in a single machine, and connect the key manager, server (e.g., the provider in the paper) and client instances via the local loopback interface. To this end, switch your current working directory to `bin/`, and start each instance in an independent terminal:   
 
-```
+```shell
 ./keymanager
 ```
-```
+```shell
 ./server
 ```
 
