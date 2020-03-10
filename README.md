@@ -17,7 +17,7 @@ efficiency and data confidentiality, with small performance overhead.
 
 ## Publication
 
-* Jingwei Li, Zuoru Yang, Yanjing Ren, Patrick P. C. Lee, and Xiaosong Zhang. Balancing Storage Efficiency and Data Confidentiality with Tunable Encrypted Deduplication. Proceedings of the European Conference on Computer Systems (Eurosys 2020), Heraklion, Crete, Greece, Apr 2020.
+* Jingwei Li, Zuoru Yang, Yanjing Ren, Patrick P. C. Lee, and Xiaosong Zhang. 2020. Balancing Storage Efficiency and Data Confidentiality with Tunable Encrypted Deduplication. In Fifteenth European Conference on Computer Systems (EuroSys ’20), April 27–30, 2020, Heraklion, Greece. ACM, New York, NY, USA, 15 pages. https://doi.org/10.1145/3342195.3387531
 
 ## Prerequisites
 
