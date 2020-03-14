@@ -9,8 +9,12 @@ RecvDecode::RecvDecode(string fileName)
     cryptoObj_ = new CryptoPrimitive();
     socket_.init(CLIENT_TCP, config.getStorageServerIP(), config.getStorageServerPort());
     cryptoObj_->generateHash((u_char*)&fileName[0], fileName.length(), fileNameHash_);
-    recvFileHead(fileRecipe_, fileNameHash_);
-    cerr << "RecvDecode : recv file recipe head, file size = " << fileRecipe_.fileRecipeHead.fileSize << ", total chunk number = " << fileRecipe_.fileRecipeHead.totalChunkNumber << endl;
+    if (processRecipe(fileRecipe_, fileRecipeList_ fileNameHash_)) {
+        cerr << "RecvDecode : recv file recipe head, file size = " << fileRecipe_.fileRecipeHead.fileSize << ", total chunk number = " << fileRecipe_.fileRecipeHead.totalChunkNumber << endl;
+    } else {
+        cerr << "RecvDecode : recv file recipe error" << endl;
+        exit(0);
+    }
 }
 
 RecvDecode::~RecvDecode()
@@ -24,17 +28,15 @@ RecvDecode::~RecvDecode()
     delete outPutMQ_;
 }
 
-bool RecvDecode::recvFileHead(Recipe_t& fileRecipe, u_char* fileNameHash)
+bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t recipeList, u_char* fileNameHash)
 {
     NetworkHeadStruct_t request, respond;
-    request.messageType = CLIENT_DOWNLOAD_FILEHEAD;
+    request.messageType = CLIENT_DOWNLOAD_RECIPE_SIZE;
     request.dataSize = FILE_NAME_HASH_SIZE;
     request.clientID = clientID_;
 
     int sendSize = sizeof(NetworkHeadStruct_t) + FILE_NAME_HASH_SIZE;
     u_char requestBuffer[sendSize];
-    u_char respondBuffer[1024 * 1024];
-    int recvSize;
 
     memcpy(requestBuffer, &request, sizeof(NetworkHeadStruct_t));
     memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), fileNameHash, FILE_NAME_HASH_SIZE);
@@ -44,6 +46,8 @@ bool RecvDecode::recvFileHead(Recipe_t& fileRecipe, u_char* fileNameHash)
             cerr << "RecvDecode : storage server closed" << endl;
             return false;
         }
+        u_char respondBuffer[sizeof(NetworkHeadStruct_t)];
+        int recvSize;
         if (!socket_.Recv(respondBuffer, recvSize)) {
             cerr << "RecvDecode : storage server closed" << endl;
             return false;
@@ -66,64 +70,56 @@ bool RecvDecode::recvFileHead(Recipe_t& fileRecipe, u_char* fileNameHash)
             exit(1);
         }
         if (respond.messageType == SUCCESS) {
-            if (respond.dataSize != sizeof(Recipe_t)) {
-                cerr << "RecvDecode : Server send file recipe head faild!" << endl;
-                exit(1);
-            } else {
-                memcpy(&fileRecipe, respondBuffer + sizeof(NetworkHeadStruct_t), sizeof(Recipe_t));
-                break;
-            }
-        }
-    }
-    return true;
-}
+            uint64_t recipeLength = respond.dataSize;
+            u_char* encryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeLength + sizeof(NetworkHeadStruct_t));
+            u_char* decryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeLength);
+            request.messageType = CLIENT_DOWNLOAD_ENCRYPTED_RECIPE;
+            request.dataSize = FILE_NAME_HASH_SIZE;
+            request.clientID = clientID_;
+            sendSize = sizeof(NetworkHeadStruct_t) + FILE_NAME_HASH_SIZE;
+            memcpy(requestBuffer, &request, sizeof(NetworkHeadStruct_t));
+            memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), fileNameHash, FILE_NAME_HASH_SIZE);
 
-bool RecvDecode::recvChunks(ChunkList_t& recvChunk, int& chunkNumber, uint32_t& startID, uint32_t& endID)
-{
-    NetworkHeadStruct_t request, respond;
-    request.messageType = CLIENT_DOWNLOAD_CHUNK_WITH_RECIPE;
-    request.dataSize = FILE_NAME_HASH_SIZE + 2 * sizeof(uint32_t);
-    request.clientID = clientID_;
-    int sendSize = sizeof(NetworkHeadStruct_t) + FILE_NAME_HASH_SIZE + 2 * sizeof(uint32_t);
-    u_char requestBuffer[sendSize];
-    u_char respondBuffer[NETWORK_MESSAGE_DATA_SIZE];
-    int recvSize;
-    memcpy(requestBuffer, &request, sizeof(NetworkHeadStruct_t));
-    memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), fileNameHash_, FILE_NAME_HASH_SIZE);
-    memcpy(requestBuffer + sizeof(NetworkHeadStruct_t) + FILE_NAME_HASH_SIZE, &startID, sizeof(uint32_t));
-    memcpy(requestBuffer + sizeof(NetworkHeadStruct_t) + FILE_NAME_HASH_SIZE + sizeof(uint32_t), &endID, sizeof(uint32_t));
-    while (true) {
-        if (!socket_.Send(requestBuffer, sendSize)) {
-            cerr << "RecvDecode : storage server closed" << endl;
-            return false;
-        }
-        if (!socket_.Recv(respondBuffer, recvSize)) {
-            cerr << "RecvDecode : storage server closed" << endl;
-            return false;
-        }
-        memcpy(&respond, respondBuffer, sizeof(NetworkHeadStruct_t));
-        if (respond.messageType == ERROR_RESEND)
-            continue;
-        if (respond.messageType == ERROR_CLOSE) {
-            cerr << "RecvDecode : Server reject download request!" << endl;
-            exit(1);
-        }
-        if (respond.messageType == SUCCESS) {
-            chunkNumber = endID - startID;
-            int totalRecvSize = 0;
-            for (int i = 0; i < chunkNumber; i++) {
-                Chunk_t tempChunk;
-                memcpy(&tempChunk.ID, respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, sizeof(uint32_t));
-                totalRecvSize += sizeof(uint32_t);
-                memcpy(&tempChunk.logicDataSize, respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, sizeof(int));
-                totalRecvSize += sizeof(int);
-                memcpy(&tempChunk.logicData, respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, tempChunk.logicDataSize);
-                totalRecvSize += tempChunk.logicDataSize;
-                memcpy(&tempChunk.encryptKey, respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, CHUNK_ENCRYPT_KEY_SIZE);
-                totalRecvSize += CHUNK_ENCRYPT_KEY_SIZE;
-                recvChunk.push_back(tempChunk);
+            if (!socket_.Send(requestBuffer, sendSize)) {
+                cerr << "RecvDecode : storage server closed" << endl;
+                return false;
             }
-            break;
+
+            if (!socket_.Recv(encryptedRecipeBuffer, recvSize)) {
+                cerr << "RecvDecode : storage server closed" << endl;
+                return false;
+            }
+            if (recvSize != respond.dataSize + sizeof(NetworkHeadStruct_t)) {
+                cerr << "RecvDecode : recv encrypted file recipe size error" << endl;
+            } else {
+                u_char clientKey[32];
+                memset(clientKey, 1, 32);
+                cryptoObj_->decryptWithKey(encryptedRecipeBuffer + sizeof(NetworkHeadStruct_t), respond.dataSize, clientKey, decryptedRecipeBuffer);
+                memcpy(&recipeHead, decryptedRecipeBuffer, sizeof(Recipe_t));
+                u_char* requestChunkList = (u_char*)malloc(sizeof(u_char) * CHUNK_FINGER_PRINT_SIZE * recipeHead.fileRecipeHead.totalChunkNumber + sizeof(NetworkHeadStruct_t));
+                for (uint64_t i = 0; i < recipeHead.fileRecipeHead.totalChunkNumber; i++) {
+                    RecipeEntry_t newRecipeEntry;
+                    memcpy(&newRecipeEntry, decryptedRecipeBuffer + sizeof(Recipe_t) + i * sizeof(RecipeEntry_t), sizeof(RecipeEntry_t));
+                    recipeList.push_back(newRecipeEntry);
+                    memcpy(requestChunkList + sizeof(NetworkHeadStruct_t) + i * CHUNK_FINGER_PRINT_SIZE, newRecipeEntry.chunkHash, CHUNK_FINGER_PRINT_SIZE);
+                }
+                free(encryptedRecipeBuffer);
+                free(decryptedRecipeBuffer);
+
+                request.messageType = CLIENT_UPLOAD_DECRYPTED_RECIPE;
+                request.dataSize = recipeHead.fileRecipeHead.totalChunkNumber * CHUNK_FINGER_PRINT_SIZE;
+                sendSize = CHUNK_FINGER_PRINT_SIZE * recipeHead.fileRecipeHead.totalChunkNumber + sizeof(NetworkHeadStruct_t);
+                memcpy(requestChunkList, &request, sizeof(NetworkHeadStruct_t));
+                if (!socket_.Send(requestChunkList, sendSize)) {
+                    free(requestChunkList);
+                    cerr << "RecvDecode : storage server closed" << endl;
+                    return false;
+                } else {
+                    free(requestChunkList);
+                    cerr << "RecvDecode : process recipe done, send to server done" << endl;
+                    break;
+                }
+            }
         }
     }
     return true;

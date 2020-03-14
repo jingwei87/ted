@@ -44,7 +44,7 @@ void DataSR::run(Socket socket)
                 }
                 break;
             }
-            case CLIENT_UPLOAD_RECIPE: {
+            case CLIENT_UPLOAD_ENCRYPTED_RECIPE: {
                 cout << "DataSR : recv file recipe" << endl;
                 Recipe_t tempRecipeHead;
                 memcpy(&tempRecipeHead, recvBuffer + sizeof(NetworkHeadStruct_t), sizeof(Recipe_t));
@@ -73,7 +73,7 @@ void DataSR::run(Socket socket)
                 // socket.Send(sendBuffer, sendSize);
                 break;
             }
-            case CLIENT_DOWNLOAD_FILEHEAD: {
+            case CLIENT_DOWNLOAD_ENCRYPTED_RECIPE: {
 
                 if (storageObj_->restoreRecipeHead((char*)recvBuffer + sizeof(NetworkHeadStruct_t), restoredFileRecipe)) {
                     cout << "StorageCore : restore file size = " << restoredFileRecipe.fileRecipeHead.fileSize << " chunk number = " << restoredFileRecipe.fileRecipeHead.totalChunkNumber << endl;

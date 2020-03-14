@@ -31,37 +31,26 @@ Sender::~Sender()
 bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
 {
     int totalRecipeNumber = recipeList.size();
-    int sendRecipeNumber = 0;
-    int sendRecipeBatchNumber = config.getSendRecipeBatchSize();
-    int currentSendRecipeNumber = 0;
-    while ((totalRecipeNumber - sendRecipeNumber) != 0) {
+    int totalRecipeSize = totalRecipeNumber * sizeof(RecipeEntry_t) + sizeof(Recipe_t);
+    u_char* recipeBuffer = (u_char*)malloc(sizeof(u_char) * totalRecipeSize);
+    memcpy(recipeBuffer, &request, sizeof(Recipe_t));
+    for (int i = 0; i < totalRecipeNumber; i++) {
+        memcpy(recipeBuffer + sizeof(Recipe_t) + i * sizeof(RecipeEntry_t), &recipeList[i], sizeof(RecipeEntry_t));
+    }
+    char clientKey[32];
+    memset(clientKey, 1, 32);
 
-        if (totalRecipeNumber - sendRecipeNumber < sendRecipeBatchNumber) {
-            currentSendRecipeNumber = totalRecipeNumber - sendRecipeNumber;
-        } else {
-            currentSendRecipeNumber = sendRecipeBatchNumber;
-        }
-        NetworkHeadStruct_t requestBody, respondBody;
-
-        requestBody.clientID = clientID_;
-        requestBody.messageType = CLIENT_UPLOAD_RECIPE;
-        respondBody.clientID = 0;
-        respondBody.messageType = 0;
-        respondBody.dataSize = 0;
-        int sendSize = sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t) + currentSendRecipeNumber * sizeof(RecipeEntry_t);
-        requestBody.dataSize = sizeof(Recipe_t) + currentSendRecipeNumber * sizeof(RecipeEntry_t);
-        u_char requestBuffer[sendSize];
-        memcpy(requestBuffer, &requestBody, sizeof(requestBody));
-        memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), &request, sizeof(Recipe_t));
-        for (int i = 0; i < currentSendRecipeNumber; i++) {
-            memcpy(requestBuffer + sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t) + i * sizeof(RecipeEntry_t), &recipeList[sendRecipeNumber + i], sizeof(RecipeEntry_t));
-        }
-        if (!socket_.Send(requestBuffer, sendSize)) {
-            cerr << "Sender : error sending file resipces, peer may close" << endl;
-            return false;
-        }
-        sendRecipeNumber += currentSendRecipeNumber;
-        currentSendRecipeNumber = 0;
+    NetworkHeadStruct_t requestBody, respondBody;
+    requestBody.clientID = clientID_;
+    requestBody.messageType = CLIENT_UPLOAD_ENCRYPTED_RECIPE;
+    int sendSize = sizeof(NetworkHeadStruct_t) + totalRecipeSize;
+    requestBody.dataSize = totalRecipeSize;
+    u_char* requestBuffer = (u_char*)malloc(sizeof(u_char) * sendSize);
+    memcpy(requestBuffer, &requestBody, sizeof(NetworkHeadStruct_t));
+    cryptoObj_->encryptWithKey(recipeBuffer, totalRecipeSize, clientKey, requestBuffer + sizeof(NetworkHeadStruct_t));
+    if (!socket_.Send(requestBuffer, sendSize)) {
+        cerr << "Sender : error sending file resipces, peer may close" << endl;
+        return false;
     }
     return true;
 }

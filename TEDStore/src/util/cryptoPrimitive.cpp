@@ -260,47 +260,61 @@ bool CryptoPrimitive::encryptChunk(Chunk_t& chunk)
         cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
         return false;
     } else {
-        memcpy(chunk.logicData, ciphertext, chunk.logicDataSize);
-        if (!encryptWithKey(chunk.encryptKey, CHUNK_ENCRYPT_KEY_SIZE, chunkKeyEncryptionKey_, cipherKey)) {
-            cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
-            return false;
-        } else {
-            memcpy(chunk.encryptKey, cipherKey, CHUNK_ENCRYPT_KEY_SIZE);
-            return true;
-        }
+        // memcpy(chunk.logicData, ciphertext, chunk.logicDataSize);
+        // if (!encryptWithKey(chunk.encryptKey, CHUNK_ENCRYPT_KEY_SIZE, chunkKeyEncryptionKey_, cipherKey)) {
+        //     cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
+        //     return false;
+        // } else {
+        //     memcpy(chunk.encryptKey, cipherKey, CHUNK_ENCRYPT_KEY_SIZE);
+        //     return true;
+        // }
+        return true;
     }
 }
 
 bool CryptoPrimitive::decryptChunk(Chunk_t& chunk)
 {
     u_char plaintData[chunk.logicDataSize];
-    u_char plaintKey[CHUNK_ENCRYPT_KEY_SIZE];
-    if (!decryptWithKey(chunk.encryptKey, CHUNK_ENCRYPT_KEY_SIZE, chunkKeyEncryptionKey_, plaintKey)) {
+    // u_char plaintKey[CHUNK_ENCRYPT_KEY_SIZE];
+    // if (!decryptWithKey(chunk.encryptKey, CHUNK_ENCRYPT_KEY_SIZE, chunkKeyEncryptionKey_, plaintKey)) {
+    //     cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
+    //     return false;
+    // } else {
+    //     if (!decryptWithKey(chunk.logicData, chunk.logicDataSize, plaintKey, plaintData)) {
+    //         cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
+    //         return false;
+    //     } else {
+    //         memcpy(chunk.logicData, plaintData, chunk.logicDataSize);
+    //         return true;
+    //     }
+    // }
+    if (!decryptWithKey(chunk.logicData, chunk.logicDataSize, chunk.encryptKey, plaintData)) {
         cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
         return false;
     } else {
-        if (!decryptWithKey(chunk.logicData, chunk.logicDataSize, plaintKey, plaintData)) {
-            cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
-            return false;
-        } else {
-            memcpy(chunk.logicData, plaintData, chunk.logicDataSize);
-            return true;
-        }
+        memcpy(chunk.logicData, plaintData, chunk.logicDataSize);
+        return true;
     }
 }
 
 bool CryptoPrimitive::decryptChunk(u_char* chunkData, int chunkSize, u_char* key, u_char* plaintData)
 {
-    u_char plaintKey[CHUNK_ENCRYPT_KEY_SIZE];
-    if (!decryptWithKey(key, CHUNK_ENCRYPT_KEY_SIZE, chunkKeyEncryptionKey_, plaintKey)) {
-        cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
+    // u_char plaintKey[CHUNK_ENCRYPT_KEY_SIZE];
+    // if (!decryptWithKey(key, CHUNK_ENCRYPT_KEY_SIZE, chunkKeyEncryptionKey_, plaintKey)) {
+    //     cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
+    //     return false;
+    // } else {
+    //     if (!decryptWithKey(chunkData, chunkSize, plaintKey, plaintData)) {
+    //         cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
+    //         return false;
+    //     } else {
+    //         return true;
+    //     }
+    // }
+    if (!decryptWithKey(chunkData, chunkSize, key, plaintData)) {
+        cerr << "CryptoPrimitive Error: decrypt chunk logic data error" << endl;
         return false;
     } else {
-        if (!decryptWithKey(chunkData, chunkSize, plaintKey, plaintData)) {
-            cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
-            return false;
-        } else {
-            return true;
-        }
+        return true;
     }
 }
