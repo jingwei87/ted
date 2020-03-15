@@ -28,10 +28,10 @@ RecvDecode::~RecvDecode()
     delete outPutMQ_;
 }
 
-bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t recipeList, u_char* fileNameHash)
+bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t& recipeList, u_char* fileNameHash)
 {
     NetworkHeadStruct_t request, respond;
-    request.messageType = CLIENT_DOWNLOAD_RECIPE_SIZE;
+    request.messageType = CLIENT_DOWNLOAD_ENCRYPTED_RECIPE;
     request.dataSize = FILE_NAME_HASH_SIZE;
     request.clientID = clientID_;
 

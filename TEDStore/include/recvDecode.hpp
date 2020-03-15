@@ -29,7 +29,7 @@ public:
     RecvDecode(string fileName);
     ~RecvDecode();
     void run();
-    bool processRecipe(Recipe_t& FileRecipe, RecipeList_t fileRecipeList, u_char* fileNameHash);
+    bool processRecipe(Recipe_t& FileRecipe, RecipeList_t& fileRecipeList, u_char* fileNameHash);
     bool recvChunks(ChunkList_t& recvChunk, int& chunkNumber, uint32_t& startID, uint32_t& endID);
     Recipe_t getFileRecipeHead();
     bool insertMQToRetriever(RetrieverData_t& newChunk);

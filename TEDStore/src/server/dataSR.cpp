@@ -46,31 +46,17 @@ void DataSR::run(Socket socket)
             }
             case CLIENT_UPLOAD_ENCRYPTED_RECIPE: {
                 cout << "DataSR : recv file recipe" << endl;
-                Recipe_t tempRecipeHead;
-                memcpy(&tempRecipeHead, recvBuffer + sizeof(NetworkHeadStruct_t), sizeof(Recipe_t));
-                int currentRecipeEntryNumber = (netBody.dataSize - sizeof(Recipe_t)) / sizeof(RecipeEntry_t);
-                RecipeList_t tempRecipeEntryList;
-                for (int i = 0; i < currentRecipeEntryNumber; i++) {
-                    RecipeEntry_t tempRecipeEntry;
-                    memcpy(&tempRecipeEntry, recvBuffer + sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t) + i * sizeof(RecipeEntry_t), sizeof(RecipeEntry_t));
-                    tempRecipeEntryList.push_back(tempRecipeEntry);
-                }
-                cout << "StorageCore : recv Recipe from client" << endl;
-
-                if (!storageObj_->checkRecipeStatus(tempRecipeHead, tempRecipeEntryList)) {
-                    cerr << "StorageCore : verify Recipe fail, send resend flag" << endl;
-                    netBody.messageType = ERROR_RESEND;
-                    netBody.dataSize = 0;
-                    memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
-                    sendSize = sizeof(NetworkHeadStruct_t);
-                } else {
-                    cout << "StorageCore : verify Recipe succes" << endl;
-                    netBody.messageType = SUCCESS;
-                    netBody.dataSize = 0;
-                    memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
-                    sendSize = sizeof(NetworkHeadStruct_t);
-                }
-                // socket.Send(sendBuffer, sendSize);
+                storageObj_->checkRecipeStatus(tempRecipeHead, tempRecipeEntryList);
+                break;
+            }
+            case CLIENT_UPLOAD_DECRYPTED_RECIPE: {
+                cout << "DataSR : recv file recipe" << endl;
+                storageObj_->checkRecipeStatus(tempRecipeHead, tempRecipeEntryList);
+                break;
+            }
+            case CLIENT_UPLOAD_DECRYPTED_RECIPE: {
+                cout << "DataSR : recv file recipe" << endl;
+                storageObj_->checkRecipeStatus(tempRecipeHead, tempRecipeEntryList);
                 break;
             }
             case CLIENT_DOWNLOAD_ENCRYPTED_RECIPE: {
