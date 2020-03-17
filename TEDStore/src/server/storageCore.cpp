@@ -8,25 +8,6 @@ extern Configure config;
 extern Database fp2ChunkDB;
 extern Database fileName2metaDB;
 
-void PRINT_BYTE_ARRAY_STORAGE_CORE(
-    FILE* file, void* mem, uint32_t len)
-{
-    if (!mem || !len) {
-        fprintf(file, "\n( null )\n");
-        return;
-    }
-    uint8_t* array = (uint8_t*)mem;
-    fprintf(file, "%u bytes:\n{\n", len);
-    uint32_t i = 0;
-    for (i = 0; i < len - 1; i++) {
-        fprintf(file, "0x%x, ", array[i]);
-        if (i % 8 == 7)
-            fprintf(file, "\n");
-    }
-    fprintf(file, "0x%x ", array[i]);
-    fprintf(file, "\n}\n");
-}
-
 StorageCore::StorageCore()
 {
     RecipeNamePrefix_ = config.getRecipeRootPath();
@@ -82,7 +63,6 @@ bool StorageCore::storeChunks(NetworkHeadStruct_t& networkHead, char* data)
     for (int i = 0; i < chunkNumber; i++) {
         int currentChunkSize;
         string originHash(data + readSize, CHUNK_HASH_SIZE);
-        // cerr << "save chunk hash" << endl;
         readSize += CHUNK_HASH_SIZE;
         memcpy(&currentChunkSize, data + readSize, sizeof(int));
         readSize += sizeof(int);
@@ -126,7 +106,6 @@ bool StorageCore::restoreRecipesSize(char* fileNameHash, uint64_t& recipeSize)
 {
     string recipeName;
     string DBKey(fileNameHash, FILE_NAME_HASH_SIZE);
-    PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, fileNameHash, FILE_NAME_HASH_SIZE);
     if (fileName2metaDB.query(DBKey, recipeName)) {
         ifstream RecipeIn;
         string readRecipeName;
@@ -139,9 +118,6 @@ bool StorageCore::restoreRecipesSize(char* fileNameHash, uint64_t& recipeSize)
             RecipeIn.seekg(0, std::ios::end);
             recipeSize = RecipeIn.tellg();
             RecipeIn.seekg(0, std::ios::beg);
-            // u_char* recipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeSize);
-            // RecipeIn.read((char*)recipeBuffer, recipeSize);
-            // recipeContent = recipeBuffer;
             RecipeIn.close();
             return true;
         }
@@ -156,7 +132,6 @@ bool StorageCore::restoreRecipes(char* fileNameHash, u_char* recipeContent, uint
 {
     string recipeName;
     string DBKey(fileNameHash, FILE_NAME_HASH_SIZE);
-    PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, fileNameHash, FILE_NAME_HASH_SIZE);
     if (fileName2metaDB.query(DBKey, recipeName)) {
         ifstream RecipeIn;
         string readRecipeName;
@@ -187,7 +162,6 @@ bool StorageCore::storeRecipes(char* fileNameHash, u_char* recipeContent, uint64
     string writeRecipeName, buffer, recipeName;
 
     string DBKey(fileNameHash, FILE_NAME_HASH_SIZE);
-    PRINT_BYTE_ARRAY_STORAGE_CORE(stdout, fileNameHash, FILE_NAME_HASH_SIZE);
     if (fileName2metaDB.query(DBKey, recipeName)) {
         cerr << "StorageCore : current file's recipe exist, modify it now" << recipeName << endl;
         writeRecipeName = RecipeNamePrefix_ + recipeName + RecipeNameTail_;

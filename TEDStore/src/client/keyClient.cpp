@@ -9,25 +9,6 @@ struct timeval timeendKey;
 struct timeval timestartKeySocket;
 struct timeval timeendKeySocket;
 
-void PRINT_BYTE_ARRAY_KEYC(
-    FILE* file, void* mem, uint32_t len)
-{
-    if (!mem || !len) {
-        fprintf(file, "\n( null )\n");
-        return;
-    }
-    uint8_t* array = (uint8_t*)mem;
-    fprintf(file, "%u bytes:\n{\n", len);
-    uint32_t i = 0;
-    for (i = 0; i < len - 1; i++) {
-        fprintf(file, "0x%x, ", array[i]);
-        if (i % 8 == 7)
-            fprintf(file, "\n");
-    }
-    fprintf(file, "0x%x ", array[i]);
-    fprintf(file, "\n}\n");
-}
-
 keyClient::keyClient(Sender* senderObjTemp)
 {
     inputMQ_ = new messageQueue<Data_t>;
@@ -222,18 +203,7 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
 
 bool keyClient::encodeChunk(Data_t& newChunk)
 {
-    // cout << "original data" << endl;
-    PRINT_BYTE_ARRAY_KEYC(stdout, newChunk.chunk.logicData, newChunk.chunk.logicDataSize);
     bool statusChunk = cryptoObj_->encryptChunk(newChunk.chunk);
-    // cout << "original key" << endl;
-    // PRINT_BYTE_ARRAY_KEYC(stdout, newChunk.chunk.encryptKey, CHUNK_ENCRYPT_KEY_SIZE);
-    // cout << "encrypted data" << endl;
-    // PRINT_BYTE_ARRAY_KEYC(stdout, newChunk.chunk.logicData, newChunk.chunk.logicDataSize);
-    // cryptoObj_->decryptChunk(newChunk.chunk);
-    // cout << "decrypted structure data" << endl;
-    // PRINT_BYTE_ARRAY_KEYC(stdout, newChunk.chunk.logicData, newChunk.chunk.logicDataSize);
-    // cryptoObj_->decryptChunk(newChunk.chunk);
-
     bool statusHash = cryptoObj_->generateHash(newChunk.chunk.logicData, newChunk.chunk.logicDataSize, newChunk.chunk.chunkHash);
     if (!statusChunk) {
         cerr << "KeyClient : error encrypt chunk" << endl;

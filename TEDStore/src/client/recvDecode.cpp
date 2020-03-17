@@ -2,25 +2,6 @@
 
 extern Configure config;
 
-void PRINT_BYTE_ARRAY_RECV(
-    FILE* file, void* mem, uint32_t len)
-{
-    if (!mem || !len) {
-        fprintf(file, "\n( null )\n");
-        return;
-    }
-    uint8_t* array = (uint8_t*)mem;
-    fprintf(file, "%u bytes:\n{\n", len);
-    uint32_t i = 0;
-    for (i = 0; i < len - 1; i++) {
-        fprintf(file, "0x%x, ", array[i]);
-        if (i % 8 == 7)
-            fprintf(file, "\n");
-    }
-    fprintf(file, "0x%x ", array[i]);
-    fprintf(file, "\n}\n");
-}
-
 RecvDecode::RecvDecode(string fileName)
 {
     clientID_ = config.getClientID();
@@ -74,15 +55,15 @@ bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t& recipeList, u
     memcpy(&respond, respondBuffer, sizeof(NetworkHeadStruct_t));
     if (respond.messageType == ERROR_CLOSE) {
         cerr << "RecvDecode : Server reject download request!" << endl;
-        exit(1);
+        return false;
     }
     if (respond.messageType == ERROR_FILE_NOT_EXIST) {
         cerr << "RecvDecode : Server reject download request, file not exist in server!" << endl;
-        exit(1);
+        return false;
     }
     if (respond.messageType == ERROR_CHUNK_NOT_EXIST) {
         cerr << "RecvDecode : Server reject download request, chunk not exist in server!" << endl;
-        exit(1);
+        return false;
     }
     if (respond.messageType == SUCCESS) {
         uint64_t recipeLength = respond.dataSize;
@@ -100,11 +81,11 @@ bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t& recipeList, u
         if (recvSize != respond.dataSize + sizeof(NetworkHeadStruct_t)) {
             cerr << "RecvDecode : recv encrypted file recipe size error" << endl;
         } else {
-            cerr << "RecvDecode : recv encrypted file recipe size =" << respond.dataSize << endl;
+            // cerr << "RecvDecode : recv encrypted file recipe size =" << respond.dataSize << endl;
             u_char clientKey[32];
             memset(clientKey, 1, 32);
             memcpy(&recipeHead, encryptedRecipeBuffer + sizeof(NetworkHeadStruct_t), sizeof(Recipe_t));
-            cerr << "RecvDecode : recv encrypted file recipes done, file size = " << recipeHead.fileRecipeHead.fileSize << endl;
+            // cerr << "RecvDecode : recv encrypted file recipes done, file size = " << recipeHead.fileRecipeHead.fileSize << endl;
             cryptoObj_->decryptWithKey(encryptedRecipeBuffer + sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t), recipeLength - sizeof(Recipe_t), clientKey, decryptedRecipeBuffer);
             u_char* requestChunkList = (u_char*)malloc(sizeof(u_char) * sizeof(RecipeEntry_t) * recipeHead.fileRecipeHead.totalChunkNumber + sizeof(NetworkHeadStruct_t));
             for (uint64_t i = 0; i < recipeHead.fileRecipeHead.totalChunkNumber; i++) {
@@ -129,21 +110,20 @@ bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t& recipeList, u
                 cerr << "RecvDecode : storage server closed" << endl;
                 return false;
             } else {
-                cerr << "RecvDecode : process recipe done, send recipe size = " << recipeListSize << " to server" << endl;
-            }
-
-            request.messageType = CLIENT_UPLOAD_DECRYPTED_RECIPE;
-            request.dataSize = recipeHead.fileRecipeHead.totalChunkNumber * sizeof(RecipeEntry_t);
-            sendSize = recipeHead.fileRecipeHead.totalChunkNumber * sizeof(RecipeEntry_t) + sizeof(NetworkHeadStruct_t);
-            memcpy(requestChunkList, &request, sizeof(NetworkHeadStruct_t));
-            if (!socket_.Send(requestChunkList, sendSize)) {
-                free(requestChunkList);
-                cerr << "RecvDecode : storage server closed" << endl;
-                return false;
-            } else {
-                free(requestChunkList);
-                cerr << "RecvDecode : process recipe done, send to server done, send size = " << sendSize << endl;
-                return true;
+                // cerr << "RecvDecode : process recipe done, send recipe size = " << recipeListSize << " to server" << endl;
+                request.messageType = CLIENT_UPLOAD_DECRYPTED_RECIPE;
+                request.dataSize = recipeHead.fileRecipeHead.totalChunkNumber * sizeof(RecipeEntry_t);
+                sendSize = recipeHead.fileRecipeHead.totalChunkNumber * sizeof(RecipeEntry_t) + sizeof(NetworkHeadStruct_t);
+                memcpy(requestChunkList, &request, sizeof(NetworkHeadStruct_t));
+                if (!socket_.Send(requestChunkList, sendSize)) {
+                    free(requestChunkList);
+                    cerr << "RecvDecode : storage server closed" << endl;
+                    return false;
+                } else {
+                    free(requestChunkList);
+                    // cerr << "RecvDecode : process recipe done, send to server done, send size = " << sendSize << endl;
+                    return true;
+                }
             }
         }
     } else {
@@ -176,7 +156,6 @@ void RecvDecode::run()
     u_char requestBuffer[sendSize];
     u_char respondBuffer[NETWORK_MESSAGE_DATA_SIZE];
     int recvSize;
-    uint64_t totalChunkSize = 0;
 
     memcpy(requestBuffer, &request, sizeof(NetworkHeadStruct_t));
     memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), fileNameHash_, FILE_NAME_HASH_SIZE);
@@ -211,16 +190,10 @@ void RecvDecode::run()
                 memcpy(&chunkSize, respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, sizeof(int));
                 totalRecvSize += sizeof(int);
                 cryptoObj_->decryptChunk(respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, chunkSize, fileRecipeList_[chunkID].chunkKey, chunkPlaintData);
-                PRINT_BYTE_ARRAY_RECV(stdout, chunkPlaintData, chunkSize);
-                // PRINT_BYTE_ARRAY_RECV(stdout, fileRecipeList_[chunkID].chunkKey, CHUNK_ENCRYPT_KEY_SIZE);
-                // PRINT_BYTE_ARRAY_RECV(stdout, respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, chunkSize);
-                // cerr << "chunk id = " << chunkID << " chunk size = " << chunkSize << endl;
-                totalChunkSize += chunkSize;
                 RetrieverData_t newData;
                 newData.ID = chunkID;
                 newData.logicDataSize = chunkSize;
                 memcpy(newData.logicData, chunkPlaintData, chunkSize);
-                // PRINT_BYTE_ARRAY_RECV(stdout, chunkPlaintData, chunkSize);
                 if (!insertMQToRetriever(newData)) {
                     cerr << "RecvDecode : Error insert chunk data into retriever" << endl;
                 }
@@ -229,6 +202,6 @@ void RecvDecode::run()
             totalRecvChunks += chunkNumber;
         }
     }
-    cerr << "RecvDecode : download job done, exit now, total chunk size = " << totalChunkSize << endl;
+    cerr << "RecvDecode : download job done, exit now" << endl;
     return;
 }

@@ -62,20 +62,20 @@ void DataSR::run(Socket socket)
                 break;
             }
             case CLIENT_UPLOAD_DECRYPTED_RECIPE: {
-                cerr << "DataSR : current recipe size = " << recipeSize << ", toatl chunk number = " << restoredFileRecipe.fileRecipeHead.totalChunkNumber << endl;
+                // cerr << "DataSR : current recipe size = " << recipeSize << ", toatl chunk number = " << restoredFileRecipe.fileRecipeHead.totalChunkNumber << endl;
                 uint64_t decryptedRecipeListSize = 0;
                 memcpy(&decryptedRecipeListSize, recvBuffer + sizeof(NetworkHeadStruct_t), sizeof(uint64_t));
-                cerr << "DataSR : process recipe list size = " << decryptedRecipeListSize << endl;
+                // cerr << "DataSR : process recipe list size = " << decryptedRecipeListSize << endl;
                 u_char* recvDecryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * decryptedRecipeListSize + sizeof(NetworkHeadStruct_t));
                 if (socket.Recv(recvDecryptedRecipeBuffer, recvSize)) {
                     NetworkHeadStruct_t tempHeader;
                     memcpy(&tempHeader, recvDecryptedRecipeBuffer, sizeof(NetworkHeadStruct_t));
-                    cerr << "DataSR : CLIENT_UPLOAD_DECRYPTED_RECIPE, recv message type " << tempHeader.messageType << ", message size = " << tempHeader.dataSize << endl;
+                    // cerr << "DataSR : CLIENT_UPLOAD_DECRYPTED_RECIPE, recv message type " << tempHeader.messageType << ", message size = " << tempHeader.dataSize << endl;
                 } else {
                     cerr << "DataSR : recv decrypted file recipe error " << endl;
                 }
                 int restoreChunkNumber = restoredFileRecipe.fileRecipeHead.totalChunkNumber;
-                cerr << "DataSR : target restore chunk number = " << restoreChunkNumber << endl;
+                // cerr << "DataSR : target restore chunk number = " << restoreChunkNumber << endl;
                 // memcpy(&restoredFileRecipe, recvDecryptedRecipeBuffer + sizeof(NetworkHeadStruct_t), sizeof(Recipe_t));
                 for (int i = 0; i < restoreChunkNumber; i++) {
                     RecipeEntry_t newRecipeEntry;
@@ -90,14 +90,14 @@ void DataSR::run(Socket socket)
             case CLIENT_DOWNLOAD_ENCRYPTED_RECIPE: {
 
                 if (storageObj_->restoreRecipesSize((char*)recvBuffer + sizeof(NetworkHeadStruct_t), recipeSize)) {
-                    cerr << "StorageCore : restore file size = " << recipeSize << endl;
+                    // cerr << "StorageCore : restore file size = " << recipeSize << endl;
                     netBody.messageType = SUCCESS;
                     netBody.dataSize = recipeSize;
                     sendSize = sizeof(NetworkHeadStruct_t);
                     memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
                     memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
                     socket.Send(sendBuffer, sendSize);
-                    cerr << "StorageCore : send recipe size done" << endl;
+                    // cerr << "StorageCore : send recipe size done" << endl;
                     u_char* recipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeSize);
                     storageObj_->restoreRecipes((char*)recvBuffer + sizeof(NetworkHeadStruct_t), recipeBuffer, recipeSize);
                     u_char* sendRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeSize + sizeof(NetworkHeadStruct_t));
@@ -106,7 +106,7 @@ void DataSR::run(Socket socket)
                     sendSize = sizeof(NetworkHeadStruct_t) + recipeSize;
                     socket.Send(sendRecipeBuffer, sendSize);
                     memcpy(&restoredFileRecipe, recipeBuffer, sizeof(Recipe_t));
-                    cerr << "StorageCore : send recipe list done, file size = " << restoredFileRecipe.fileRecipeHead.fileSize << ", total chunk number = " << restoredFileRecipe.fileRecipeHead.totalChunkNumber << endl;
+                    // cerr << "StorageCore : send recipe list done, file size = " << restoredFileRecipe.fileRecipeHead.fileSize << ", total chunk number = " << restoredFileRecipe.fileRecipeHead.totalChunkNumber << endl;
                     free(sendRecipeBuffer);
                     free(recipeBuffer);
                 } else {

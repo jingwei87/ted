@@ -10,25 +10,6 @@ struct timeval timeendSenderReadMQ;
 struct timeval timestartSenderRecipe;
 struct timeval timeendSenderRecipe;
 
-void PRINT_BYTE_ARRAY_SENDER(
-    FILE* file, void* mem, uint32_t len)
-{
-    if (!mem || !len) {
-        fprintf(file, "\n( null )\n");
-        return;
-    }
-    uint8_t* array = (uint8_t*)mem;
-    fprintf(file, "%u bytes:\n{\n", len);
-    uint32_t i = 0;
-    for (i = 0; i < len - 1; i++) {
-        fprintf(file, "0x%x, ", array[i]);
-        if (i % 8 == 7)
-            fprintf(file, "\n");
-    }
-    fprintf(file, "0x%x ", array[i]);
-    fprintf(file, "\n}\n");
-}
-
 Sender::Sender()
 {
     inputMQ_ = new messageQueue<Data_t>;
@@ -52,11 +33,8 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
     int totalRecipeNumber = recipeList.size();
     int totalRecipeSize = totalRecipeNumber * sizeof(RecipeEntry_t) + sizeof(Recipe_t);
     u_char* recipeBuffer = (u_char*)malloc(sizeof(u_char) * totalRecipeNumber * sizeof(RecipeEntry_t));
-    PRINT_BYTE_ARRAY_SENDER(stdout, &request.fileRecipeHead.fileNameHash, FILE_NAME_HASH_SIZE);
     for (int i = 0; i < totalRecipeNumber; i++) {
         memcpy(recipeBuffer + i * sizeof(RecipeEntry_t), &recipeList[i], sizeof(RecipeEntry_t));
-        // cerr << "DataSR : recv chunk id = " << recipeList[i].chunkID << ", chunk size = " << recipeList[i].chunkSize << endl;
-        // PRINT_BYTE_ARRAY_SENDER(stdout, recipeList[i].chunkKey, CHUNK_ENCRYPT_KEY_SIZE);
     }
     u_char clientKey[32];
     memset(clientKey, 1, 32);
