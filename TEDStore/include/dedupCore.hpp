@@ -18,7 +18,7 @@ private:
 public:
     DedupCore();
     ~DedupCore();
-    bool dedupByHash(powSignedHash_t in, RequiredChunk_t& out);
+    bool dedupByHash(HashList_t in, RequiredChunk_t& out);
 };
 
 #endif //TEDSTORE_DEDUPCORE_HPP

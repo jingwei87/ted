@@ -20,11 +20,13 @@ void DataSR::run(Socket socket)
     int sendSize = 0;
     u_char recvBuffer[NETWORK_MESSAGE_DATA_SIZE];
     u_char sendBuffer[NETWORK_MESSAGE_DATA_SIZE];
-    // double totalSaveChunkTime = 0;
+    // double totalstoreChunkTime = 0;
     uint32_t startID = 0;
     uint32_t endID = 0;
     Recipe_t restoredFileRecipe;
     uint32_t totalRestoredChunkNumber = 0;
+    uint64_t recipeSize = 0;
+    u_char* recipeBuffer;
     while (true) {
         if (!socket.Recv(recvBuffer, recvSize)) {
             cerr << "DataSR : client closed socket connect, fd = " << socket.fd_ << " Thread exit now" << endl;
@@ -38,36 +40,40 @@ void DataSR::run(Socket socket)
                 return;
             }
             case CLIENT_UPLOAD_CHUNK: {
-                if (!storageObj_->saveChunks(netBody, (char*)recvBuffer + sizeof(NetworkHeadStruct_t))) {
+                if (!storageObj_->storeChunks(netBody, (char*)recvBuffer + sizeof(NetworkHeadStruct_t))) {
                     cerr << "DedupCore : dedup stage 2 report error" << endl;
                     return;
                 }
                 break;
             }
             case CLIENT_UPLOAD_ENCRYPTED_RECIPE: {
-                cout << "DataSR : recv file recipe" << endl;
-                storageObj_->checkRecipeStatus(tempRecipeHead, tempRecipeEntryList);
+                int recipeListSize = netBody.dataSize;
+                cout << "DataSR : recv file recipe size = " << recipeListSize << endl;
+                u_char* recipeListBuffer = (u_char*)malloc(sizeof(u_char) * recipeListSize + sizeof(NetworkHeadStruct_t));
+                if (!socket.Recv(recipeListBuffer, recvSize)) {
+                    cerr << "DataSR : client closed socket connect, recipe store failed,  fd = " << socket.fd_ << " Thread exit now" << endl;
+                    return;
+                }
+                char fileNameHash[FILE_NAME_HASH_SIZE];
+                memcpy(fileNameHash, recipeListBuffer + sizeof(NetworkHeadStruct_t), FILE_NAME_HASH_SIZE);
+                storageObj_->storeRecipes(fileNameHash, recipeListBuffer + sizeof(NetworkHeadStruct_t) + FILE_NAME_HASH_SIZE, recipeListSize);
                 break;
             }
             case CLIENT_UPLOAD_DECRYPTED_RECIPE: {
                 cout << "DataSR : recv file recipe" << endl;
-                storageObj_->checkRecipeStatus(tempRecipeHead, tempRecipeEntryList);
-                break;
-            }
-            case CLIENT_UPLOAD_DECRYPTED_RECIPE: {
-                cout << "DataSR : recv file recipe" << endl;
-                storageObj_->checkRecipeStatus(tempRecipeHead, tempRecipeEntryList);
-                break;
+                u_char* recvDecryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeSize + sizeof(NetworkHeadStruct_t));
+                decryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeBufferSize) break;
             }
             case CLIENT_DOWNLOAD_ENCRYPTED_RECIPE: {
 
-                if (storageObj_->restoreRecipeHead((char*)recvBuffer + sizeof(NetworkHeadStruct_t), restoredFileRecipe)) {
-                    cout << "StorageCore : restore file size = " << restoredFileRecipe.fileRecipeHead.fileSize << " chunk number = " << restoredFileRecipe.fileRecipeHead.totalChunkNumber << endl;
+                if (storageObj_->restoreRecipes((char*)recvBuffer + sizeof(NetworkHeadStruct_t), recipeBuffer, recipeSize)) {
+                    cout << "StorageCore : restore file size = " << recipeSize << endl;
                     netBody.messageType = SUCCESS;
-                    netBody.dataSize = sizeof(Recipe_t);
-                    memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
-                    memcpy(sendBuffer + sizeof(NetworkHeadStruct_t), &restoredFileRecipe, sizeof(Recipe_t));
-                    sendSize = sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t);
+                    netBody.dataSize = recipeSize;
+                    u_char* sendRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeSize + sizeof(NetworkHeadStruct_t));
+                    memcpy(sendRecipeBuffer, &netBody, sizeof(NetworkHeadStruct_t));
+                    memcpy(sendRecipeBuffer + sizeof(NetworkHeadStruct_t), recipeBuffer, recipeSize);
+                    sendSize = sizeof(NetworkHeadStruct_t) + recipeSize;
                 } else {
                     netBody.messageType = ERROR_FILE_NOT_EXIST;
                     netBody.dataSize = 0;

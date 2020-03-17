@@ -37,21 +37,40 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
     for (int i = 0; i < totalRecipeNumber; i++) {
         memcpy(recipeBuffer + sizeof(Recipe_t) + i * sizeof(RecipeEntry_t), &recipeList[i], sizeof(RecipeEntry_t));
     }
-    char clientKey[32];
+    u_char clientKey[32];
     memset(clientKey, 1, 32);
 
-    NetworkHeadStruct_t requestBody, respondBody;
-    requestBody.clientID = clientID_;
-    requestBody.messageType = CLIENT_UPLOAD_ENCRYPTED_RECIPE;
-    int sendSize = sizeof(NetworkHeadStruct_t) + totalRecipeSize;
-    requestBody.dataSize = totalRecipeSize;
+    NetworkHeadStruct_t requestBodySize;
+    requestBodySize.clientID = clientID_;
+    requestBodySize.messageType = CLIENT_UPLOAD_ENCRYPTED_RECIPE;
+    int sendSize = sizeof(NetworkHeadStruct_t);
+    requestBodySize.dataSize = totalRecipeSize;
     u_char* requestBuffer = (u_char*)malloc(sizeof(u_char) * sendSize);
-    memcpy(requestBuffer, &requestBody, sizeof(NetworkHeadStruct_t));
-    cryptoObj_->encryptWithKey(recipeBuffer, totalRecipeSize, clientKey, requestBuffer + sizeof(NetworkHeadStruct_t));
+    memcpy(requestBuffer, &requestBodySize, sizeof(NetworkHeadStruct_t));
     if (!socket_.Send(requestBuffer, sendSize)) {
-        cerr << "Sender : error sending file resipces, peer may close" << endl;
+        free(requestBuffer);
+        cerr << "Sender : error sending file resipces size, peer may close" << endl;
         return false;
+    } else {
+        free(requestBuffer);
+        NetworkHeadStruct_t requestBodyRecipe;
+        requestBodyRecipe.clientID = clientID_;
+        requestBodyRecipe.messageType = CLIENT_UPLOAD_ENCRYPTED_RECIPE;
+        int sendSize = sizeof(NetworkHeadStruct_t) + totalRecipeSize;
+        requestBodyRecipe.dataSize = totalRecipeSize;
+        u_char* requestBuffer = (u_char*)malloc(sizeof(u_char) * sendSize);
+        memcpy(requestBuffer, &requestBodyRecipe, sizeof(NetworkHeadStruct_t));
+        cryptoObj_->encryptWithKey(recipeBuffer, totalRecipeSize, clientKey, requestBuffer + sizeof(NetworkHeadStruct_t));
+        if (!socket_.Send(requestBuffer, sendSize)) {
+            free(requestBuffer);
+            cerr << "Sender : error sending file resipces, peer may close" << endl;
+            return false;
+        } else {
+            free(requestBuffer);
+            cerr << "Sender : send recipe done" << endl;
+        }
     }
+
     return true;
 }
 

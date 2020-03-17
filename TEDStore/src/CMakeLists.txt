@@ -9,8 +9,11 @@ endif()
 set(OPENSSL_INCLUDE_PATH ../lib/openssl/include)
 set(OPENSSL_LIBRARY_PATH ../lib/openssl/)
 
-set(LEVELDB_INCLUDE_PATH ../lib/leveldb/include)
-set(LEVELDB_LIBRARY_PATH ../lib/leveldb/build)
+# set(LEVELDB_INCLUDE_PATH ../lib/leveldb/include)
+# set(LEVELDB_LIBRARY_PATH ../lib/leveldb/build)
+
+set(LEVELDB_INCLUDE_PATH ~/Library/leveldb-1.22/include)
+set(LEVELDB_LIBRARY_PATH ~/Library/leveldb-1.22/build)
 
 include_directories(${BOOST_INCLUDE_DIR} ${LEVELDB_INCLUDE_PATH} ${OPENSSL_INCLUDE_PATH} ../include)
 link_directories(${BOOST_LIBRARY_DIR} ${LEVELDB_LIBRARY_PATH} ${OPENSSL_LIBRARY_PATH} util)

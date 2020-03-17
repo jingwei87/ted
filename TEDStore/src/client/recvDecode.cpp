@@ -9,7 +9,7 @@ RecvDecode::RecvDecode(string fileName)
     cryptoObj_ = new CryptoPrimitive();
     socket_.init(CLIENT_TCP, config.getStorageServerIP(), config.getStorageServerPort());
     cryptoObj_->generateHash((u_char*)&fileName[0], fileName.length(), fileNameHash_);
-    if (processRecipe(fileRecipe_, fileRecipeList_ fileNameHash_)) {
+    if (processRecipe(fileRecipe_, fileRecipeList_, fileNameHash_)) {
         cerr << "RecvDecode : recv file recipe head, file size = " << fileRecipe_.fileRecipeHead.fileSize << ", total chunk number = " << fileRecipe_.fileRecipeHead.totalChunkNumber << endl;
     } else {
         cerr << "RecvDecode : recv file recipe error" << endl;
