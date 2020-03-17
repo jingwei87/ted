@@ -12,6 +12,7 @@ Retriever::Retriever(string fileName, RecvDecode*& recvDecodeObjTemp)
 Retriever::~Retriever()
 {
     retrieveFile_.close();
+    cerr << "Retriever : file close correct" << endl;
 }
 
 void Retriever::recvThread()
@@ -23,7 +24,7 @@ void Retriever::recvThread()
             totalRecvNumber_++;
         }
     }
-    cout << "Retriever : job done, thread exit now" << endl;
+    cerr << "Retriever : job done, thread exit now" << endl;
     return;
 }
 

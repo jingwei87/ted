@@ -18,6 +18,15 @@ typedef struct {
     u_char chunkHash[CHUNK_HASH_SIZE];
     u_char encryptKey[CHUNK_ENCRYPT_KEY_SIZE];
 } Chunk_t;
+
+typedef struct {
+    u_char chunkHash[CHUNK_HASH_SIZE];
+} ChunkHash_t;
+
+typedef struct {
+    vector<ChunkHash_t> hash_;
+} HashList_t;
+
 // HIGH - 16460 LOW - 16428
 
 typedef struct {

@@ -31,38 +31,46 @@ Sender::~Sender()
 bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
 {
     int totalRecipeNumber = recipeList.size();
-    int sendRecipeNumber = 0;
-    int sendRecipeBatchNumber = config.getSendRecipeBatchSize();
-    int currentSendRecipeNumber = 0;
-    while ((totalRecipeNumber - sendRecipeNumber) != 0) {
+    int totalRecipeSize = totalRecipeNumber * sizeof(RecipeEntry_t) + sizeof(Recipe_t);
+    u_char* recipeBuffer = (u_char*)malloc(sizeof(u_char) * totalRecipeNumber * sizeof(RecipeEntry_t));
+    for (int i = 0; i < totalRecipeNumber; i++) {
+        memcpy(recipeBuffer + i * sizeof(RecipeEntry_t), &recipeList[i], sizeof(RecipeEntry_t));
+    }
+    u_char clientKey[32];
+    memset(clientKey, 1, 32);
 
-        if (totalRecipeNumber - sendRecipeNumber < sendRecipeBatchNumber) {
-            currentSendRecipeNumber = totalRecipeNumber - sendRecipeNumber;
-        } else {
-            currentSendRecipeNumber = sendRecipeBatchNumber;
-        }
-        NetworkHeadStruct_t requestBody, respondBody;
-
-        requestBody.clientID = clientID_;
-        requestBody.messageType = CLIENT_UPLOAD_RECIPE;
-        respondBody.clientID = 0;
-        respondBody.messageType = 0;
-        respondBody.dataSize = 0;
-        int sendSize = sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t) + currentSendRecipeNumber * sizeof(RecipeEntry_t);
-        requestBody.dataSize = sizeof(Recipe_t) + currentSendRecipeNumber * sizeof(RecipeEntry_t);
-        u_char requestBuffer[sendSize];
-        memcpy(requestBuffer, &requestBody, sizeof(requestBody));
+    NetworkHeadStruct_t requestBodySize;
+    requestBodySize.clientID = clientID_;
+    requestBodySize.messageType = CLIENT_UPLOAD_ENCRYPTED_RECIPE;
+    int sendSize = sizeof(NetworkHeadStruct_t);
+    requestBodySize.dataSize = totalRecipeSize;
+    u_char* requestBufferFirst = (u_char*)malloc(sizeof(u_char) * sendSize);
+    memcpy(requestBufferFirst, &requestBodySize, sizeof(NetworkHeadStruct_t));
+    if (!socket_.Send(requestBufferFirst, sendSize)) {
+        free(requestBufferFirst);
+        cerr << "Sender : error sending file resipces size, peer may close" << endl;
+        return false;
+    } else {
+        free(requestBufferFirst);
+        NetworkHeadStruct_t requestBodyRecipe;
+        requestBodyRecipe.clientID = clientID_;
+        requestBodyRecipe.messageType = CLIENT_UPLOAD_ENCRYPTED_RECIPE;
+        int sendSize = sizeof(NetworkHeadStruct_t) + totalRecipeSize;
+        requestBodyRecipe.dataSize = totalRecipeSize;
+        u_char* requestBuffer = (u_char*)malloc(sizeof(u_char) * sendSize);
+        memcpy(requestBuffer, &requestBodyRecipe, sizeof(NetworkHeadStruct_t));
         memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), &request, sizeof(Recipe_t));
-        for (int i = 0; i < currentSendRecipeNumber; i++) {
-            memcpy(requestBuffer + sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t) + i * sizeof(RecipeEntry_t), &recipeList[sendRecipeNumber + i], sizeof(RecipeEntry_t));
-        }
+        cryptoObj_->encryptWithKey(recipeBuffer, totalRecipeNumber * sizeof(RecipeEntry_t), clientKey, requestBuffer + sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t));
         if (!socket_.Send(requestBuffer, sendSize)) {
+            free(requestBuffer);
             cerr << "Sender : error sending file resipces, peer may close" << endl;
             return false;
+        } else {
+            free(requestBuffer);
+            cerr << "Sender : send recipe done" << endl;
         }
-        sendRecipeNumber += currentSendRecipeNumber;
-        currentSendRecipeNumber = 0;
     }
+
     return true;
 }
 
@@ -170,6 +178,7 @@ void Sender::run()
                 memcpy(sendChunkBatchBuffer + sizeof(NetworkHeadStruct_t) + sizeof(int) + currentChunkNumber * sizeof(Chunk_t), &tempChunk.chunk, sizeof(Chunk_t));
                 currentChunkNumber++;
                 currentSendChunkBatchBufferSize += sizeof(Chunk_t);
+                // PRINT_BYTE_ARRAY_SENDER(stdout, tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize);
 #endif
                 RecipeEntry_t newRecipeEntry;
                 newRecipeEntry.chunkID = tempChunk.chunk.ID;
@@ -195,13 +204,13 @@ void Sender::run()
     gettimeofday(&timeendSender, NULL);
     diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
     second = diff / 1000000.0;
-    cout << "Sender : send chunk time = " << second - totalExtractMQTime << " s" << endl;
+    cerr << "Sender : send chunk time = " << second - totalExtractMQTime << " s" << endl;
 #endif
 // printf("Sender send chunk list time is %lf s\n", totalSendTime);
 #if BREAK_DOWN_DEFINE == 1
     gettimeofday(&timestartSenderRecipe, NULL);
 #endif
-    cout << "Sender : start send file recipes" << endl;
+    cerr << "Sender : start send file recipes" << endl;
     if (!this->sendRecipe(fileRecipe, recipeList, status)) {
         cerr << "Sender : send recipe list error, upload fail " << endl;
         free(sendChunkBatchBuffer);
@@ -212,7 +221,7 @@ void Sender::run()
     gettimeofday(&timeendSenderRecipe, NULL);
     diff = 1000000 * (timeendSenderRecipe.tv_sec - timestartSenderRecipe.tv_sec) + timeendSenderRecipe.tv_usec - timestartSenderRecipe.tv_usec;
     second = diff / 1000000.0;
-    cout << "Sender : send recipe list time = " << second << " s" << endl;
+    cerr << "Sender : send recipe list time = " << second << " s" << endl;
 #endif
     free(sendChunkBatchBuffer);
     sendEndFlag();

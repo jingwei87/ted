@@ -47,13 +47,14 @@ public:
     StorageCore();
     ~StorageCore();
 
-    bool saveChunks(NetworkHeadStruct_t& networkHead, char* data);
-    bool saveRecipe(std::string recipeName, Recipe_t recipeHead, RecipeList_t recipeList, bool status);
-    bool restoreRecipeAndChunk(char* fileNameHash, uint32_t startID, uint32_t endID, ChunkList_t& restoredChunkList);
-    bool saveChunk(std::string chunkHash, char* chunkData, int chunkSize);
-    bool restoreChunk(std::string chunkHash, std::string& chunkData);
-    bool checkRecipeStatus(Recipe_t recipeHead, RecipeList_t recipeList);
-    bool restoreRecipeHead(char* fileNameHash, Recipe_t& restoreRecipe);
+    bool restoreChunks(NetworkHeadStruct_t& networkHead, char* data);
+    bool storeRecipes(char* fileNameHash, u_char* recipeContent, uint64_t recipeSize);
+    bool restoreRecipeAndChunk(RecipeList_t recipeList, uint32_t startID, uint32_t endID, ChunkList_t& restoredChunkList);
+    bool storeChunk(string chunkHash, char* chunkData, int chunkSize);
+    bool storeChunks(NetworkHeadStruct_t& networkHead, char* data);
+    bool restoreChunk(std::string chunkHash, std::string& chunkDataStr);
+    bool restoreRecipes(char* fileNameHash, u_char* recipeContent, uint64_t& recipeSize);
+    bool restoreRecipesSize(char* fileNameHash, uint64_t& recipeSize);
 };
 
 #endif

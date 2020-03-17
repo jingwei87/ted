@@ -84,15 +84,15 @@ void keyServer::runKeyGen(SSL* connection)
             gettimeofday(&timeendKeyServerTotal, NULL);
             diff = 1000000 * (timeendKeyServerTotal.tv_sec - timestartKeyServerTotal.tv_sec) + timeendKeyServerTotal.tv_usec - timestartKeyServerTotal.tv_usec;
             second = diff / 1000000.0;
-            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
-            cout << "keyServer : compute optimal time = " << optimalComputeTime << " s" << endl;
-            cout << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
-            cout << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
+            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cerr << "keyServer : compute optimal time = " << optimalComputeTime << " s" << endl;
+            cerr << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
+            cerr << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
 #endif
             return;
         }
         int recvNumber = recvSize / (4 * sizeof(uint32_t));
-        cout << "KeyServer : recv hash number = " << recvNumber << endl;
+        cerr << "KeyServer : recv hash number = " << recvNumber << endl;
         u_char key[recvNumber * CHUNK_ENCRYPT_KEY_SIZE];
         multiThreadEditSketchTableMutex_.lock();
 #if BREAK_DOWN_DEFINE == 1
@@ -172,10 +172,10 @@ void keyServer::runKeyGen(SSL* connection)
             gettimeofday(&timeendKeyServerTotal, NULL);
             diff = 1000000 * (timeendKeyServerTotal.tv_sec - timestartKeyServerTotal.tv_sec) + timeendKeyServerTotal.tv_usec - timestartKeyServerTotal.tv_usec;
             second = diff / 1000000.0;
-            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
-            cout << "keyServer : compute optimal time = " << optimalComputeTime << " s" << endl;
-            cout << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
-            cout << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
+            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cerr << "keyServer : compute optimal time = " << optimalComputeTime << " s" << endl;
+            cerr << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
+            cerr << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
 #endif
             return;
         }
@@ -193,7 +193,7 @@ void keyServer::runKeyGen(SSL* connection)
                 string strTemp = ss.str();
                 opInput_.push_back(make_pair(strTemp, sketchTable_[0][i]));
             }
-            cout << "keyServer : start optimization solver" << endl;
+            cerr << "keyServer : start optimization solver" << endl;
             sketchTableCounter_ = 0;
             OpSolver* solver = new OpSolver(opm_, opInput_);
             T_ = solver->GetOptimal();
@@ -235,12 +235,12 @@ void keyServer::runKeyGen(SSL* connection)
             T_ = 1;
             multiThreadEditTMutex_.unlock();
 #if BREAK_DOWN_DEFINE == 1
-            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             return;
         }
         int recvNumber = recvSize / (4 * sizeof(uint32_t));
-        cout << "KeyServer : recv hash number = " << recvNumber << endl;
+        cerr << "KeyServer : recv hash number = " << recvNumber << endl;
         u_char key[recvNumber * CHUNK_ENCRYPT_KEY_SIZE];
         multiThreadEditSketchTableMutex_.lock();
 #if BREAK_DOWN_DEFINE == 1
@@ -319,7 +319,7 @@ void keyServer::runKeyGen(SSL* connection)
             T_ = 1;
             multiThreadEditTMutex_.unlock();
 #if BREAK_DOWN_DEFINE == 1
-            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             return;
         }
@@ -333,7 +333,7 @@ void keyServer::runKeyGen(SSL* connection)
                 string strTemp = ss.str();
                 opInput_.push_back(make_pair(strTemp, sketchTable_[0][i]));
             }
-            cout << "keyServer : start optimization solver" << endl;
+            cerr << "keyServer : start optimization solver" << endl;
             sketchTableCounter_ = 0;
             opSolverFlag_ = true;
             multiThreadEditTMutex_.unlock();

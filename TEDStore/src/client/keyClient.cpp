@@ -145,19 +145,19 @@ void keyClient::run()
             if (!senderObj_->editJobDoneFlag()) {
                 cerr << "KeyClient : error to set job done flag for sender" << endl;
             } else {
-                cout << "KeyClient : key exchange thread job done, exit now" << endl;
+                cerr << "KeyClient : key exchange thread job done, exit now" << endl;
             }
             break;
         }
     }
 #if BREAK_DOWN_DEFINE == 1
-    cout << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
-    cout << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
-    cout << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
-    cout << "KeyClient : key derviation work time = " << keyDerivationTime << " s" << endl;
-    cout << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
-    cout << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
-    cout << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
+    cerr << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
+    cerr << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
+    cerr << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
+    cerr << "KeyClient : key derviation work time = " << keyDerivationTime << " s" << endl;
+    cerr << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
+    cerr << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
+    cerr << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
 #endif
     return;
 }

@@ -45,13 +45,13 @@ StorageCore::~StorageCore()
     string writeContainerName = containerNamePrefix_ + lastContainerFileName_ + containerNameTail_;
     currentContainer_.saveTOFile(writeContainerName);
 #if BREAK_DOWN_DEFINE == 1
-    cout << "Upload query DB time = " << queryDBTimeUpload << " s, write Container time = " << writeContainerTime << " s, insert DB time = " << insertDBTimeUpload << " s, unique chunk number = " << uniqueChunkNumber << endl;
-    cout << "Restore chunks DB time = " << queryDBTime << " s, Read Container time = " << readContainerTime << " s, Current read container number = " << readContainerNumber << endl;
+    cerr << "Upload query DB time = " << queryDBTimeUpload << " s, write Container time = " << writeContainerTime << " s, insert DB time = " << insertDBTimeUpload << " s, unique chunk number = " << uniqueChunkNumber << endl;
+    cerr << "Restore chunks DB time = " << queryDBTime << " s, Read Container time = " << readContainerTime << " s, Current read container number = " << readContainerNumber << endl;
 #endif
     delete cryptoObj_;
 }
 
-bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
+bool StorageCore::storeChunks(NetworkHeadStruct_t& networkHead, char* data)
 {
     // gettimeofday(&timestartStorage, NULL);
     int chunkNumber;
@@ -63,14 +63,13 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
     for (int i = 0; i < chunkNumber; i++) {
         int currentChunkSize;
         string originHash(data + readSize, CHUNK_HASH_SIZE);
-        // cout << "save chunk hash" << endl;
         readSize += CHUNK_HASH_SIZE;
         memcpy(&currentChunkSize, data + readSize, sizeof(int));
         readSize += sizeof(int);
         if (fp2ChunkDB.query(originHash, tmpdata)) {
             continue;
         } else {
-            if (!saveChunk(originHash, data + readSize, currentChunkSize)) {
+            if (!storeChunk(originHash, data + readSize, currentChunkSize)) {
                 return false;
             }
         }
@@ -94,7 +93,7 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
             continue;
         } else {
             uniqueChunkNumber++;
-            if (!saveChunk(originHash, (char*)newChunk.logicData, newChunk.logicDataSize)) {
+            if (!storeChunk(originHash, (char*)newChunk.logicData, newChunk.logicDataSize)) {
                 return false;
             }
         }
@@ -103,7 +102,7 @@ bool StorageCore::saveChunks(NetworkHeadStruct_t& networkHead, char* data)
     return true;
 }
 
-bool StorageCore::restoreRecipeHead(char* fileNameHash, Recipe_t& restoreRecipe)
+bool StorageCore::restoreRecipesSize(char* fileNameHash, uint64_t& recipeSize)
 {
     string recipeName;
     string DBKey(fileNameHash, FILE_NAME_HASH_SIZE);
@@ -116,55 +115,21 @@ bool StorageCore::restoreRecipeHead(char* fileNameHash, Recipe_t& restoreRecipe)
             std::cerr << "StorageCore : Can not open Recipe file : " << readRecipeName;
             return false;
         } else {
-            Recipe_t tempRecipeHead;
-            char recipeHeadBuffer[sizeof(Recipe_t)];
-            memset(recipeHeadBuffer, 0, sizeof(Recipe_t));
-            RecipeIn.seekg(ios::beg);
-            RecipeIn.read(recipeHeadBuffer, sizeof(Recipe_t));
+            RecipeIn.seekg(0, std::ios::end);
+            recipeSize = RecipeIn.tellg();
+            RecipeIn.seekg(0, std::ios::beg);
             RecipeIn.close();
-            memcpy(&restoreRecipe, recipeHeadBuffer, sizeof(Recipe_t));
             return true;
         }
     } else {
+        std::cerr << "StorageCore : file recipe not exist" << endl;
         return false;
     }
     return true;
 }
 
-bool StorageCore::saveRecipe(std::string recipeName, Recipe_t recipeHead, RecipeList_t recipeList, bool status)
+bool StorageCore::restoreRecipes(char* fileNameHash, u_char* recipeContent, uint64_t& recipeSize)
 {
-    ofstream RecipeOut;
-    string writeRecipeName, buffer;
-
-    writeRecipeName = RecipeNamePrefix_ + recipeName + RecipeNameTail_;
-    RecipeOut.open(writeRecipeName, ios::app | ios::binary);
-    if (!RecipeOut.is_open()) {
-        std::cerr << "Can not open Recipe file: " << writeRecipeName << endl;
-        return false;
-    }
-    int recipeListSize = recipeList.size();
-    if (status) {
-        for (int i = 0; i < recipeListSize; i++) {
-            RecipeOut.write((char*)&recipeList[i], sizeof(RecipeEntry_t));
-        }
-    } else {
-        char tempHeadBuffer[sizeof(Recipe_t)];
-        memcpy(tempHeadBuffer, &recipeHead, sizeof(Recipe_t));
-        RecipeOut.write(tempHeadBuffer, sizeof(Recipe_t));
-        cout << "StorageCore : save recipe head over, total chunk number = " << recipeHead.fileRecipeHead.totalChunkNumber << " file size = " << recipeHead.fileRecipeHead.fileSize << endl;
-        char tempBuffer[sizeof(RecipeEntry_t)];
-        for (int i = 0; i < recipeListSize; i++) {
-            RecipeOut.write((char*)&recipeList[i], sizeof(RecipeEntry_t));
-        }
-    }
-    RecipeOut.close();
-    return true;
-}
-
-bool StorageCore::restoreRecipeAndChunk(char* fileNameHash, uint32_t startID, uint32_t endID, ChunkList_t& restoredChunkList)
-{
-    ifstream RecipeIn;
-    string readRecipeName;
     string recipeName;
     string DBKey(fileNameHash, FILE_NAME_HASH_SIZE);
     if (fileName2metaDB.query(DBKey, recipeName)) {
@@ -175,43 +140,86 @@ bool StorageCore::restoreRecipeAndChunk(char* fileNameHash, uint32_t startID, ui
         if (!RecipeIn.is_open()) {
             std::cerr << "StorageCore : Can not open Recipe file : " << readRecipeName;
             return false;
+        } else {
+            RecipeIn.seekg(0, std::ios::end);
+            recipeSize = RecipeIn.tellg();
+            RecipeIn.seekg(0, std::ios::beg);
+            RecipeIn.read((char*)recipeContent, recipeSize);
+            RecipeIn.close();
+            return true;
         }
+    } else {
+        std::cerr << "StorageCore : file recipe not exist" << endl;
+        return false;
+    }
+    return true;
+}
 
-        char readBuffer[sizeof(RecipeEntry_t) * (endID - startID)];
-        RecipeIn.seekg(sizeof(Recipe_t) + startID * sizeof(RecipeEntry_t));
-        RecipeIn.read(readBuffer, sizeof(RecipeEntry_t) * (endID - startID));
-        RecipeIn.close();
-        for (int i = 0; i < (endID - startID); i++) {
-            RecipeEntry_t newRecipeEntry;
-            memcpy(&newRecipeEntry, readBuffer + i * sizeof(RecipeEntry_t), sizeof(RecipeEntry_t));
-            string chunkHash((char*)newRecipeEntry.chunkHash, CHUNK_HASH_SIZE);
-            string chunkData;
-            if (restoreChunk(chunkHash, chunkData)) {
-                if (chunkData.length() != newRecipeEntry.chunkSize) {
-                    cerr << "StorageCore : restore chunk logic data size error" << endl;
-                    return false;
-                } else {
-                    Chunk_t newChunk;
-                    newChunk.ID = newRecipeEntry.chunkID;
-                    newChunk.logicDataSize = newRecipeEntry.chunkSize;
-                    memcpy(newChunk.chunkHash, newRecipeEntry.chunkHash, CHUNK_HASH_SIZE);
-                    memcpy(newChunk.encryptKey, newRecipeEntry.chunkKey, CHUNK_ENCRYPT_KEY_SIZE);
-                    memcpy(newChunk.logicData, &chunkData[0], newChunk.logicDataSize);
-                    restoredChunkList.push_back(newChunk);
-                }
+bool StorageCore::storeRecipes(char* fileNameHash, u_char* recipeContent, uint64_t recipeSize)
+{
 
-            } else {
-                cerr << "StorageCore : can not restore chunk" << endl;
-                return false;
-            }
+    ofstream RecipeOut;
+    string writeRecipeName, buffer, recipeName;
+
+    string DBKey(fileNameHash, FILE_NAME_HASH_SIZE);
+    if (fileName2metaDB.query(DBKey, recipeName)) {
+        cerr << "StorageCore : current file's recipe exist, modify it now" << recipeName << endl;
+        writeRecipeName = RecipeNamePrefix_ + recipeName + RecipeNameTail_;
+        RecipeOut.open(writeRecipeName, ios::app | ios::binary);
+        if (!RecipeOut.is_open()) {
+            std::cerr << "Can not open Recipe file: " << writeRecipeName << endl;
+            return false;
         }
+        RecipeOut.write((char*)recipeContent, recipeSize);
+        RecipeOut.close();
         return true;
     } else {
-        return false;
+        char recipeNameBuffer[FILE_NAME_HASH_SIZE * 2 + 1];
+        for (int i = 0; i < FILE_NAME_HASH_SIZE; i++) {
+            sprintf(recipeNameBuffer + 2 * i, "%02X", fileNameHash[i]);
+        }
+        cerr << "StorageCore : current file's recipe not exist\nnew recipe file name = " << recipeNameBuffer << endl;
+        string recipeNameNew(recipeNameBuffer, FILE_NAME_HASH_SIZE * 2);
+        fileName2metaDB.insert(DBKey, recipeNameNew);
+        writeRecipeName = RecipeNamePrefix_ + recipeNameNew + RecipeNameTail_;
+        RecipeOut.open(writeRecipeName, ios::app | ios::binary);
+        if (!RecipeOut.is_open()) {
+            std::cerr << "Can not open Recipe file: " << writeRecipeName << endl;
+            return false;
+        }
+        RecipeOut.write((char*)recipeContent, recipeSize);
+        RecipeOut.close();
+        return true;
     }
 }
 
-bool StorageCore::saveChunk(std::string chunkHash, char* chunkData, int chunkSize)
+bool StorageCore::restoreRecipeAndChunk(RecipeList_t recipeList, uint32_t startID, uint32_t endID, ChunkList_t& restoredChunkList)
+{
+
+    for (int i = 0; i < (endID - startID); i++) {
+        string chunkHash((char*)recipeList[startID + i].chunkHash, CHUNK_HASH_SIZE);
+        string chunkData;
+        if (restoreChunk(chunkHash, chunkData)) {
+            if (chunkData.length() != recipeList[startID + i].chunkSize) {
+                cerr << "StorageCore : restore chunk logic data size error" << endl;
+                return false;
+            } else {
+                Chunk_t newChunk;
+                newChunk.ID = recipeList[startID + i].chunkID;
+                newChunk.logicDataSize = recipeList[startID + i].chunkSize;
+                memcpy(newChunk.chunkHash, recipeList[startID + i].chunkHash, CHUNK_HASH_SIZE);
+                memcpy(newChunk.logicData, &chunkData[0], newChunk.logicDataSize);
+                restoredChunkList.push_back(newChunk);
+            }
+        } else {
+            cerr << "StorageCore : can not restore chunk" << endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+bool StorageCore::storeChunk(std::string chunkHash, char* chunkData, int chunkSize)
 {
     keyForChunkHashDB_t key;
     key.length = chunkSize;
@@ -289,33 +297,6 @@ bool StorageCore::restoreChunk(std::string chunkHash, std::string& chunkDataStr)
     }
 }
 
-bool StorageCore::checkRecipeStatus(Recipe_t recipeHead, RecipeList_t recipeList)
-{
-    string recipeName;
-    string DBKey((char*)recipeHead.fileRecipeHead.fileNameHash, FILE_NAME_HASH_SIZE);
-    if (fileName2metaDB.query(DBKey, recipeName)) {
-        cout << "StorageCore : current file's recipe exist, add data back, recipe file name = " << recipeName << endl;
-        if (!this->saveRecipe(recipeName, recipeHead, recipeList, true)) {
-            std::cerr << "StorageCore : save recipe failed " << endl;
-            return false;
-        }
-    } else {
-        char recipeNameBuffer[FILE_NAME_HASH_SIZE * 2 + 1];
-        for (int i = 0; i < FILE_NAME_HASH_SIZE; i++) {
-            sprintf(recipeNameBuffer + 2 * i, "%02X", recipeHead.fileRecipeHead.fileNameHash[i]);
-        }
-        cout << "StorageCore : current file's recipe not exist, new recipe file name = " << recipeNameBuffer << endl;
-        string recipeNameNew(recipeNameBuffer, FILE_NAME_HASH_SIZE * 2);
-        fileName2metaDB.insert(DBKey, recipeNameNew);
-        if (!this->saveRecipe(recipeNameNew, recipeHead, recipeList, false)) {
-            std::cerr << "StorageCore : save recipe failed " << endl;
-            return false;
-        }
-    }
-    cout << "StorageCore : save recipe number = " << recipeList.size() << endl;
-    return true;
-}
-
 bool StorageCore::writeContainer(keyForChunkHashDB_t& key, char* data)
 {
     if (key.length + currentContainer_.used_ < maxContainerSize_) {
@@ -376,7 +357,7 @@ bool Container::saveTOFile(string fileName)
         return false;
     }
     containerOut.write(this->body_, this->used_);
-    cout << "Container : save " << setbase(10) << this->used_ << " bytes to file system" << endl;
+    cerr << "Container : save " << setbase(10) << this->used_ << " bytes to file system" << endl;
     containerOut.close();
     return true;
 }
