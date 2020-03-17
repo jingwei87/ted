@@ -22,8 +22,8 @@ struct timeval timeend;
 
 void usage()
 {
-    cout << "[client -r filename] for receive file" << endl;
-    cout << "[client -s filename] for send file" << endl;
+    cerr << "[client -r filename] for receive file" << endl;
+    cerr << "[client -s filename] for send file" << endl;
 }
 
 int main(int argv, char* argc[])
@@ -74,8 +74,8 @@ int main(int argv, char* argc[])
     gettimeofday(&timeend, NULL);
     long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
     double second = diff / 1000000.0;
-    cout << "System : total work time is " << diff << " us = " << second << " s" << endl;
-    cout << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
-    cout << "System : end work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
+    cerr << "System : total work time is " << diff << " us = " << second << " s" << endl;
+    cerr << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
+    cerr << "System : end work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
     return 0;
 }

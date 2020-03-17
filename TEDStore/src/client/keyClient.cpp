@@ -9,6 +9,25 @@ struct timeval timeendKey;
 struct timeval timestartKeySocket;
 struct timeval timeendKeySocket;
 
+void PRINT_BYTE_ARRAY_KEYC(
+    FILE* file, void* mem, uint32_t len)
+{
+    if (!mem || !len) {
+        fprintf(file, "\n( null )\n");
+        return;
+    }
+    uint8_t* array = (uint8_t*)mem;
+    fprintf(file, "%u bytes:\n{\n", len);
+    uint32_t i = 0;
+    for (i = 0; i < len - 1; i++) {
+        fprintf(file, "0x%x, ", array[i]);
+        if (i % 8 == 7)
+            fprintf(file, "\n");
+    }
+    fprintf(file, "0x%x ", array[i]);
+    fprintf(file, "\n}\n");
+}
+
 keyClient::keyClient(Sender* senderObjTemp)
 {
     inputMQ_ = new messageQueue<Data_t>;
@@ -145,19 +164,19 @@ void keyClient::run()
             if (!senderObj_->editJobDoneFlag()) {
                 cerr << "KeyClient : error to set job done flag for sender" << endl;
             } else {
-                cout << "KeyClient : key exchange thread job done, exit now" << endl;
+                cerr << "KeyClient : key exchange thread job done, exit now" << endl;
             }
             break;
         }
     }
 #if BREAK_DOWN_DEFINE == 1
-    cout << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
-    cout << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
-    cout << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
-    cout << "KeyClient : key derviation work time = " << keyDerivationTime << " s" << endl;
-    cout << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
-    cout << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
-    cout << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
+    cerr << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
+    cerr << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
+    cerr << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
+    cerr << "KeyClient : key derviation work time = " << keyDerivationTime << " s" << endl;
+    cerr << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
+    cerr << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
+    cerr << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
 #endif
     return;
 }
@@ -203,7 +222,18 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
 
 bool keyClient::encodeChunk(Data_t& newChunk)
 {
+    // cout << "original data" << endl;
+    PRINT_BYTE_ARRAY_KEYC(stdout, newChunk.chunk.logicData, newChunk.chunk.logicDataSize);
     bool statusChunk = cryptoObj_->encryptChunk(newChunk.chunk);
+    // cout << "original key" << endl;
+    // PRINT_BYTE_ARRAY_KEYC(stdout, newChunk.chunk.encryptKey, CHUNK_ENCRYPT_KEY_SIZE);
+    // cout << "encrypted data" << endl;
+    // PRINT_BYTE_ARRAY_KEYC(stdout, newChunk.chunk.logicData, newChunk.chunk.logicDataSize);
+    // cryptoObj_->decryptChunk(newChunk.chunk);
+    // cout << "decrypted structure data" << endl;
+    // PRINT_BYTE_ARRAY_KEYC(stdout, newChunk.chunk.logicData, newChunk.chunk.logicDataSize);
+    // cryptoObj_->decryptChunk(newChunk.chunk);
+
     bool statusHash = cryptoObj_->generateHash(newChunk.chunk.logicData, newChunk.chunk.logicDataSize, newChunk.chunk.chunkHash);
     if (!statusChunk) {
         cerr << "KeyClient : error encrypt chunk" << endl;

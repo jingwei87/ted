@@ -49,11 +49,12 @@ public:
 
     bool restoreChunks(NetworkHeadStruct_t& networkHead, char* data);
     bool storeRecipes(char* fileNameHash, u_char* recipeContent, uint64_t recipeSize);
-    bool restoreRecipeAndChunk(u_char* recipeBuffer, uint32_t startID, uint32_t endID, ChunkList_t& restoredChunkList);
+    bool restoreRecipeAndChunk(RecipeList_t recipeList, uint32_t startID, uint32_t endID, ChunkList_t& restoredChunkList);
     bool storeChunk(string chunkHash, char* chunkData, int chunkSize);
     bool storeChunks(NetworkHeadStruct_t& networkHead, char* data);
     bool restoreChunk(std::string chunkHash, std::string& chunkDataStr);
     bool restoreRecipes(char* fileNameHash, u_char* recipeContent, uint64_t& recipeSize);
+    bool restoreRecipesSize(char* fileNameHash, uint64_t& recipeSize);
 };
 
 #endif

@@ -255,7 +255,7 @@ bool CryptoPrimitive::decryptWithKey(u_char* ciphertext, const int dataSize, u_c
 bool CryptoPrimitive::encryptChunk(Chunk_t& chunk)
 {
     u_char ciphertext[chunk.logicDataSize];
-    u_char cipherKey[CHUNK_ENCRYPT_KEY_SIZE];
+    // u_char cipherKey[CHUNK_ENCRYPT_KEY_SIZE];
     if (!encryptWithKey(chunk.logicData, chunk.logicDataSize, chunk.encryptKey, ciphertext)) {
         cerr << "CryptoPrimitive Error: encrypt chunk logic data error" << endl;
         return false;
@@ -268,6 +268,7 @@ bool CryptoPrimitive::encryptChunk(Chunk_t& chunk)
         //     memcpy(chunk.encryptKey, cipherKey, CHUNK_ENCRYPT_KEY_SIZE);
         //     return true;
         // }
+        memcpy(chunk.logicData, ciphertext, chunk.logicDataSize);
         return true;
     }
 }

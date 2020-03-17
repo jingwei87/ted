@@ -2,6 +2,25 @@
 
 extern Configure config;
 
+void PRINT_BYTE_ARRAY_RECV(
+    FILE* file, void* mem, uint32_t len)
+{
+    if (!mem || !len) {
+        fprintf(file, "\n( null )\n");
+        return;
+    }
+    uint8_t* array = (uint8_t*)mem;
+    fprintf(file, "%u bytes:\n{\n", len);
+    uint32_t i = 0;
+    for (i = 0; i < len - 1; i++) {
+        fprintf(file, "0x%x, ", array[i]);
+        if (i % 8 == 7)
+            fprintf(file, "\n");
+    }
+    fprintf(file, "0x%x ", array[i]);
+    fprintf(file, "\n}\n");
+}
+
 RecvDecode::RecvDecode(string fileName)
 {
     clientID_ = config.getClientID();
@@ -40,89 +59,96 @@ bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t& recipeList, u
 
     memcpy(requestBuffer, &request, sizeof(NetworkHeadStruct_t));
     memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), fileNameHash, FILE_NAME_HASH_SIZE);
+    // PRINT_BYTE_ARRAY_RECV(stdout, fileNameHash, FILE_NAME_HASH_SIZE);
 
-    while (true) {
-        if (!socket_.Send(requestBuffer, sendSize)) {
-            cerr << "RecvDecode : storage server closed" << endl;
-            return false;
-        }
-        u_char respondBuffer[sizeof(NetworkHeadStruct_t)];
-        int recvSize;
-        if (!socket_.Recv(respondBuffer, recvSize)) {
-            cerr << "RecvDecode : storage server closed" << endl;
-            return false;
-        }
-        memcpy(&respond, respondBuffer, sizeof(NetworkHeadStruct_t));
-        if (respond.messageType == ERROR_RESEND) {
-            cerr << "RecvDecode : Server send resend flag!" << endl;
-            continue;
-        }
-        if (respond.messageType == ERROR_CLOSE) {
-            cerr << "RecvDecode : Server reject download request!" << endl;
-            exit(1);
-        }
-        if (respond.messageType == ERROR_FILE_NOT_EXIST) {
-            cerr << "RecvDecode : Server reject download request, file not exist in server!" << endl;
-            exit(1);
-        }
-        if (respond.messageType == ERROR_CHUNK_NOT_EXIST) {
-            cerr << "RecvDecode : Server reject download request, chunk not exist in server!" << endl;
-            exit(1);
-        }
-        if (respond.messageType == SUCCESS) {
-            uint64_t recipeLength = respond.dataSize;
-            u_char* encryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeLength + sizeof(NetworkHeadStruct_t));
-            u_char* decryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeLength);
-            request.messageType = CLIENT_DOWNLOAD_ENCRYPTED_RECIPE;
-            request.dataSize = FILE_NAME_HASH_SIZE;
-            request.clientID = clientID_;
-            sendSize = sizeof(NetworkHeadStruct_t) + FILE_NAME_HASH_SIZE;
-            memcpy(requestBuffer, &request, sizeof(NetworkHeadStruct_t));
-            memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), fileNameHash, FILE_NAME_HASH_SIZE);
-
-            if (!socket_.Send(requestBuffer, sendSize)) {
-                cerr << "RecvDecode : storage server closed" << endl;
-                return false;
-            }
-
-            if (!socket_.Recv(encryptedRecipeBuffer, recvSize)) {
-                cerr << "RecvDecode : storage server closed" << endl;
-                return false;
-            }
-            if (recvSize != respond.dataSize + sizeof(NetworkHeadStruct_t)) {
-                cerr << "RecvDecode : recv encrypted file recipe size error" << endl;
-            } else {
-                u_char clientKey[32];
-                memset(clientKey, 1, 32);
-                cryptoObj_->decryptWithKey(encryptedRecipeBuffer + sizeof(NetworkHeadStruct_t), respond.dataSize, clientKey, decryptedRecipeBuffer);
-                memcpy(&recipeHead, decryptedRecipeBuffer, sizeof(Recipe_t));
-                u_char* requestChunkList = (u_char*)malloc(sizeof(u_char) * CHUNK_FINGER_PRINT_SIZE * recipeHead.fileRecipeHead.totalChunkNumber + sizeof(NetworkHeadStruct_t));
-                for (uint64_t i = 0; i < recipeHead.fileRecipeHead.totalChunkNumber; i++) {
-                    RecipeEntry_t newRecipeEntry;
-                    memcpy(&newRecipeEntry, decryptedRecipeBuffer + sizeof(Recipe_t) + i * sizeof(RecipeEntry_t), sizeof(RecipeEntry_t));
-                    recipeList.push_back(newRecipeEntry);
-                    memcpy(requestChunkList + sizeof(NetworkHeadStruct_t) + i * CHUNK_FINGER_PRINT_SIZE, newRecipeEntry.chunkHash, CHUNK_FINGER_PRINT_SIZE);
-                }
-                free(encryptedRecipeBuffer);
-                free(decryptedRecipeBuffer);
-
-                request.messageType = CLIENT_UPLOAD_DECRYPTED_RECIPE;
-                request.dataSize = recipeHead.fileRecipeHead.totalChunkNumber * CHUNK_FINGER_PRINT_SIZE;
-                sendSize = CHUNK_FINGER_PRINT_SIZE * recipeHead.fileRecipeHead.totalChunkNumber + sizeof(NetworkHeadStruct_t);
-                memcpy(requestChunkList, &request, sizeof(NetworkHeadStruct_t));
-                if (!socket_.Send(requestChunkList, sendSize)) {
-                    free(requestChunkList);
-                    cerr << "RecvDecode : storage server closed" << endl;
-                    return false;
-                } else {
-                    free(requestChunkList);
-                    cerr << "RecvDecode : process recipe done, send to server done" << endl;
-                    break;
-                }
-            }
-        }
+    if (!socket_.Send(requestBuffer, sendSize)) {
+        cerr << "RecvDecode : storage server closed" << endl;
+        return false;
     }
-    return true;
+    u_char respondBuffer[sizeof(NetworkHeadStruct_t)];
+    int recvSize;
+    if (!socket_.Recv(respondBuffer, recvSize)) {
+        cerr << "RecvDecode : storage server closed" << endl;
+        return false;
+    }
+    memcpy(&respond, respondBuffer, sizeof(NetworkHeadStruct_t));
+    if (respond.messageType == ERROR_CLOSE) {
+        cerr << "RecvDecode : Server reject download request!" << endl;
+        exit(1);
+    }
+    if (respond.messageType == ERROR_FILE_NOT_EXIST) {
+        cerr << "RecvDecode : Server reject download request, file not exist in server!" << endl;
+        exit(1);
+    }
+    if (respond.messageType == ERROR_CHUNK_NOT_EXIST) {
+        cerr << "RecvDecode : Server reject download request, chunk not exist in server!" << endl;
+        exit(1);
+    }
+    if (respond.messageType == SUCCESS) {
+        uint64_t recipeLength = respond.dataSize;
+        cerr << "RecvDecode : recv recipe size = " << recipeLength << endl;
+        u_char* encryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeLength + sizeof(NetworkHeadStruct_t));
+        u_char* decryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeLength);
+
+        if (!socket_.Recv(encryptedRecipeBuffer, recvSize)) {
+            cerr << "RecvDecode : storage server closed" << endl;
+            return false;
+        } else {
+            cerr << "RecvDecode : recv encrypted file recipes, message size = " << recvSize << endl;
+        }
+        memcpy(&respond, encryptedRecipeBuffer, sizeof(NetworkHeadStruct_t));
+        if (recvSize != respond.dataSize + sizeof(NetworkHeadStruct_t)) {
+            cerr << "RecvDecode : recv encrypted file recipe size error" << endl;
+        } else {
+            cerr << "RecvDecode : recv encrypted file recipe size =" << respond.dataSize << endl;
+            u_char clientKey[32];
+            memset(clientKey, 1, 32);
+            memcpy(&recipeHead, encryptedRecipeBuffer + sizeof(NetworkHeadStruct_t), sizeof(Recipe_t));
+            cerr << "RecvDecode : recv encrypted file recipes done, file size = " << recipeHead.fileRecipeHead.fileSize << endl;
+            cryptoObj_->decryptWithKey(encryptedRecipeBuffer + sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t), recipeLength - sizeof(Recipe_t), clientKey, decryptedRecipeBuffer);
+            u_char* requestChunkList = (u_char*)malloc(sizeof(u_char) * sizeof(RecipeEntry_t) * recipeHead.fileRecipeHead.totalChunkNumber + sizeof(NetworkHeadStruct_t));
+            for (uint64_t i = 0; i < recipeHead.fileRecipeHead.totalChunkNumber; i++) {
+                RecipeEntry_t newRecipeEntry;
+                memcpy(&newRecipeEntry, decryptedRecipeBuffer + i * sizeof(RecipeEntry_t), sizeof(RecipeEntry_t));
+                recipeList.push_back(newRecipeEntry);
+                memset(newRecipeEntry.chunkKey, 0, CHUNK_ENCRYPT_KEY_SIZE);
+                memcpy(requestChunkList + sizeof(NetworkHeadStruct_t) + i * sizeof(RecipeEntry_t), &newRecipeEntry, sizeof(RecipeEntry_t));
+                // cerr << "RecvDecode : recv chunk id = " << newRecipeEntry.chunkID << ", chunk size = " << newRecipeEntry.chunkSize << endl;
+            }
+            free(encryptedRecipeBuffer);
+            free(decryptedRecipeBuffer);
+
+            request.messageType = CLIENT_UPLOAD_DECRYPTED_RECIPE;
+            request.dataSize = sizeof(uint64_t);
+            uint64_t recipeListSize = recipeHead.fileRecipeHead.totalChunkNumber * sizeof(RecipeEntry_t);
+            sendSize = sizeof(NetworkHeadStruct_t) + sizeof(uint64_t);
+            u_char sendDecryptedRecipeSizeBuffer[sizeof(NetworkHeadStruct_t) + sizeof(uint64_t)];
+            memcpy(sendDecryptedRecipeSizeBuffer, &request, sizeof(NetworkHeadStruct_t));
+            memcpy(sendDecryptedRecipeSizeBuffer + sizeof(NetworkHeadStruct_t), &recipeListSize, sizeof(uint64_t));
+            if (!socket_.Send(sendDecryptedRecipeSizeBuffer, sendSize)) {
+                cerr << "RecvDecode : storage server closed" << endl;
+                return false;
+            } else {
+                cerr << "RecvDecode : process recipe done, send recipe size = " << recipeListSize << " to server" << endl;
+            }
+
+            request.messageType = CLIENT_UPLOAD_DECRYPTED_RECIPE;
+            request.dataSize = recipeHead.fileRecipeHead.totalChunkNumber * sizeof(RecipeEntry_t);
+            sendSize = recipeHead.fileRecipeHead.totalChunkNumber * sizeof(RecipeEntry_t) + sizeof(NetworkHeadStruct_t);
+            memcpy(requestChunkList, &request, sizeof(NetworkHeadStruct_t));
+            if (!socket_.Send(requestChunkList, sendSize)) {
+                free(requestChunkList);
+                cerr << "RecvDecode : storage server closed" << endl;
+                return false;
+            } else {
+                free(requestChunkList);
+                cerr << "RecvDecode : process recipe done, send to server done, send size = " << sendSize << endl;
+                return true;
+            }
+        }
+    } else {
+        return false;
+    }
 }
 
 Recipe_t RecvDecode::getFileRecipeHead()
@@ -150,6 +176,7 @@ void RecvDecode::run()
     u_char requestBuffer[sendSize];
     u_char respondBuffer[NETWORK_MESSAGE_DATA_SIZE];
     int recvSize;
+    uint64_t totalChunkSize = 0;
 
     memcpy(requestBuffer, &request, sizeof(NetworkHeadStruct_t));
     memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), fileNameHash_, FILE_NAME_HASH_SIZE);
@@ -159,7 +186,7 @@ void RecvDecode::run()
         return;
     }
     while (totalRecvChunks < fileRecipe_.fileRecipeHead.totalChunkNumber) {
-
+        memset(respondBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
         if (!socket_.Recv(respondBuffer, recvSize)) {
             cerr << "RecvDecode : storage server closed" << endl;
             return;
@@ -183,20 +210,25 @@ void RecvDecode::run()
                 totalRecvSize += sizeof(uint32_t);
                 memcpy(&chunkSize, respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, sizeof(int));
                 totalRecvSize += sizeof(int);
-                cryptoObj_->decryptChunk(respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, chunkSize, respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize + chunkSize, chunkPlaintData);
-
+                cryptoObj_->decryptChunk(respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, chunkSize, fileRecipeList_[chunkID].chunkKey, chunkPlaintData);
+                PRINT_BYTE_ARRAY_RECV(stdout, chunkPlaintData, chunkSize);
+                // PRINT_BYTE_ARRAY_RECV(stdout, fileRecipeList_[chunkID].chunkKey, CHUNK_ENCRYPT_KEY_SIZE);
+                // PRINT_BYTE_ARRAY_RECV(stdout, respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, chunkSize);
+                // cerr << "chunk id = " << chunkID << " chunk size = " << chunkSize << endl;
+                totalChunkSize += chunkSize;
                 RetrieverData_t newData;
                 newData.ID = chunkID;
                 newData.logicDataSize = chunkSize;
                 memcpy(newData.logicData, chunkPlaintData, chunkSize);
+                // PRINT_BYTE_ARRAY_RECV(stdout, chunkPlaintData, chunkSize);
                 if (!insertMQToRetriever(newData)) {
                     cerr << "RecvDecode : Error insert chunk data into retriever" << endl;
                 }
-                totalRecvSize = totalRecvSize + chunkSize + CHUNK_ENCRYPT_KEY_SIZE;
+                totalRecvSize = totalRecvSize + chunkSize;
             }
             totalRecvChunks += chunkNumber;
         }
     }
-    cout << "RecvDecode : download job done, exit now" << endl;
+    cerr << "RecvDecode : download job done, exit now, total chunk size = " << totalChunkSize << endl;
     return;
 }
