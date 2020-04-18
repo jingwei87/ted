@@ -22,11 +22,14 @@ private:
     int sendShortHashMaskBitNumber;
     double keySocketRecvTime = 0;
     double keySocketSendTime = 0;
+    int keyGenNumber_;
 
 public:
     keyClient(Sender* senderObjTemp);
+    keyClient(uint64_t keyGenNumber);
     ~keyClient();
     void run();
+    void runKeyGenSimulator();
     bool encodeChunk(Data_t& newChunk);
     bool insertMQFromChunker(Data_t& newChunk);
     bool extractMQFromChunker(Data_t& newChunk);
@@ -34,6 +37,7 @@ public:
     bool editJobDoneFlag();
     bool setJobDoneFlag();
     bool keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber);
+    bool keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection);
 };
 
 #endif //TEDSTORE_KEYCLIENT_HPP

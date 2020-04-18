@@ -30,7 +30,7 @@ int main(int argv, char* argc[])
 {
     vector<boost::thread*> thList;
     boost::thread* th;
-    if (argv != 3) {
+    if (argv != 3 && argv != 4) {
         usage();
         return 0;
     }
@@ -61,6 +61,20 @@ int main(int argv, char* argc[])
         th = new boost::thread(attrs, boost::bind(&Sender::run, senderObj));
         thList.push_back(th);
 
+    }  else if (strcmp("-k", argc[1]) == 0) {
+        int threadNumber = atoi(argc[2]);
+        if (threadNumber == 0) {
+            threadNumber = 1;
+        }
+        int keyGenNumber = atoi(argc[3]);
+
+        gettimeofday(&timestart, NULL);
+        cout << "Key Generate Test : target thread number = " << threadNumber << ", target key number per thread = " << keyGenNumber << endl;
+        keyClientObj = new keyClient(keyGenNumber);
+        for (int i = 0; i < threadNumber; i++) {
+            th = new boost::thread(attrs, boost::bind(&keyClient::runKeyGenSimulator, keyClientObj));
+            thList.push_back(th);
+        }
     } else {
         usage();
         return 0;
@@ -75,7 +89,9 @@ int main(int argv, char* argc[])
     long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
     double second = diff / 1000000.0;
     cerr << "System : total work time is " << diff << " us = " << second << " s" << endl;
+#ifdef BREAK_DOWN_DEFINE == 1
     cerr << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
     cerr << "System : end work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
+#endif
     return 0;
 }

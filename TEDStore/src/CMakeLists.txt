@@ -9,8 +9,10 @@ endif()
 set(OPENSSL_INCLUDE_PATH ../lib/openssl/include)
 set(OPENSSL_LIBRARY_PATH ../lib/openssl/)
 
-set(LEVELDB_INCLUDE_PATH ../lib/leveldb/include)
-set(LEVELDB_LIBRARY_PATH ../lib/leveldb/build)
+# set(LEVELDB_INCLUDE_PATH ../lib/leveldb/include)
+# set(LEVELDB_LIBRARY_PATH ../lib/leveldb/build)
+set(LEVELDB_INCLUDE_PATH /home/tinoryj/Library/leveldb-1.22/include)
+set(LEVELDB_LIBRARY_PATH /home/tinoryj/Library/leveldb-1.22/build)
 
 include_directories(${BOOST_INCLUDE_DIR} ${LEVELDB_INCLUDE_PATH} ${OPENSSL_INCLUDE_PATH} ../include)
 link_directories(${BOOST_LIBRARY_DIR} ${LEVELDB_LIBRARY_PATH} ${OPENSSL_LIBRARY_PATH} util)
@@ -28,7 +30,7 @@ set(CLIENT_OBJ chunker keyClient sender  recvDecode  retriever)
 set(SERVER_OBJ dataSR  dedupCore storage) 
 set(KEYSERVER_OBJ keyServer)
 
-# set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Release")
 # set(CMAKE_BUILD_TYPE "Debug")
 
 set(CMAKE_C_FLAGS_DEBUG "-Wall -std=c1x -g -ggdb -g2") 
