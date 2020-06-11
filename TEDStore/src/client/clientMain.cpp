@@ -61,7 +61,7 @@ int main(int argv, char* argc[])
         th = new boost::thread(attrs, boost::bind(&Sender::run, senderObj));
         thList.push_back(th);
 
-    }  else if (strcmp("-k", argc[1]) == 0) {
+    } else if (strcmp("-k", argc[1]) == 0) {
         int threadNumber = atoi(argc[2]);
         if (threadNumber == 0) {
             threadNumber = 1;
@@ -89,7 +89,7 @@ int main(int argv, char* argc[])
     long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
     double second = diff / 1000000.0;
     cerr << "System : total work time is " << diff << " us = " << second << " s" << endl;
-#ifdef BREAK_DOWN_DEFINE == 1
+#if BREAK_DOWN_DEFINE == 1
     cerr << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
     cerr << "System : end work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
 #endif
