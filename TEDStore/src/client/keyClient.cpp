@@ -38,7 +38,6 @@ keyClient::~keyClient()
     delete inputMQ_;
 }
 
-
 void keyClient::runKeyGenSimulator()
 {
 
@@ -68,7 +67,7 @@ void keyClient::runKeyGenSimulator()
     while (true) {
 
         if (currentKeyGenNumber < keyGenNumber_) {
-            
+
             u_char chunkTemp[5 * CHUNK_HASH_SIZE];
             memset(chunkTemp, currentKeyGenNumber, 5 * CHUNK_HASH_SIZE);
 #if BREAK_DOWN_DEFINE == 1
@@ -112,7 +111,7 @@ void keyClient::runKeyGenSimulator()
             memset(chunkHash, 0, singleChunkHashSize * keyBatchSize_);
             memset(chunkKey, 0, CHUNK_HASH_SIZE * keyBatchSize_);
             batchNumber = 0;
-           if (!keyExchangeStatus) {
+            if (!keyExchangeStatus) {
                 cerr << "KeyClient : error get key for " << setbase(10) << batchNumber << " chunks" << endl;
                 return;
             } else {
@@ -133,13 +132,13 @@ void keyClient::runKeyGenSimulator()
                     keyDerivationTime += second;
 #endif
                 }
-            }   
+            }
         }
         if (JobDoneFlag) {
             break;
         }
     }
-#ifdef BREAK_DOWN_DEFINE == 1
+#if BREAK_DOWN_DEFINE == 1
     cerr << "KeyClient : key exchange work time = " << keyGenTime << " s, total key generated is " << currentKeyGenNumber << endl;
     cerr << "KeyClient : Short hash time = " << shortHashTime << " s" << endl;
     cerr << "KeyClient : key exchange time = " << keyExchangeTime << " s" << endl;
