@@ -8,7 +8,7 @@
 using namespace std;
 
 // macro for system running types
-#define BREAK_DOWN_DEFINE 0 // 0:breakdown disable| 1:breakdown enable
+#define BREAK_DOWN_DEFINE 1 // 0:breakdown disable| 1:breakdown enable
 #define SINGLE_THREAD_KEY_MANAGER 0 // 0:dual thread key server| 1:single thread key server
 #define SEND_CHUNK_LIST_METHOD 1 //0:reduce structure overhead | 1:fix second upload error on some platform
 
@@ -38,7 +38,7 @@ using namespace std;
 #define KEY_SERVER_NORMAL_RAND 3
 #define KEY_SERVER_GEOMETRIC_RAND 4
 #define KEY_SERVER_NO_RAND 5
-#define KEY_SERVER_RANDOM_TYPE KEY_SERVER_UNIFORM_INT_RAND
+#define KEY_SERVER_RANDOM_TYPE KEY_SERVER_NO_RAND
 
 class Configure {
 private:

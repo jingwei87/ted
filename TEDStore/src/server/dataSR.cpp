@@ -35,9 +35,16 @@ void DataSR::run(Socket socket)
         } else {
             NetworkHeadStruct_t netBody;
             memcpy(&netBody, recvBuffer, sizeof(NetworkHeadStruct_t));
-            cerr << "DataSR : recv message type " << netBody.messageType << ", message size = " << netBody.dataSize << endl;
+            // cerr << "DataSR : recv message type " << netBody.messageType << ", message size = " << netBody.dataSize << endl;
             switch (netBody.messageType) {
             case CLIENT_EXIT: {
+                cerr << "DataSR : client send job done check flag, server side job over, thread exit now" << endl;
+                netBody.messageType = SERVER_JOB_DONE_EXIT_PERMIT;
+                netBody.dataSize = 0;
+                sendSize = sizeof(NetworkHeadStruct_t);
+                memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
+                memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
+                socket.Send(sendBuffer, sendSize);
                 return;
             }
             case CLIENT_UPLOAD_CHUNK: {
@@ -125,7 +132,9 @@ void DataSR::run(Socket socket)
                 }
                 while (totalRestoredChunkNumber != restoredFileRecipe.fileRecipeHead.totalChunkNumber) {
                     ChunkList_t restoredChunkList;
+#if BREAK_DOWN_DEFINE == 1
                     gettimeofday(&timestartDataSR, NULL);
+#endif
                     if (storageObj_->restoreRecipeAndChunk(restoredRecipeList, startID, endID, restoredChunkList)) {
                         netBody.messageType = SUCCESS;
                         int currentChunkNumber = restoredChunkList.size();
@@ -157,10 +166,12 @@ void DataSR::run(Socket socket)
                         sendSize = sizeof(NetworkHeadStruct_t);
                         return;
                     }
+#if BREAK_DOWN_DEFINE == 1
                     gettimeofday(&timeendDataSR, NULL);
                     int diff = 1000000 * (timeendDataSR.tv_sec - timestartDataSR.tv_sec) + timeendDataSR.tv_usec - timestartDataSR.tv_usec;
                     double second = diff / 1000000.0;
-                    cerr << "DataSR : restore chunk time  = " << second << endl;
+                    cerr << "DataSR : restore " << restoredChunkList.size() << "  chunk time  = " << second << " s" << endl;
+#endif
                     socket.Send(sendBuffer, sendSize);
                 }
                 break;

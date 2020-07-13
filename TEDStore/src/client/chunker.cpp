@@ -532,7 +532,10 @@ void Chunker::varSizeChunking()
     ifstream& fin = getChunkingFile();
     uint64_t fileSize = 0;
     u_char hash[CHUNK_HASH_SIZE];
-    /*start chunking*/
+/*start chunking*/
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timestartChunker, NULL);
+#endif
     while (true) {
         memset((char*)waitingForChunkingBuffer, 0, sizeof(unsigned char) * ReadSize);
         fin.read((char*)waitingForChunkingBuffer, sizeof(unsigned char) * ReadSize);

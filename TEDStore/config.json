@@ -13,7 +13,7 @@
 		"_keyServerPort": 6666,
 		"_sketchTableWidth": 1048576,
 		"_optimalSolverComputeItemNumberThreshold": 48000,
-		"_storageBlowPercent": 0.005
+		"_storageBlowPercent": 0
 	},
 	"SPConfig": {
 		"_storageServerIP": "127.0.0.1",
