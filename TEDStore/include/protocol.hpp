@@ -2,6 +2,10 @@
 #define TEDSTORE_PROTOCOL_HPP
 
 #include <bits/stdc++.h>
+
+#define SYSTEM_WORK_TYPE_KEY_GENERATE_SIMULATE 1
+#define SYSTEM_WORK_TYPE_UPLOAD_FILE 2
+#define SYSTEM_WORK_TYPE_DOWNLOAD_FILE 3
 //client-server network protocol
 #define CLIENT_UPLOAD_CHUNK 7
 #define CLIENT_DOWNLOAD_CHUNK_WITH_RECIPE 8

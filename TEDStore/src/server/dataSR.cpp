@@ -132,7 +132,7 @@ void DataSR::run(Socket socket)
                 }
                 while (totalRestoredChunkNumber != restoredFileRecipe.fileRecipeHead.totalChunkNumber) {
                     ChunkList_t restoredChunkList;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timestartDataSR, NULL);
 #endif
                     if (storageObj_->restoreRecipeAndChunk(restoredRecipeList, startID, endID, restoredChunkList)) {
@@ -166,7 +166,7 @@ void DataSR::run(Socket socket)
                         sendSize = sizeof(NetworkHeadStruct_t);
                         return;
                     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timeendDataSR, NULL);
                     int diff = 1000000 * (timeendDataSR.tv_sec - timestartDataSR.tv_sec) + timeendDataSR.tv_usec - timestartDataSR.tv_usec;
                     double second = diff / 1000000.0;

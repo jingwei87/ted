@@ -8,7 +8,7 @@
 using namespace std;
 
 // macro for system running types
-#define BREAK_DOWN_DEFINE 1 // 0:breakdown disable| 1:breakdown enable
+#define SYSTEM_BREAK_DOWN 1 // 0:breakdown disable| 1:breakdown enable
 #define SINGLE_THREAD_KEY_MANAGER 0 // 0:dual thread key server| 1:single thread key server
 #define SEND_CHUNK_LIST_METHOD 1 //0:reduce structure overhead | 1:fix second upload error on some platform
 

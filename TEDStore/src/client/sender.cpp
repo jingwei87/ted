@@ -67,11 +67,9 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
             return false;
         } else {
             free(requestBuffer);
-            cerr << "Sender : send recipe done" << endl;
+            return true;
         }
     }
-
-    return true;
 }
 
 bool Sender::sendChunkList(char* requestBufferIn, int sendBufferSize, int sendChunkNumber, int& status)
@@ -137,7 +135,7 @@ bool Sender::sendEndFlag()
 
 void Sender::run()
 {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     double totalSendChunkTime = 0;
     double totalSendRecipeTime = 0;
     double totalRecipeAssembleTime = 0;
@@ -162,7 +160,7 @@ void Sender::run()
         if (inputMQ_->done_ && inputMQ_->isEmpty()) {
             jobDoneFlag = true;
         }
-        bool extractChunkStatus = extractMQFromKeyClient(tempChunk);
+        bool extractChunkStatus = extractMQFromEncoder(tempChunk);
 
         if (extractChunkStatus) {
 
@@ -170,7 +168,7 @@ void Sender::run()
                 memcpy(&fileRecipe, &tempChunk.recipe, sizeof(Recipe_t));
                 continue;
             } else {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                 gettimeofday(&timestartSender, NULL);
 #endif
 #if SEND_CHUNK_LIST_METHOD == 0
@@ -186,13 +184,13 @@ void Sender::run()
                 currentSendChunkBatchBufferSize += sizeof(Chunk_t);
                 // PRINT_BYTE_ARRAY_SENDER(stdout, tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize);
 #endif
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                 gettimeofday(&timeendSender, NULL);
                 diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
                 second = diff / 1000000.0;
                 totalSendChunkTime += second;
 #endif
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                 gettimeofday(&timestartSender, NULL);
 #endif
                 RecipeEntry_t newRecipeEntry;
@@ -202,7 +200,7 @@ void Sender::run()
                 memcpy(newRecipeEntry.chunkKey, tempChunk.chunk.encryptKey, CHUNK_ENCRYPT_KEY_SIZE);
                 recipeList.push_back(newRecipeEntry);
                 currentSendRecipeNumber++;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                 gettimeofday(&timeendSender, NULL);
                 diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
                 second = diff / 1000000.0;
@@ -211,14 +209,14 @@ void Sender::run()
             }
         }
         if (currentChunkNumber == sendBatchSize || jobDoneFlag) {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartSender, NULL);
 #endif
             if (this->sendChunkList(sendChunkBatchBuffer, currentSendChunkBatchBufferSize, currentChunkNumber, status)) {
                 currentSendChunkBatchBufferSize = sizeof(NetworkHeadStruct_t) + sizeof(int);
                 memset(sendChunkBatchBuffer, 0, sizeof(NetworkHeadStruct_t) + sizeof(int) + sizeof(char) * sendBatchSize * (CHUNK_HASH_SIZE + MAX_CHUNK_SIZE + sizeof(int)));
                 currentChunkNumber = 0;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                 gettimeofday(&timeendSender, NULL);
                 diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
                 second = diff / 1000000.0;
@@ -226,7 +224,7 @@ void Sender::run()
 #endif
             } else {
                 cerr << "Sender : send " << setbase(10) << currentChunkNumber << " chunk error" << endl;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                 gettimeofday(&timeendSender, NULL);
                 diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
                 second = diff / 1000000.0;
@@ -236,25 +234,30 @@ void Sender::run()
             }
         }
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     cerr << "Sender : send chunk time = " << totalSendChunkTime << " s" << endl;
 #endif
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartSender, NULL);
 #endif
     // cerr << "Sender : start send file recipes" << endl;
     if (!this->sendRecipe(fileRecipe, recipeList, status)) {
         cerr << "Sender : send recipe list error, upload fail " << endl;
         free(sendChunkBatchBuffer);
-        sendEndFlag();
-        return;
+        bool serverJobDoneFlag = sendEndFlag();
+        if (serverJobDoneFlag) {
+            return;
+        } else {
+            cerr << "Sender : server job done flag error, server may shutdown, upload may faild" << endl;
+            return;
+        }
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timeendSender, NULL);
     diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
     second = diff / 1000000.0;
     totalSendRecipeTime += second;
-    cerr << "Sender : ssembleTime recipe list time = " << totalRecipeAssembleTime << " s" << endl;
+    cerr << "Sender : assemble recipe list time = " << totalRecipeAssembleTime << " s" << endl;
     cerr << "Sender : send recipe list time = " << totalSendRecipeTime << " s" << endl;
 #endif
     free(sendChunkBatchBuffer);
@@ -267,12 +270,12 @@ void Sender::run()
     }
 }
 
-bool Sender::insertMQFromKeyClient(Data_t& newChunk)
+bool Sender::insertMQFromEncoder(Data_t& newChunk)
 {
     return inputMQ_->push(newChunk);
 }
 
-bool Sender::extractMQFromKeyClient(Data_t& newChunk)
+bool Sender::extractMQFromEncoder(Data_t& newChunk)
 {
     return inputMQ_->pop(newChunk);
 }

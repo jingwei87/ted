@@ -24,8 +24,8 @@ public:
     sockaddr_in addr_;
     Socket(const int type, string ip, int port);
     Socket(int fd, sockaddr_in addr);
-    Socket(){};
-    ~Socket(){};
+    Socket() {};
+    ~Socket() {};
     void init(const int type, string ip, int port);
     void finish();
 

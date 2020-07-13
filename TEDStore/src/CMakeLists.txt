@@ -27,12 +27,16 @@ set(UTIL_OBJ configure cryptoPrimitive Sock database murmurHash3 optimalSolver S
 set(LINK_OBJ ${UTIL_OBJ} ${OPENSSL_LIBRARY_OBJ} ${LEVELDB_LIBRARY_OBJ}
         ${BOOST_LIBRARY_OBJ} ${UTIL_OBJ} ${SYSTEM_LIBRARY_OBJ})
 
-set(CLIENT_OBJ chunker keyClient sender  recvDecode  retriever)
+set(CLIENT_OBJ chunker keyClient encoder sender recvDecode retriever)
 set(SERVER_OBJ dataSR  dedupCore storage) 
 set(KEYSERVER_OBJ keyServer)
 
-set(CMAKE_BUILD_TYPE "Release")
-# set(CMAKE_BUILD_TYPE "Debug")
+if (NOT CMAKE_BUILD_TYPE)
+   set (CMAKE_BUILD_TYPE "Release")
+   message (
+      STATUS "No CMAKE_BUILD_TYPE selected, defaulting to ${CMAKE_BUILD_TYPE}"
+   )
+endif ()
 
 set(CMAKE_C_FLAGS_DEBUG "-Wall -std=c1x -g -ggdb -g2") 
 set(CMAKE_CXX_FLAGS_DEBUG "-Wall -std=c++17 -g -ggdb -g2 -fsanitize=leak -fno-omit-frame-pointer")
@@ -47,6 +51,7 @@ set(CMAKE_MODULE_PATH /usr/share/cmake-3.10/Modules/)
 # SET (CMAKE_NM      "/usr/bin/llvm-nm")
 # SET (CMAKE_OBJDUMP "/usr/bin/llvm-objdump")
 # SET (CMAKE_RANLIB  "/usr/bin/llvm-ranlib")
+
 
 
 add_subdirectory(client)
