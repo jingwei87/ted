@@ -30,6 +30,7 @@ void usage()
 
 int main(int argv, char* argc[])
 {
+    gettimeofday(&timestart, NULL);
     vector<boost::thread*> thList;
     boost::thread* th;
     if (argv != 3 && argv != 4) {
@@ -78,7 +79,6 @@ int main(int argv, char* argc[])
         }
         int keyGenNumber = atoi(argc[3]);
 
-        gettimeofday(&timestart, NULL);
         cout << "Key Generate Test : target thread number = " << threadNumber << ", target key number per thread = " << keyGenNumber << endl;
         keyClientObj = new keyClient(keyGenNumber);
         for (int i = 0; i < threadNumber; i++) {
@@ -89,16 +89,23 @@ int main(int argv, char* argc[])
         usage();
         return 0;
     }
-
+    gettimeofday(&timeend, NULL);
+    long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
+    double second = diff / 1000000.0;
+    cerr << "System : init work time is " << diff << " us = " << second << " s" << endl;
     gettimeofday(&timestart, NULL);
 
     for (auto it : thList) {
         it->join();
     }
     gettimeofday(&timeend, NULL);
-    long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
-    double second = diff / 1000000.0;
+    diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
+    second = diff / 1000000.0;
     cerr << "System : total work time is " << diff << " us = " << second << " s" << endl;
+#if SYSTEM_BREAK_DOWN == 1
+    cerr << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
+    cerr << "System : finish work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
+#endif
     if (systemWorkType == SYSTEM_WORK_TYPE_KEY_GENERATE_SIMULATE) {
         delete keyClientObj;
     } else if (systemWorkType == SYSTEM_WORK_TYPE_UPLOAD_FILE) {
@@ -110,9 +117,5 @@ int main(int argv, char* argc[])
         delete recvDecodeObj;
         delete retrieverObj;
     }
-#if SYSTEM_BREAK_DOWN == 1
-    cerr << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
-    cerr << "System : finish work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
-#endif
     return 0;
 }

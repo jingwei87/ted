@@ -16,6 +16,13 @@ DataSR::DataSR(StorageCore* storageObj, DedupCore* dedupCoreObj)
 
 void DataSR::run(Socket socket)
 {
+#if SYSTEM_BREAK_DOWN == 1
+    double restoreChunkTime = 0;
+    double storeChunkTime = 0;
+    double storeRecipeTime = 0;
+    long diff;
+    double second;
+#endif
     int recvSize = 0;
     int sendSize = 0;
     u_char recvBuffer[NETWORK_MESSAGE_DATA_SIZE];
@@ -31,7 +38,7 @@ void DataSR::run(Socket socket)
         memset(recvBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
         if (!socket.Recv(recvBuffer, recvSize)) {
             cerr << "DataSR : client closed socket connect, fd = " << socket.fd_ << " Thread exit now" << endl;
-            return;
+            break;
         } else {
             NetworkHeadStruct_t netBody;
             memcpy(&netBody, recvBuffer, sizeof(NetworkHeadStruct_t));
@@ -48,7 +55,8 @@ void DataSR::run(Socket socket)
                 return;
             }
             case CLIENT_UPLOAD_CHUNK: {
-                if (!storageObj_->storeChunks(netBody, (char*)recvBuffer + sizeof(NetworkHeadStruct_t))) {
+                bool storeChunkStatus = storageObj_->storeChunks(netBody, (char*)recvBuffer + sizeof(NetworkHeadStruct_t));
+                if (!storeChunkStatus) {
                     cerr << "DedupCore : dedup stage 2 report error" << endl;
                     return;
                 } else {
@@ -176,9 +184,9 @@ void DataSR::run(Socket socket)
                     }
 #if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timeendDataSR, NULL);
-                    int diff = 1000000 * (timeendDataSR.tv_sec - timestartDataSR.tv_sec) + timeendDataSR.tv_usec - timestartDataSR.tv_usec;
-                    double second = diff / 1000000.0;
-                    cerr << "DataSR : restore " << restoredChunkList.size() << "  chunk time  = " << second << " s" << endl;
+                    diff = 1000000 * (timeendDataSR.tv_sec - timestartDataSR.tv_sec) + timeendDataSR.tv_usec - timestartDataSR.tv_usec;
+                    second = diff / 1000000.0;
+                    restoreChunkTime += second;
 #endif
                     socket.Send(sendBuffer, sendSize);
                 }
@@ -189,5 +197,8 @@ void DataSR::run(Socket socket)
             }
         }
     }
+#if SYSTEM_BREAK_DOWN == 1
+    cerr << "DataSR : restore chunk time  = " << restoreChunkTime << " s" << endl;
+#endif
     return;
 }

@@ -2,6 +2,9 @@
 
 extern Configure config;
 
+struct timeval timestartRecvDecode;
+struct timeval timeendRecvDecode;
+
 RecvDecode::RecvDecode(string fileName)
 {
     clientID_ = config.getClientID();
@@ -9,7 +12,19 @@ RecvDecode::RecvDecode(string fileName)
     cryptoObj_ = new CryptoPrimitive();
     socket_.init(CLIENT_TCP, config.getStorageServerIP(), config.getStorageServerPort());
     cryptoObj_->generateHash((u_char*)&fileName[0], fileName.length(), fileNameHash_);
-    if (processRecipe(fileRecipe_, fileRecipeList_, fileNameHash_)) {
+#if SYSTEM_BREAK_DOWN == 1
+    long diff;
+    double second;
+    gettimeofday(&timestartRecvDecode, NULL);
+#endif
+    bool processRecipeStatus = processRecipe(fileRecipe_, fileRecipeList_, fileNameHash_);
+#if SYSTEM_BREAK_DOWN == 1
+    gettimeofday(&timeendRecvDecode, NULL);
+    diff = 1000000 * (timeendRecvDecode.tv_sec - timestartRecvDecode.tv_sec) + timeendRecvDecode.tv_usec - timestartRecvDecode.tv_usec;
+    second = diff / 1000000.0;
+    cerr << "RecvDecode : process file recipes time = " << second << " s" << endl;
+#endif
+    if (processRecipeStatus) {
         cerr << "RecvDecode : recv file recipe head, file size = " << fileRecipe_.fileRecipeHead.fileSize << ", total chunk number = " << fileRecipe_.fileRecipeHead.totalChunkNumber << endl;
     } else {
         cerr << "RecvDecode : recv file recipe error" << endl;
@@ -147,6 +162,11 @@ bool RecvDecode::extractMQToRetriever(RetrieverData_t& newData)
 
 void RecvDecode::run()
 {
+#if SYSTEM_BREAK_DOWN == 1
+    long diff;
+    double second;
+    double decryptChunkTime = 0;
+#endif
     int recvChunkBatchSize = config.getSendChunkBatchSize();
     NetworkHeadStruct_t request, respond;
     request.messageType = CLIENT_DOWNLOAD_CHUNK_WITH_RECIPE;
@@ -185,6 +205,9 @@ void RecvDecode::run()
             u_char chunkPlaintData[MAX_CHUNK_SIZE];
             memcpy(&chunkNumber, respondBuffer + sizeof(NetworkHeadStruct_t), sizeof(int));
             for (int i = 0; i < chunkNumber; i++) {
+#if SYSTEM_BREAK_DOWN == 1
+                gettimeofday(&timestartRecvDecode, NULL);
+#endif
                 memcpy(&chunkID, respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, sizeof(uint32_t));
                 totalRecvSize += sizeof(uint32_t);
                 memcpy(&chunkSize, respondBuffer + sizeof(NetworkHeadStruct_t) + totalRecvSize, sizeof(int));
@@ -194,6 +217,12 @@ void RecvDecode::run()
                 newData.ID = chunkID;
                 newData.logicDataSize = chunkSize;
                 memcpy(newData.logicData, chunkPlaintData, chunkSize);
+#if SYSTEM_BREAK_DOWN == 1
+                gettimeofday(&timeendRecvDecode, NULL);
+                diff = 1000000 * (timeendRecvDecode.tv_sec - timestartRecvDecode.tv_sec) + timeendRecvDecode.tv_usec - timestartRecvDecode.tv_usec;
+                second = diff / 1000000.0;
+                decryptChunkTime += second;
+#endif
                 if (!insertMQToRetriever(newData)) {
                     cerr << "RecvDecode : Error insert chunk data into retriever" << endl;
                 }
@@ -203,5 +232,8 @@ void RecvDecode::run()
         }
     }
     cerr << "RecvDecode : download job done, exit now" << endl;
+#if SYSTEM_BREAK_DOWN == 1
+    cerr << "RecvDecode : chunk decrypt time = " << decryptChunkTime << " s" << endl;
+#endif
     return;
 }
