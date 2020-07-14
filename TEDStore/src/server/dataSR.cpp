@@ -51,6 +51,14 @@ void DataSR::run(Socket socket)
                 if (!storageObj_->storeChunks(netBody, (char*)recvBuffer + sizeof(NetworkHeadStruct_t))) {
                     cerr << "DedupCore : dedup stage 2 report error" << endl;
                     return;
+                } else {
+                    netBody.messageType = SUCCESS;
+                    netBody.dataSize = 0;
+                    sendSize = sizeof(NetworkHeadStruct_t);
+                    memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
+                    memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
+                    socket.Send(sendBuffer, sendSize);
+                    cerr << "DedupCore : deduplication and storage job done, send success flag" << endl;
                 }
                 break;
             }

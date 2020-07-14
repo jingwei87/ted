@@ -270,7 +270,6 @@ void keyClient::run()
     cerr << "KeyClient : chunk short hash compute work time = " << shortHashTime << " s" << endl;
     cerr << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
     cerr << "KeyClient : plaint chunk crypto hash generate work time = " << chunkHashGenerateTime << " s" << endl;
-    // cerr << "KeyClient : cipher chunk crypto hash generate work time = " << chunkHashGenerateTime << " s" << endl;
     cerr << "KeyClient : key derviation work time = " << keyDerivationTime << " s" << endl;
     // cerr << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
     // cerr << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;

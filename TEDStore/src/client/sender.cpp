@@ -74,18 +74,27 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
 
 bool Sender::sendChunkList(char* requestBufferIn, int sendBufferSize, int sendChunkNumber, int& status)
 {
-    NetworkHeadStruct_t requestBody;
+    NetworkHeadStruct_t requestBody, respondBody;
     requestBody.clientID = clientID_;
     requestBody.messageType = CLIENT_UPLOAD_CHUNK;
     u_char requestBuffer[NETWORK_MESSAGE_DATA_SIZE];
+    u_char respondBuffer[sizeof(NetworkHeadStruct_t)];
     int sendSize = sizeof(NetworkHeadStruct_t) + sizeof(int) + sendBufferSize;
+    int respondSize = 0;
     memcpy(requestBufferIn + sizeof(NetworkHeadStruct_t), &sendChunkNumber, sizeof(int));
     requestBody.dataSize = sendBufferSize + sizeof(int);
     memcpy(requestBufferIn, &requestBody, sizeof(NetworkHeadStruct_t));
     if (!socket_.Send((u_char*)requestBufferIn, sendSize)) {
         return false;
     } else {
-        return true;
+        bool recvStatus = socket_.Recv(respondBuffer, respondSize);
+        memcpy(&respondBody, respondBuffer, sizeof(NetworkHeadStruct_t));
+        if (recvStatus && respondBody.messageType == SUCCESS) {
+            return true;
+        } else {
+            cerr << "Sender : recv dedup status error, peer closed" << endl;
+            return false;
+        }
     }
 }
 
@@ -137,6 +146,7 @@ void Sender::run()
 {
 #if SYSTEM_BREAK_DOWN == 1
     double totalSendChunkTime = 0;
+    double totalChunkAssembleTime = 0;
     double totalSendRecipeTime = 0;
     double totalRecipeAssembleTime = 0;
     long diff;
@@ -188,7 +198,7 @@ void Sender::run()
                 gettimeofday(&timeendSender, NULL);
                 diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
                 second = diff / 1000000.0;
-                totalSendChunkTime += second;
+                totalChunkAssembleTime += second;
 #endif
 #if SYSTEM_BREAK_DOWN == 1
                 gettimeofday(&timestartSender, NULL);
@@ -235,7 +245,8 @@ void Sender::run()
         }
     }
 #if SYSTEM_BREAK_DOWN == 1
-    cerr << "Sender : send chunk time = " << totalSendChunkTime << " s" << endl;
+    cerr << "Sender : assemble chunk list time = " << totalChunkAssembleTime << " s" << endl;
+    cerr << "Sender : chunk deduplication service time = " << totalSendChunkTime << " s" << endl;
 #endif
 #if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartSender, NULL);

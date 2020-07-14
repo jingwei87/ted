@@ -326,7 +326,7 @@ void Chunker::fixSizeChunking()
     cerr << "Chunker : total read file time = " << setbase(10) << readFileTime << " s" << endl;
     cerr << "Chunker : total chunking time = " << setbase(10) << second - (insertTime + readFileTime) << " s" << endl;
 #endif
-    cerr << "Chunker : Fixed chunking over:\n\tTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << " Byte;\n\tTotal chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
+    cerr << "Chunker : Fixed chunking over:\n\t  Total file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << " Byte;\n\t  Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
 }
 
 void Chunker::varSizeChunking()
@@ -489,7 +489,7 @@ void Chunker::varSizeChunking()
     cerr << "Chunker : total read file time = " << setbase(10) << readFileTime << " s" << endl;
     cerr << "Chunker : total chunking time = " << setbase(10) << second - (insertTime + readFileTime) << " s" << endl;
 #endif
-    cerr << "Chunker : variable size chunking over:\n\tTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << " Byte;\n\tTotal chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
+    cerr << "Chunker : variable size chunking over:\n\t  Total file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << " Byte;\n\t  Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
     return;
 }
 
@@ -578,7 +578,7 @@ void Chunker::traceDrivenChunkingFSL()
     cerr << "Chunker : total read file time = " << setbase(10) << readFileTime << " s" << endl;
     cerr << "Chunker : total chunking time = " << chunkTime << " s" << endl;
 #endif
-    cerr << "Chunker : trace gen over:\n\tTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << " Byte;\n\tTotal chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
+    cerr << "Chunker : trace gen over:\n\t  Total file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << " Byte;\n\t  Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
 }
 
 void Chunker::traceDrivenChunkingUBC()
@@ -667,7 +667,7 @@ void Chunker::traceDrivenChunkingUBC()
     cerr << "Chunker : total read file time = " << setbase(10) << readFileTime << " s" << endl;
     cerr << "Chunker : total chunking time is" << chunkTime << " s" << endl;
 #endif
-    cerr << "Chunker : trace gen over:\n\tTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << " Byte;\n\tTotal chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
+    cerr << "Chunker : trace gen over:\n\t  Total file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << " Byte;\n\t  Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
 }
 
 bool Chunker::insertMQToKeyClient(Data_t& newData)

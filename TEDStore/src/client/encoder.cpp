@@ -62,38 +62,40 @@ void Encoder::run()
             if (tempChunk.dataType == DATA_TYPE_RECIPE) {
                 insertMQToSender(tempChunk);
                 continue;
-            }
-
-#if SYSTEM_BREAK_DOWN == 1
-            gettimeofday(&timestartEncoder, NULL);
-#endif
-            bool encryptChunkStatus = cryptoObj_->encryptChunk(tempChunk.chunk);
-#if SYSTEM_BREAK_DOWN == 1
-            gettimeofday(&timeendEncoder, NULL);
-            diff = 1000000 * (timeendEncoder.tv_sec - timestartEncoder.tv_sec) + timeendEncoder.tv_usec - timestartEncoder.tv_usec;
-            second = diff / 1000000.0;
-            encryptChunkContentTime += second;
-#endif
-            if (encryptChunkStatus) {
+            } else {
 #if SYSTEM_BREAK_DOWN == 1
                 gettimeofday(&timestartEncoder, NULL);
 #endif
-                bool generateCipherChunkHashStatus = cryptoObj_->generateHash(tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, tempChunk.chunk.chunkHash);
+                u_char ciphertext[tempChunk.chunk.logicDataSize];
+                bool encryptChunkContentStatus = cryptoObj_->encryptWithKey(tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, tempChunk.chunk.encryptKey, ciphertext);
 #if SYSTEM_BREAK_DOWN == 1
                 gettimeofday(&timeendEncoder, NULL);
                 diff = 1000000 * (timeendEncoder.tv_sec - timestartEncoder.tv_sec) + timeendEncoder.tv_usec - timestartEncoder.tv_usec;
                 second = diff / 1000000.0;
-                generateCipherChunkHashTime += second;
+                encryptChunkContentTime += second;
 #endif
-                if (generateCipherChunkHashStatus) {
-                    insertMQToSender(tempChunk);
-                } else {
-                    cerr << "Encoder : generate cipher chunk hash error, exiting" << endl;
+                if (!encryptChunkContentStatus) {
+                    cerr << "Encoder : cryptoPrimitive error, encrypt chunk logic data error" << endl;
                     return;
+                } else {
+                    memcpy(tempChunk.chunk.logicData, ciphertext, tempChunk.chunk.logicDataSize);
+#if SYSTEM_BREAK_DOWN == 1
+                    gettimeofday(&timestartEncoder, NULL);
+#endif
+                    bool generateCipherChunkHashStatus = cryptoObj_->generateHash(tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, tempChunk.chunk.chunkHash);
+#if SYSTEM_BREAK_DOWN == 1
+                    gettimeofday(&timeendEncoder, NULL);
+                    diff = 1000000 * (timeendEncoder.tv_sec - timestartEncoder.tv_sec) + timeendEncoder.tv_usec - timestartEncoder.tv_usec;
+                    second = diff / 1000000.0;
+                    generateCipherChunkHashTime += second;
+#endif
+                    if (generateCipherChunkHashStatus) {
+                        insertMQToSender(tempChunk);
+                    } else {
+                        cerr << "Encoder : generate cipher chunk hash error, exiting" << endl;
+                        return;
+                    }
                 }
-            } else {
-                cerr << "Encoder : encrypt chunk error, exiting" << endl;
-                return;
             }
         }
         if (JobDoneFlag) {
@@ -108,7 +110,7 @@ void Encoder::run()
         }
     }
 #if SYSTEM_BREAK_DOWN == 1
-    cout << "Encoder : chunk encryption work time = " << encryptChunkContentTime << " s" << endl;
+    cout << "Encoder : chunk content encryption work time = " << encryptChunkContentTime << " s" << endl;
     cout << "Encoder : cipher chunk crypto hash generate work time = " << generateCipherChunkHashTime << " s" << endl;
 #endif
     return;
