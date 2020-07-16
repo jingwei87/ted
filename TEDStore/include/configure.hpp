@@ -18,6 +18,13 @@ using namespace std;
 #define CHUNKER_TRACE_DRIVEN_TYPE_FSL 2
 #define CHUNKER_TRACE_DRIVEN_TYPE_UBC 3
 
+/* Message Queue Settings: QUEUE_TYPE to setup the default message queue*/
+#define QUEUE_TYPE_LOCKFREE_SPSC_QUEUE 0
+#define QUEUE_TYPE_LOCKFREE_QUEUE 1
+#define QUEUE_TYPE_READ_WRITE_QUEUE 2
+#define QUEUE_TYPE_CONCURRENT_QUEUE 3
+#define QUEUE_TYPE QUEUE_TYPE_CONCURRENT_QUEUE
+
 #define MIN_CHUNK_SIZE 4096 //macro for the min size of variable-size chunker
 #define AVG_CHUNK_SIZE 8192 //macro for the average size of variable-size chunker
 #define MAX_CHUNK_SIZE 16384 //macro for the max size of variable-size chunker

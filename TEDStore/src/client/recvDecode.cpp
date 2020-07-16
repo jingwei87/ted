@@ -39,8 +39,10 @@ RecvDecode::~RecvDecode()
     if (cryptoObj_ != nullptr) {
         delete cryptoObj_;
     }
+#if QUEUE_TYPE == QUEUE_TYPE_LOCKFREE_SPSC_QUEUE || QUEUE_TYPE == QUEUE_TYPE_LOCKFREE_QUEUE
     outPutMQ_->~messageQueue();
     delete outPutMQ_;
+#endif
 }
 
 bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t& recipeList, u_char* fileNameHash)
