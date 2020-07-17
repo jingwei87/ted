@@ -24,7 +24,7 @@ private:
 
 public:
     DataSR(StorageCore* storageObj, DedupCore* dedupCoreObj);
-    ~DataSR(){};
+    ~DataSR() {};
     void run(Socket socket);
 };
 

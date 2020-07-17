@@ -14,7 +14,6 @@ using namespace std;
 class RecvDecode {
 private:
     Socket socket_;
-    Socket socketPow_;
     void receiveChunk();
     u_char fileNameHash_[FILE_NAME_HASH_SIZE];
     CryptoPrimitive* cryptoObj_;

@@ -35,7 +35,6 @@ RecvDecode::RecvDecode(string fileName)
 RecvDecode::~RecvDecode()
 {
     socket_.finish();
-    socketPow_.finish();
     if (cryptoObj_ != nullptr) {
         delete cryptoObj_;
     }
