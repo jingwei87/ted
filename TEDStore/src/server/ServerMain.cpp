@@ -44,18 +44,18 @@ int main()
 
     fp2ChunkDB.openDB(config.getFp2ChunkDBName());
     fileName2metaDB.openDB(config.getFp2MetaDBame());
+    ssl* dataSecurityChannelTemp = new ssl(config.getStorageServerIP(), config.getStorageServerPort(), SERVERSIDE);
 
     dedupCoreObj = new DedupCore();
     storageObj = new StorageCore();
-    dataSRObj = new DataSR(storageObj, dedupCoreObj);
+    dataSRObj = new DataSR(storageObj, dedupCoreObj, dataSecurityChannelTemp);
 
     boost::thread* th;
     boost::thread::attributes attrs;
     attrs.set_stack_size(200 * 1024 * 1024);
-    Socket socketData(SERVER_TCP, "", config.getStorageServerPort());
     while (true) {
-        Socket tmpSocket = socketData.Listen();
-        th = new boost::thread(attrs, boost::bind(&DataSR::run, dataSRObj, tmpSocket));
+        SSL* sslConnectionData = dataSecurityChannelTemp->sslListen().second;
+        th = new boost::thread(attrs, boost::bind(&DataSR::run, dataSRObj, sslConnectionData));
         thList.push_back(th);
     }
 

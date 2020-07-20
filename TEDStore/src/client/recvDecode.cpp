@@ -10,7 +10,8 @@ RecvDecode::RecvDecode(string fileName)
     clientID_ = config.getClientID();
     outPutMQ_ = new messageQueue<RetrieverData_t>;
     cryptoObj_ = new CryptoPrimitive();
-    socket_.init(CLIENT_TCP, config.getStorageServerIP(), config.getStorageServerPort());
+    dataSecurityChannel_ = new ssl(config.getStorageServerIP(), config.getStorageServerPort(), CLIENTSIDE);
+    sslConnectionData_ = dataSecurityChannel_->sslConnect().second;
     cryptoObj_->generateHash((u_char*)&fileName[0], fileName.length(), fileNameHash_);
 #if SYSTEM_BREAK_DOWN == 1
     long diff;
@@ -34,7 +35,10 @@ RecvDecode::RecvDecode(string fileName)
 
 RecvDecode::~RecvDecode()
 {
-    socket_.finish();
+#if SYSTEM_BREAK_DOWN == 1
+    cerr << "RecvDecode : chunk decrypt time = " << decryptChunkTime_ << " s" << endl;
+#endif
+    delete dataSecurityChannel_;
     if (cryptoObj_ != nullptr) {
         delete cryptoObj_;
     }
@@ -58,13 +62,13 @@ bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t& recipeList, u
     memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), fileNameHash, FILE_NAME_HASH_SIZE);
     // PRINT_BYTE_ARRAY_RECV(stdout, fileNameHash, FILE_NAME_HASH_SIZE);
 
-    if (!socket_.Send(requestBuffer, sendSize)) {
+    if (!dataSecurityChannel_->send(sslConnectionData_, (char*)requestBuffer, sendSize)) {
         cerr << "RecvDecode : storage server closed" << endl;
         return false;
     }
     u_char respondBuffer[sizeof(NetworkHeadStruct_t)];
     int recvSize;
-    if (!socket_.Recv(respondBuffer, recvSize)) {
+    if (!dataSecurityChannel_->recv(sslConnectionData_, (char*)respondBuffer, recvSize)) {
         cerr << "RecvDecode : storage server closed" << endl;
         return false;
     }
@@ -87,7 +91,7 @@ bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t& recipeList, u
         u_char* encryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeLength + sizeof(NetworkHeadStruct_t));
         u_char* decryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeLength);
 
-        if (!socket_.Recv(encryptedRecipeBuffer, recvSize)) {
+        if (!dataSecurityChannel_->recv(sslConnectionData_, (char*)encryptedRecipeBuffer, recvSize)) {
             cerr << "RecvDecode : storage server closed" << endl;
             return false;
         } else {
@@ -122,7 +126,7 @@ bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t& recipeList, u
             u_char sendDecryptedRecipeSizeBuffer[sizeof(NetworkHeadStruct_t) + sizeof(uint64_t)];
             memcpy(sendDecryptedRecipeSizeBuffer, &request, sizeof(NetworkHeadStruct_t));
             memcpy(sendDecryptedRecipeSizeBuffer + sizeof(NetworkHeadStruct_t), &recipeListSize, sizeof(uint64_t));
-            if (!socket_.Send(sendDecryptedRecipeSizeBuffer, sendSize)) {
+            if (!dataSecurityChannel_->send(sslConnectionData_, (char*)sendDecryptedRecipeSizeBuffer, sendSize)) {
                 cerr << "RecvDecode : storage server closed" << endl;
                 return false;
             } else {
@@ -131,7 +135,7 @@ bool RecvDecode::processRecipe(Recipe_t& recipeHead, RecipeList_t& recipeList, u
                 request.dataSize = recipeHead.fileRecipeHead.totalChunkNumber * sizeof(RecipeEntry_t);
                 sendSize = recipeHead.fileRecipeHead.totalChunkNumber * sizeof(RecipeEntry_t) + sizeof(NetworkHeadStruct_t);
                 memcpy(requestChunkList, &request, sizeof(NetworkHeadStruct_t));
-                if (!socket_.Send(requestChunkList, sendSize)) {
+                if (!dataSecurityChannel_->send(sslConnectionData_, (char*)requestChunkList, sendSize)) {
                     free(requestChunkList);
                     cerr << "RecvDecode : storage server closed" << endl;
                     return false;
@@ -166,7 +170,6 @@ void RecvDecode::run()
 #if SYSTEM_BREAK_DOWN == 1
     long diff;
     double second;
-    double decryptChunkTime = 0;
 #endif
     int recvChunkBatchSize = config.getSendChunkBatchSize();
     NetworkHeadStruct_t request, respond;
@@ -181,13 +184,13 @@ void RecvDecode::run()
     memcpy(requestBuffer, &request, sizeof(NetworkHeadStruct_t));
     memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), fileNameHash_, FILE_NAME_HASH_SIZE);
 
-    if (!socket_.Send(requestBuffer, sendSize)) {
+    if (!dataSecurityChannel_->send(sslConnectionData_, (char*)requestBuffer, sendSize)) {
         cerr << "RecvDecode : storage server closed" << endl;
         return;
     }
     while (totalRecvChunks < fileRecipe_.fileRecipeHead.totalChunkNumber) {
         memset(respondBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
-        if (!socket_.Recv(respondBuffer, recvSize)) {
+        if (!dataSecurityChannel_->recv(sslConnectionData_, (char*)respondBuffer, recvSize)) {
             cerr << "RecvDecode : storage server closed" << endl;
             return;
         }
@@ -222,7 +225,7 @@ void RecvDecode::run()
                 gettimeofday(&timeendRecvDecode, NULL);
                 diff = 1000000 * (timeendRecvDecode.tv_sec - timestartRecvDecode.tv_sec) + timeendRecvDecode.tv_usec - timestartRecvDecode.tv_usec;
                 second = diff / 1000000.0;
-                decryptChunkTime += second;
+                decryptChunkTime_ += second;
 #endif
                 if (!insertMQToRetriever(newData)) {
                     cerr << "RecvDecode : Error insert chunk data into retriever" << endl;
@@ -233,8 +236,5 @@ void RecvDecode::run()
         }
     }
     cerr << "RecvDecode : download job done, exit now" << endl;
-#if SYSTEM_BREAK_DOWN == 1
-    cerr << "RecvDecode : chunk decrypt time = " << decryptChunkTime << " s" << endl;
-#endif
     return;
 }

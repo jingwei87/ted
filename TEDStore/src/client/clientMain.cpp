@@ -121,11 +121,6 @@ int main(int argv, char* argc[])
     gettimeofday(&timeend, NULL);
     diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
     second = diff / 1000000.0;
-    cerr << "System : total work time is " << diff << " us = " << second << " s" << endl;
-#if SYSTEM_BREAK_DOWN == 1
-    cerr << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
-    cerr << "System : finish work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
-#endif
     if (systemWorkType == SYSTEM_WORK_TYPE_KEY_GENERATE_SIMULATE) {
         delete keyClientObj;
     } else if (systemWorkType == SYSTEM_WORK_TYPE_UPLOAD_FILE) {
@@ -137,5 +132,11 @@ int main(int argv, char* argc[])
         delete recvDecodeObj;
         delete retrieverObj;
     }
+    cerr << "System : total work time is " << diff << " us = " << second << " s" << endl;
+#if SYSTEM_BREAK_DOWN == 1
+    cerr << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
+    cerr << "System : finish work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
+#endif
+
     return 0;
 }

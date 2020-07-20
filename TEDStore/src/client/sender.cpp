@@ -13,14 +13,15 @@ struct timeval timeendSenderRecipe;
 Sender::Sender()
 {
     inputMQ_ = new messageQueue<Data_t>;
-    socket_.init(CLIENT_TCP, config.getStorageServerIP(), config.getStorageServerPort());
+    dataSecurityChannel_ = new ssl(config.getStorageServerIP(), config.getStorageServerPort(), CLIENTSIDE);
+    sslConnectionData_ = dataSecurityChannel_->sslConnect().second;
     cryptoObj_ = new CryptoPrimitive();
     clientID_ = config.getClientID();
 }
 
 Sender::~Sender()
 {
-    socket_.finish();
+    delete dataSecurityChannel_;
     if (cryptoObj_ != NULL) {
         delete cryptoObj_;
     }
@@ -48,7 +49,7 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
     requestBodySize.dataSize = totalRecipeSize;
     u_char* requestBufferFirst = (u_char*)malloc(sizeof(u_char) * sendSize);
     memcpy(requestBufferFirst, &requestBodySize, sizeof(NetworkHeadStruct_t));
-    if (!socket_.Send(requestBufferFirst, sendSize)) {
+    if (!dataSecurityChannel_->send(sslConnectionData_, (char*)requestBufferFirst, sendSize)) {
         free(requestBufferFirst);
         cerr << "Sender : error sending file resipces size, peer may close" << endl;
         return false;
@@ -63,7 +64,7 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
         memcpy(requestBuffer, &requestBodyRecipe, sizeof(NetworkHeadStruct_t));
         memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), &request, sizeof(Recipe_t));
         cryptoObj_->encryptWithKey(recipeBuffer, totalRecipeNumber * sizeof(RecipeEntry_t), clientKey, requestBuffer + sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t));
-        if (!socket_.Send(requestBuffer, sendSize)) {
+        if (!dataSecurityChannel_->send(sslConnectionData_, (char*)requestBuffer, sendSize)) {
             free(requestBuffer);
             cerr << "Sender : error sending file resipces, peer may close" << endl;
             return false;
@@ -86,10 +87,10 @@ bool Sender::sendChunkList(char* requestBufferIn, int sendBufferSize, int sendCh
     memcpy(requestBufferIn + sizeof(NetworkHeadStruct_t), &sendChunkNumber, sizeof(int));
     requestBody.dataSize = sendBufferSize + sizeof(int);
     memcpy(requestBufferIn, &requestBody, sizeof(NetworkHeadStruct_t));
-    if (!socket_.Send((u_char*)requestBufferIn, sendSize)) {
+    if (!dataSecurityChannel_->send(sslConnectionData_, (char*)(u_char*)requestBufferIn, sendSize)) {
         return false;
     } else {
-        bool recvStatus = socket_.Recv(respondBuffer, respondSize);
+        bool recvStatus = dataSecurityChannel_->recv(sslConnectionData_, (char*)respondBuffer, respondSize);
         memcpy(&respondBody, respondBuffer, sizeof(NetworkHeadStruct_t));
         if (recvStatus && respondBody.messageType == SUCCESS) {
             return true;
@@ -103,12 +104,12 @@ bool Sender::sendChunkList(char* requestBufferIn, int sendBufferSize, int sendCh
 bool Sender::sendData(u_char* request, int requestSize, u_char* respond, int& respondSize, bool recv)
 {
     std::lock_guard<std::mutex> locker(mutexSocket_);
-    if (!socket_.Send(request, requestSize)) {
+    if (!dataSecurityChannel_->send(sslConnectionData_, (char*)request, requestSize)) {
         cerr << "Sender : send data error peer closed" << endl;
         return false;
     }
     if (recv) {
-        if (!socket_.Recv(respond, respondSize)) {
+        if (!dataSecurityChannel_->recv(sslConnectionData_, (char*)respond, respondSize)) {
             cerr << "Sender : recv data error peer closed" << endl;
             return false;
         }
@@ -127,11 +128,11 @@ bool Sender::sendEndFlag()
     u_char requestBuffer[sendSize];
     u_char responseBuffer[sizeof(NetworkHeadStruct_t)];
     memcpy(requestBuffer, &requestBody, sizeof(NetworkHeadStruct_t));
-    if (!socket_.Send(requestBuffer, sendSize)) {
+    if (!dataSecurityChannel_->send(sslConnectionData_, (char*)requestBuffer, sendSize)) {
         cerr << "Sender : send data error peer closed" << endl;
         return false;
     }
-    if (!socket_.Recv(responseBuffer, recvSize)) {
+    if (!dataSecurityChannel_->recv(sslConnectionData_, (char*)responseBuffer, recvSize)) {
         cerr << "Sender : send data error peer closed" << endl;
         return false;
     } else {

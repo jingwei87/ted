@@ -8,7 +8,7 @@
 #include "dedupCore.hpp"
 #include "messageQueue.hpp"
 #include "protocol.hpp"
-#include "socket.hpp"
+#include "ssl.hpp"
 #include "storageCore.hpp"
 #include <bits/stdc++.h>
 
@@ -21,11 +21,12 @@ private:
     StorageCore* storageObj_;
     DedupCore* dedupCoreObj_;
     uint32_t restoreChunkBatchSize;
+    ssl* dataSecurityChannel_;
 
 public:
-    DataSR(StorageCore* storageObj, DedupCore* dedupCoreObj);
+    DataSR(StorageCore* storageObj, DedupCore* dedupCoreObj, ssl* dataSecurityChannelTemp);
     ~DataSR() {};
-    void run(Socket socket);
+    void run(SSL* sslConnection);
 };
 
 #endif //TEDSTORE_DATASR_HPP

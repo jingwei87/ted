@@ -23,7 +23,9 @@ private:
     uint32_t currentID_ = 0;
     uint32_t totalChunkNumber_;
     uint32_t totalRecvNumber_ = 0;
-
+#if SYSTEM_BREAK_DOWN == 1
+    double writeFileTime_ = 0;
+#endif
 public:
     Retriever(string fileName, RecvDecode*& recvDecodeObjTemp);
     ~Retriever();

@@ -6,14 +6,15 @@
 #include "dataStructure.hpp"
 #include "messageQueue.hpp"
 #include "protocol.hpp"
-#include "socket.hpp"
+#include "ssl.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
 
 class RecvDecode {
 private:
-    Socket socket_;
+    ssl* dataSecurityChannel_;
+    SSL* sslConnectionData_;
     void receiveChunk();
     u_char fileNameHash_[FILE_NAME_HASH_SIZE];
     CryptoPrimitive* cryptoObj_;
@@ -21,7 +22,9 @@ private:
     std::mutex multiThreadDownloadMutex;
     uint32_t totalRecvChunks = 0;
     int clientID_;
-
+#if SYSTEM_BREAK_DOWN == 1
+    double decryptChunkTime_ = 0;
+#endif
 public:
     Recipe_t fileRecipe_;
     RecipeList_t fileRecipeList_;

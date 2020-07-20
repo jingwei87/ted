@@ -6,12 +6,13 @@
 #include "dataStructure.hpp"
 #include "messageQueue.hpp"
 #include "protocol.hpp"
-#include "socket.hpp"
+#include "ssl.hpp"
 
 class Sender {
 private:
     std::mutex mutexSocket_;
-    Socket socket_;
+    ssl* dataSecurityChannel_;
+    SSL* sslConnectionData_;
     int clientID_;
     messageQueue<Data_t>* inputMQ_;
     CryptoPrimitive* cryptoObj_;

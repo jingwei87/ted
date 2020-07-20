@@ -15,7 +15,9 @@ Retriever::Retriever(string fileName, RecvDecode*& recvDecodeObjTemp)
 Retriever::~Retriever()
 {
     retrieveFile_.close();
-    cerr << "Retriever : file close correct" << endl;
+#if SYSTEM_BREAK_DOWN == 1
+    cerr << "Retriever : write file time = " << writeFileTime_ << " s" << endl;
+#endif
 }
 
 void Retriever::recvThread()
@@ -23,7 +25,6 @@ void Retriever::recvThread()
 #if SYSTEM_BREAK_DOWN == 1
     long diff;
     double second;
-    double writeFileTime = 0;
 #endif
     RetrieverData_t newData;
     while (totalRecvNumber_ < totalChunkNumber_) {
@@ -39,13 +40,10 @@ void Retriever::recvThread()
             gettimeofday(&timeendRetriever, NULL);
             diff = 1000000 * (timeendRetriever.tv_sec - timestartRetriever.tv_sec) + timeendRetriever.tv_usec - timestartRetriever.tv_usec;
             second = diff / 1000000.0;
-            writeFileTime += second;
+            writeFileTime_ += second;
 #endif
         }
     }
-#if SYSTEM_BREAK_DOWN == 1
-    cerr << "Retriever : write file time = " << writeFileTime << " s" << endl;
-#endif
     cerr << "Retriever : job done, thread exit now" << endl;
     return;
 }

@@ -7,14 +7,15 @@ struct timeval timeendDataSR;
 
 extern Configure config;
 
-DataSR::DataSR(StorageCore* storageObj, DedupCore* dedupCoreObj)
+DataSR::DataSR(StorageCore* storageObj, DedupCore* dedupCoreObj, ssl* dataSecurityChannelTemp)
 {
     restoreChunkBatchSize = config.getSendChunkBatchSize();
     storageObj_ = storageObj;
     dedupCoreObj_ = dedupCoreObj;
+    dataSecurityChannel_ = dataSecurityChannelTemp;
 }
 
-void DataSR::run(Socket socket)
+void DataSR::run(SSL* sslConnection)
 {
 #if SYSTEM_BREAK_DOWN == 1
     double restoreChunkTime = 0;
@@ -36,8 +37,8 @@ void DataSR::run(Socket socket)
     uint64_t recipeSize = 0;
     while (true) {
         memset(recvBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
-        if (!socket.Recv(recvBuffer, recvSize)) {
-            cerr << "DataSR : client closed socket connect, fd = " << socket.fd_ << " Thread exit now" << endl;
+        if (!dataSecurityChannel_->recv(sslConnection, (char*)recvBuffer, recvSize)) {
+            cerr << "DataSR : client closed socket connect, Thread exit now" << endl;
             break;
         } else {
             NetworkHeadStruct_t netBody;
@@ -51,7 +52,7 @@ void DataSR::run(Socket socket)
                 sendSize = sizeof(NetworkHeadStruct_t);
                 memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
                 memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
-                socket.Send(sendBuffer, sendSize);
+                dataSecurityChannel_->send(sslConnection, (char*)sendBuffer, sendSize);
                 return;
             }
             case CLIENT_UPLOAD_CHUNK: {
@@ -65,8 +66,8 @@ void DataSR::run(Socket socket)
                     sendSize = sizeof(NetworkHeadStruct_t);
                     memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
                     memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
-                    socket.Send(sendBuffer, sendSize);
-                    cerr << "DedupCore : deduplication and storage job done, send success flag" << endl;
+                    dataSecurityChannel_->send(sslConnection, (char*)sendBuffer, sendSize);
+                    // cerr << "DedupCore : deduplication and storage job done, send success flag" << endl;
                 }
                 break;
             }
@@ -74,8 +75,8 @@ void DataSR::run(Socket socket)
                 int recipeListSize = netBody.dataSize;
                 cerr << "DataSR : recv file recipe size = " << recipeListSize << endl;
                 u_char* recipeListBuffer = (u_char*)malloc(sizeof(u_char) * recipeListSize + sizeof(NetworkHeadStruct_t));
-                if (!socket.Recv(recipeListBuffer, recvSize)) {
-                    cerr << "DataSR : client closed socket connect, recipe store failed,  fd = " << socket.fd_ << " Thread exit now" << endl;
+                if (!dataSecurityChannel_->recv(sslConnection, (char*)recipeListBuffer, recvSize)) {
+                    cerr << "DataSR : client closed socket connect, recipe store failed, Thread exit now" << endl;
                     return;
                 }
                 Recipe_t newFileRecipe;
@@ -90,7 +91,7 @@ void DataSR::run(Socket socket)
                 memcpy(&decryptedRecipeListSize, recvBuffer + sizeof(NetworkHeadStruct_t), sizeof(uint64_t));
                 // cerr << "DataSR : process recipe list size = " << decryptedRecipeListSize << endl;
                 u_char* recvDecryptedRecipeBuffer = (u_char*)malloc(sizeof(u_char) * decryptedRecipeListSize + sizeof(NetworkHeadStruct_t));
-                if (socket.Recv(recvDecryptedRecipeBuffer, recvSize)) {
+                if (dataSecurityChannel_->recv(sslConnection, (char*)recvDecryptedRecipeBuffer, recvSize)) {
                     NetworkHeadStruct_t tempHeader;
                     memcpy(&tempHeader, recvDecryptedRecipeBuffer, sizeof(NetworkHeadStruct_t));
                     // cerr << "DataSR : CLIENT_UPLOAD_DECRYPTED_RECIPE, recv message type " << tempHeader.messageType << ", message size = " << tempHeader.dataSize << endl;
@@ -119,7 +120,7 @@ void DataSR::run(Socket socket)
                     sendSize = sizeof(NetworkHeadStruct_t);
                     memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
                     memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
-                    socket.Send(sendBuffer, sendSize);
+                    dataSecurityChannel_->send(sslConnection, (char*)sendBuffer, sendSize);
                     // cerr << "StorageCore : send recipe size done" << endl;
                     u_char* recipeBuffer = (u_char*)malloc(sizeof(u_char) * recipeSize);
                     storageObj_->restoreRecipes((char*)recvBuffer + sizeof(NetworkHeadStruct_t), recipeBuffer, recipeSize);
@@ -127,7 +128,7 @@ void DataSR::run(Socket socket)
                     memcpy(sendRecipeBuffer, &netBody, sizeof(NetworkHeadStruct_t));
                     memcpy(sendRecipeBuffer + sizeof(NetworkHeadStruct_t), recipeBuffer, recipeSize);
                     sendSize = sizeof(NetworkHeadStruct_t) + recipeSize;
-                    socket.Send(sendRecipeBuffer, sendSize);
+                    dataSecurityChannel_->send(sslConnection, (char*)sendRecipeBuffer, sendSize);
                     memcpy(&restoredFileRecipe, recipeBuffer, sizeof(Recipe_t));
                     // cerr << "StorageCore : send recipe list done, file size = " << restoredFileRecipe.fileRecipeHead.fileSize << ", total chunk number = " << restoredFileRecipe.fileRecipeHead.totalChunkNumber << endl;
                     free(sendRecipeBuffer);
@@ -137,7 +138,7 @@ void DataSR::run(Socket socket)
                     netBody.dataSize = 0;
                     memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
                     sendSize = sizeof(NetworkHeadStruct_t);
-                    socket.Send(sendBuffer, sendSize);
+                    dataSecurityChannel_->send(sslConnection, (char*)sendBuffer, sendSize);
                 }
                 break;
             }
@@ -188,7 +189,7 @@ void DataSR::run(Socket socket)
                     second = diff / 1000000.0;
                     restoreChunkTime += second;
 #endif
-                    socket.Send(sendBuffer, sendSize);
+                    dataSecurityChannel_->send(sslConnection, (char*)sendBuffer, sendSize);
                 }
                 break;
             }
