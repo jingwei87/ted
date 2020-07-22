@@ -90,14 +90,15 @@ bool Sender::sendChunkList(char* requestBufferIn, int sendBufferSize, int sendCh
     if (!dataSecurityChannel_->send(sslConnectionData_, (char*)(u_char*)requestBufferIn, sendSize)) {
         return false;
     } else {
-        bool recvStatus = dataSecurityChannel_->recv(sslConnectionData_, (char*)respondBuffer, respondSize);
-        memcpy(&respondBody, respondBuffer, sizeof(NetworkHeadStruct_t));
-        if (recvStatus && respondBody.messageType == SUCCESS) {
-            return true;
-        } else {
-            cerr << "Sender : recv dedup status error, peer closed" << endl;
-            return false;
-        }
+        // bool recvStatus = dataSecurityChannel_->recv(sslConnectionData_, (char*)respondBuffer, respondSize);
+        // memcpy(&respondBody, respondBuffer, sizeof(NetworkHeadStruct_t));
+        // if (recvStatus && respondBody.messageType == SUCCESS) {
+        //     return true;
+        // } else {
+        //     cerr << "Sender : recv dedup status error, peer closed" << endl;
+        //     return false;
+        // }
+        return true;
     }
 }
 
@@ -173,7 +174,7 @@ void Sender::run()
         if (inputMQ_->done_ && inputMQ_->isEmpty()) {
             jobDoneFlag = true;
         }
-        bool extractChunkStatus = extractMQFromEncoder(tempChunk);
+        bool extractChunkStatus = extractMQ(tempChunk);
 
         if (extractChunkStatus) {
 
@@ -284,12 +285,12 @@ void Sender::run()
     }
 }
 
-bool Sender::insertMQFromEncoder(Data_t& newChunk)
+bool Sender::insertMQ(Data_t& newChunk)
 {
     return inputMQ_->push(newChunk);
 }
 
-bool Sender::extractMQFromEncoder(Data_t& newChunk)
+bool Sender::extractMQ(Data_t& newChunk)
 {
     return inputMQ_->pop(newChunk);
 }

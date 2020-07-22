@@ -9,7 +9,9 @@ struct timeval timeendKey;
 struct timeval timestartKeySocket;
 struct timeval timeendKeySocket;
 
-keyClient::keyClient(Encoder* encoderObjTemp)
+#if ENCODER_MODULE_ENABLED == 1
+
+KeyClient::KeyClient(Encoder* encoderObjTemp)
 {
     inputMQ_ = new messageQueue<Data_t>;
     encoderObj_ = encoderObjTemp;
@@ -20,7 +22,21 @@ keyClient::keyClient(Encoder* encoderObjTemp)
     sendShortHashMaskBitNumber = config.getSendShortHashMaskBitNumber();
 }
 
-keyClient::keyClient(uint64_t keyGenNumber)
+#else
+
+KeyClient::KeyClient(Sender* senderObjTemp)
+{
+    inputMQ_ = new messageQueue<Data_t>;
+    senderObj_ = senderObjTemp;
+    cryptoObj_ = new CryptoPrimitive();
+    keyBatchSize_ = (int)config.getKeyBatchSize();
+    keySecurityChannel_ = new ssl(config.getKeyServerIP(), config.getKeyServerPort(), CLIENTSIDE);
+    sslConnection_ = keySecurityChannel_->sslConnect().second;
+    sendShortHashMaskBitNumber = config.getSendShortHashMaskBitNumber();
+}
+#endif
+
+KeyClient::KeyClient(uint64_t keyGenNumber)
 {
     inputMQ_ = new messageQueue<Data_t>;
     cryptoObj_ = new CryptoPrimitive();
@@ -29,7 +45,7 @@ keyClient::keyClient(uint64_t keyGenNumber)
     sendShortHashMaskBitNumber = config.getSendShortHashMaskBitNumber();
 }
 
-keyClient::~keyClient()
+KeyClient::~KeyClient()
 {
     if (cryptoObj_ != NULL) {
         delete cryptoObj_;
@@ -40,7 +56,7 @@ keyClient::~keyClient()
 #endif
 }
 
-void keyClient::runKeyGenSimulator()
+void KeyClient::runKeyGenSimulator()
 {
 
 #if SYSTEM_BREAK_DOWN == 1
@@ -149,14 +165,16 @@ void keyClient::runKeyGenSimulator()
     return;
 }
 
-void keyClient::run()
+void KeyClient::run()
 {
 #if SYSTEM_BREAK_DOWN == 1
     double keyGenTime = 0;
     double shortHashTime = 0;
     double keyDerivationTime = 0;
     double keyExchangeTime = 0;
-    double chunkHashGenerateTime = 0;
+    // double generatePlainChunkHashTime = 0;
+    double chunkContentEncryptionTime = 0;
+    double generateCipherChunkHashTime = 0;
     long diff;
     double second;
 #endif
@@ -178,9 +196,13 @@ void keyClient::run()
         if (inputMQ_->done_ && inputMQ_->isEmpty()) {
             JobDoneFlag = true;
         }
-        if (extractMQFromChunker(tempChunk)) {
+        if (extractMQ(tempChunk)) {
             if (tempChunk.dataType == DATA_TYPE_RECIPE) {
-                insertMQToEncoder(tempChunk);
+#if ENCODER_MODULE_ENABLED == 1
+                encoderObj_->insertMQ(tempChunk);
+#else
+                senderObj_->insertMQ(tempChunk);
+#endif
                 continue;
             }
 #if SYSTEM_BREAK_DOWN == 1
@@ -224,17 +246,17 @@ void keyClient::run()
             } else {
                 u_char newKeyBuffer[CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE];
                 for (int i = 0; i < batchNumber; i++) {
-#if SYSTEM_BREAK_DOWN == 1
-                    gettimeofday(&timestartKey, NULL);
-#endif
-                    cryptoObj_->generateHash(batchList[i].chunk.logicData, batchList[i].chunk.logicDataSize, batchList[i].chunk.chunkHash);
-#if SYSTEM_BREAK_DOWN == 1
-                    gettimeofday(&timeendKey, NULL);
-                    diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
-                    second = diff / 1000000.0;
-                    keyGenTime += second;
-                    chunkHashGenerateTime += second;
-#endif
+// #if SYSTEM_BREAK_DOWN == 1
+//                     gettimeofday(&timestartKey, NULL);
+// #endif
+//                     cryptoObj_->generateHash(batchList[i].chunk.logicData, batchList[i].chunk.logicDataSize, batchList[i].chunk.chunkHash);
+// #if SYSTEM_BREAK_DOWN == 1
+//                     gettimeofday(&timeendKey, NULL);
+//                     diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+//                     second = diff / 1000000.0;
+//                     keyGenTime += second;
+//                     generatePlainChunkHashTime += second;
+// #endif
 #if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timestartKey, NULL);
 #endif
@@ -248,7 +270,43 @@ void keyClient::run()
                     keyGenTime += second;
                     keyDerivationTime += second;
 #endif
-                    insertMQToEncoder(batchList[i]);
+#if ENCODER_MODULE_ENABLED == 1
+                    encoderObj_->insertMQ(batchList[i]);
+#else
+#if SYSTEM_BREAK_DOWN == 1
+                    gettimeofday(&timestartKey, NULL);
+#endif
+                    u_char ciphertext[batchList[i].chunk.logicDataSize];
+                    bool encryptChunkContentStatus = cryptoObj_->encryptWithKey(batchList[i].chunk.logicData, batchList[i].chunk.logicDataSize, batchList[i].chunk.encryptKey, ciphertext);
+#if SYSTEM_BREAK_DOWN == 1
+                    gettimeofday(&timeendKey, NULL);
+                    diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+                    second = diff / 1000000.0;
+                    chunkContentEncryptionTime += second;
+#endif
+                    if (!encryptChunkContentStatus) {
+                        cerr << "KeyClient : cryptoPrimitive error, encrypt chunk logic data error" << endl;
+                        return;
+                    } else {
+                        memcpy(batchList[i].chunk.logicData, ciphertext, batchList[i].chunk.logicDataSize);
+#if SYSTEM_BREAK_DOWN == 1
+                        gettimeofday(&timestartKey, NULL);
+#endif
+                        bool generateCipherChunkHashStatus = cryptoObj_->generateHash(batchList[i].chunk.logicData, batchList[i].chunk.logicDataSize, batchList[i].chunk.chunkHash);
+#if SYSTEM_BREAK_DOWN == 1
+                        gettimeofday(&timeendKey, NULL);
+                        diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+                        second = diff / 1000000.0;
+                        generateCipherChunkHashTime += second;
+#endif
+                        if (!generateCipherChunkHashStatus) {
+                            cerr << "KeyClient : cryptoPrimitive error, generate cipher chunk hash error" << endl;
+                            return;
+                        } else {
+                            senderObj_->insertMQ(batchList[i]);
+                        }
+                    }
+#endif
                 }
                 batchList.clear();
                 batchList.reserve(keyBatchSize_);
@@ -258,12 +316,13 @@ void keyClient::run()
             }
         }
         if (JobDoneFlag) {
-            if (!encoderObj_->editJobDoneFlag()) {
-                cerr << "KeyClient : error to set job done flag for sender" << endl;
-            } else {
-#if SYSTEM_BREAK_DOWN == 1
-                cerr << "KeyClient : key exchange thread job done, exit now" << endl;
+#if ENCODER_MODULE_ENABLED == 1
+            bool editJobDoneFlagStatus = encoderObj_->editJobDoneFlag();
+#else
+            bool editJobDoneFlagStatus = senderObj_->editJobDoneFlag();
 #endif
+            if (!editJobDoneFlagStatus) {
+                cerr << "KeyClient : error to set job done flag for encoder" << endl;
             }
             break;
         }
@@ -271,22 +330,23 @@ void keyClient::run()
 #if SYSTEM_BREAK_DOWN == 1
     cerr << "KeyClient : chunk short hash compute work time = " << shortHashTime << " s" << endl;
     cerr << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
-    cerr << "KeyClient : plaint chunk crypto hash generate work time = " << chunkHashGenerateTime << " s" << endl;
     cerr << "KeyClient : key derviation work time = " << keyDerivationTime << " s" << endl;
     // cerr << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
     // cerr << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
     cerr << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
+    cerr << "KeyClient : encrypt chunk content work time = " << chunkContentEncryptionTime << " s" << endl;
+    cerr << "KeyClient : cipher chunk crypto hash generate work time = " << generateCipherChunkHashTime << " s" << endl;
 #endif
     return;
 }
 
-bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber)
+bool KeyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber)
 {
 #if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     if (!keySecurityChannel_->send(sslConnection_, (char*)batchHashList, 4 * sizeof(uint32_t) * batchNumber)) {
-        cerr << "keyClient: send socket error" << endl;
+        cerr << "KeyClient: send socket error" << endl;
         return false;
     }
 #if SYSTEM_BREAK_DOWN == 1
@@ -299,7 +359,7 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     if (!keySecurityChannel_->recv(sslConnection_, recvBuffer, recvSize)) {
-        cerr << "keyClient: recv socket error" << endl;
+        cerr << "KeyClient: recv socket error" << endl;
         return false;
     }
 #if SYSTEM_BREAK_DOWN == 1
@@ -307,7 +367,7 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
     keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
     if (recvSize % CHUNK_ENCRYPT_KEY_SIZE != 0) {
-        cerr << "keyClient: recv size % CHUNK_ENCRYPT_KEY_SIZE not equal to 0" << endl;
+        cerr << "KeyClient: recv size % CHUNK_ENCRYPT_KEY_SIZE not equal to 0" << endl;
         return false;
     }
     batchkeyNumber = recvSize / CHUNK_ENCRYPT_KEY_SIZE;
@@ -319,11 +379,11 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
     }
 }
 
-bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection)
+bool KeyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection)
 {
 
     if (!securityChannel->send(sslConnection, (char*)batchHashList, 4 * sizeof(uint32_t) * batchNumber)) {
-        cerr << "keyClient: send socket error" << endl;
+        cerr << "KeyClient: send socket error" << endl;
         return false;
     }
 
@@ -331,12 +391,12 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
     int recvSize;
 
     if (!securityChannel->recv(sslConnection, recvBuffer, recvSize)) {
-        cerr << "keyClient: recv socket error" << endl;
+        cerr << "KeyClient: recv socket error" << endl;
         return false;
     }
 
     if (recvSize % CHUNK_ENCRYPT_KEY_SIZE != 0) {
-        cerr << "keyClient: recv size % CHUNK_ENCRYPT_KEY_SIZE not equal to 0" << endl;
+        cerr << "KeyClient: recv size % CHUNK_ENCRYPT_KEY_SIZE not equal to 0" << endl;
         return false;
     }
     batchkeyNumber = recvSize / CHUNK_ENCRYPT_KEY_SIZE;
@@ -348,22 +408,17 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
     }
 }
 
-bool keyClient::insertMQFromChunker(Data_t& newChunk)
+bool KeyClient::insertMQ(Data_t& newChunk)
 {
     return inputMQ_->push(newChunk);
 }
 
-bool keyClient::extractMQFromChunker(Data_t& newChunk)
+bool KeyClient::extractMQ(Data_t& newChunk)
 {
     return inputMQ_->pop(newChunk);
 }
 
-bool keyClient::insertMQToEncoder(Data_t& newChunk)
-{
-    return encoderObj_->insertMQFromKeyClient(newChunk);
-}
-
-bool keyClient::editJobDoneFlag()
+bool KeyClient::editJobDoneFlag()
 {
     inputMQ_->done_ = true;
     if (inputMQ_->done_) {

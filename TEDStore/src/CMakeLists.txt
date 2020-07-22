@@ -27,7 +27,7 @@ set(UTIL_OBJ configure cryptoPrimitive Sock database murmurHash3 optimalSolver S
 set(LINK_OBJ ${UTIL_OBJ} ${OPENSSL_LIBRARY_OBJ} ${LEVELDB_LIBRARY_OBJ}
         ${BOOST_LIBRARY_OBJ} ${UTIL_OBJ} ${SYSTEM_LIBRARY_OBJ})
 
-set(CLIENT_OBJ chunker keyClient encoder sender recvDecode retriever)
+set(CLIENT_OBJ chunker fingerprinter keyClient encoder sender recvDecode retriever)
 set(SERVER_OBJ dataSR  dedupCore storage) 
 set(KEYSERVER_OBJ keyServer)
 

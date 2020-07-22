@@ -60,15 +60,16 @@ void DataSR::run(SSL* sslConnection)
                 if (!storeChunkStatus) {
                     cerr << "DedupCore : dedup stage 2 report error" << endl;
                     return;
-                } else {
-                    netBody.messageType = SUCCESS;
-                    netBody.dataSize = 0;
-                    sendSize = sizeof(NetworkHeadStruct_t);
-                    memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
-                    memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
-                    dataSecurityChannel_->send(sslConnection, (char*)sendBuffer, sendSize);
-                    // cerr << "DedupCore : deduplication and storage job done, send success flag" << endl;
                 }
+                // else {
+                //     netBody.messageType = SUCCESS;
+                //     netBody.dataSize = 0;
+                //     sendSize = sizeof(NetworkHeadStruct_t);
+                //     memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
+                //     memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
+                //     dataSecurityChannel_->send(sslConnection, (char*)sendBuffer, sendSize);
+                //     // cerr << "DedupCore : deduplication and storage job done, send success flag" << endl;
+                // }
                 break;
             }
             case CLIENT_UPLOAD_ENCRYPTED_RECIPE: {

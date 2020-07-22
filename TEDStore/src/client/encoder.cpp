@@ -60,9 +60,9 @@ void Encoder::run()
         if (inputMQ_->done_ && inputMQ_->isEmpty()) {
             JobDoneFlag = true;
         }
-        if (extractMQFromKeyClient(tempChunk)) {
+        if (extractMQ(tempChunk)) {
             if (tempChunk.dataType == DATA_TYPE_RECIPE) {
-                insertMQToSender(tempChunk);
+                senderObj_->insertMQ(tempChunk);
                 continue;
             } else {
 #if SYSTEM_BREAK_DOWN == 1
@@ -92,7 +92,7 @@ void Encoder::run()
                     generateCipherChunkHashTime += second;
 #endif
                     if (generateCipherChunkHashStatus) {
-                        insertMQToSender(tempChunk);
+                        senderObj_->insertMQ(tempChunk);
                     } else {
                         cerr << "Encoder : generate cipher chunk hash error, exiting" << endl;
                         return;
@@ -118,19 +118,14 @@ void Encoder::run()
     return;
 }
 
-bool Encoder::insertMQFromKeyClient(Data_t& newChunk)
+bool Encoder::insertMQ(Data_t& newChunk)
 {
     return inputMQ_->push(newChunk);
 }
 
-bool Encoder::extractMQFromKeyClient(Data_t& newChunk)
+bool Encoder::extractMQ(Data_t& newChunk)
 {
     return inputMQ_->pop(newChunk);
-}
-
-bool Encoder::insertMQToSender(Data_t& newChunk)
-{
-    return senderObj_->insertMQFromEncoder(newChunk);
 }
 
 bool Encoder::editJobDoneFlag()

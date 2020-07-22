@@ -1,6 +1,7 @@
 #include "chunker.hpp"
 #include "configure.hpp"
 #include "encoder.hpp"
+#include "fingerprinter.hpp"
 #include "keyClient.hpp"
 #include "recvDecode.hpp"
 #include "retriever.hpp"
@@ -13,9 +14,12 @@ using namespace std;
 
 Configure config("config.json");
 Chunker* chunkerObj;
-keyClient* keyClientObj;
-Sender* senderObj;
+Fingerprinter* fingerprinterObj;
+KeyClient* keyClientObj;
+#if ENCODER_MODULE_ENABLED == 1
 Encoder* encoderObj;
+#endif
+Sender* senderObj;
 RecvDecode* recvDecodeObj;
 Retriever* retrieverObj;
 
@@ -26,11 +30,14 @@ void CTRLC(int s)
 {
     cerr << "Client close" << endl;
     delete chunkerObj;
+    delete fingerprinterObj;
     delete keyClientObj;
+#if ENCODER_MODULE_ENABLED == 1
+    delete encoderObj;
+#endif
     delete senderObj;
     delete recvDecodeObj;
     delete retrieverObj;
-    delete encoderObj;
     exit(0);
 }
 
@@ -76,17 +83,28 @@ int main(int argv, char* argc[])
         systemWorkType = SYSTEM_WORK_TYPE_UPLOAD_FILE;
 
         senderObj = new Sender();
+#if ENCODER_MODULE_ENABLED == 1
         encoderObj = new Encoder(senderObj);
-        keyClientObj = new keyClient(encoderObj);
+        keyClientObj = new KeyClient(encoderObj);
+#else
+        keyClientObj = new KeyClient(senderObj);
+#endif
+        fingerprinterObj = new Fingerprinter(keyClientObj);
         string inputFile(argc[2]);
-        chunkerObj = new Chunker(inputFile, keyClientObj);
+        chunkerObj = new Chunker(inputFile, fingerprinterObj);
 
         th = new boost::thread(attrs, boost::bind(&Chunker::chunking, chunkerObj));
         thList.push_back(th);
-        th = new boost::thread(attrs, boost::bind(&keyClient::run, keyClientObj));
+        //start fingerprinting thread
+        th = new boost::thread(attrs, boost::bind(&Fingerprinter::run, fingerprinterObj));
         thList.push_back(th);
+        th = new boost::thread(attrs, boost::bind(&KeyClient::run, keyClientObj));
+        thList.push_back(th);
+#if ENCODER_MODULE_ENABLED == 1
+        //start encoder thread
         th = new boost::thread(attrs, boost::bind(&Encoder::run, encoderObj));
         thList.push_back(th);
+#endif
         th = new boost::thread(attrs, boost::bind(&Sender::run, senderObj));
         thList.push_back(th);
 
@@ -100,9 +118,9 @@ int main(int argv, char* argc[])
         int keyGenNumber = atoi(argc[3]);
 
         cout << "Key Generate Test : target thread number = " << threadNumber << ", target key number per thread = " << keyGenNumber << endl;
-        keyClientObj = new keyClient(keyGenNumber);
+        keyClientObj = new KeyClient(keyGenNumber);
         for (int i = 0; i < threadNumber; i++) {
-            th = new boost::thread(attrs, boost::bind(&keyClient::runKeyGenSimulator, keyClientObj));
+            th = new boost::thread(attrs, boost::bind(&KeyClient::runKeyGenSimulator, keyClientObj));
             thList.push_back(th);
         }
     } else {
@@ -125,9 +143,12 @@ int main(int argv, char* argc[])
         delete keyClientObj;
     } else if (systemWorkType == SYSTEM_WORK_TYPE_UPLOAD_FILE) {
         delete chunkerObj;
+        delete fingerprinterObj;
         delete keyClientObj;
-        delete senderObj;
+#if ENCODER_MODULE_ENABLED == 1
         delete encoderObj;
+#endif
+        delete senderObj;
     } else if (systemWorkType == SYSTEM_WORK_TYPE_DOWNLOAD_FILE) {
         delete recvDecodeObj;
         delete retrieverObj;
@@ -137,6 +158,5 @@ int main(int argv, char* argc[])
     cerr << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
     cerr << "System : finish work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
 #endif
-
     return 0;
 }

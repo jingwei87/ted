@@ -33,8 +33,8 @@ public:
     //general send data
     bool sendData(u_char* request, int requestSize, u_char* respond, int& respondSize, bool recv);
     bool sendEndFlag();
-    bool insertMQFromEncoder(Data_t& newChunk);
-    bool extractMQFromEncoder(Data_t& newChunk);
+    bool insertMQ(Data_t& newChunk);
+    bool extractMQ(Data_t& newChunk);
     bool editJobDoneFlag();
 };
 
