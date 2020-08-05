@@ -180,6 +180,8 @@ void Sender::run()
                 currentSendChunkBatchBufferSize += sizeof(int);
                 memcpy(sendChunkBatchBuffer + currentSendChunkBatchBufferSize, tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize);
                 currentSendChunkBatchBufferSize += tempChunk.chunk.logicDataSize;
+                currentChunkNumber++;
+                // cout << currentSendChunkBatchBufferSize << "\t" << tempChunk.chunk.ID << endl;
 #else
                 memcpy(sendChunkBatchBuffer + sizeof(NetworkHeadStruct_t) + sizeof(int) + currentChunkNumber * sizeof(Chunk_t), &tempChunk.chunk, sizeof(Chunk_t));
                 currentChunkNumber++;

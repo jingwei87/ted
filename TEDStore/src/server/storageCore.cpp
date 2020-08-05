@@ -67,13 +67,15 @@ bool StorageCore::storeChunks(NetworkHeadStruct_t& networkHead, char* data)
         memcpy(&currentChunkSize, data + readSize, sizeof(int));
         readSize += sizeof(int);
         if (fp2ChunkDB.query(originHash, tmpdata)) {
+            readSize += currentChunkSize;
             continue;
         } else {
             if (!storeChunk(originHash, data + readSize, currentChunkSize)) {
                 return false;
+            } else {
+                readSize += currentChunkSize;
             }
         }
-        readSize += currentChunkSize;
     }
 #else
     for (int i = 0; i < chunkNumber; i++) {
