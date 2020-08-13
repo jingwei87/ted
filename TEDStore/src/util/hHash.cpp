@@ -25,6 +25,10 @@ HHash::HHash() {
         mpz_init(g_[i]);
     }
 
+    // init hash and buffer
+    mpz_init_set_str(hash_, "1", 10);
+    mpz_init_set_str(buff_, "1", 10);
+
     // generate the array for g
     GenerateForG(g_, p_, seed_);
 
@@ -61,35 +65,29 @@ void HHash::GenerateForG(mpz_t g[BLOCK_NUM], mpz_t p, uint32_t seed) {
  * @brief Compute the homomorphism hash of the block
  * 
  * @param result the resultant hash 
- * @param p security parameter
- * @param g security parameter
  * @param b input block
  */
-void HHash::ComputeBlockHash(mpz_t result, mpz_t p, mpz_t g[BLOCK_NUM], mpz_t b[BLOCK_NUM]) {
-	mpz_t hash, buff;
-    mpz_init_set_str(hash, "1", 10);
-	mpz_init(buff);
-
+void HHash::ComputeBlockHash(mpz_t result,  mpz_t b[BLOCK_NUM]) {
     // TODO: reduce the number of memory re-allocation 
 
 	for (uint32_t i = 0; i < BLOCK_NUM; i++) {
 		// hash = hash * g[i] ^ bij mod p = hash * buff
 		// buff contains g[i] ^ bij mod p
-		mpz_powm_sec(buff, g[i], b[i], p);
+		mpz_powm_sec(buff_, g_[i], b[i], p_);
 		//gmp_printf("Value of buff = %Zd\n", buff);
 		// Aggregate in hash
-		mpz_mul(hash, hash, buff);
+		mpz_mul(hash_, hash_, buff_);
 		//Mod here may not be optimal from a number-of-operations standpoint, but it does greatly reduce the amount of data in memory
-		mpz_mod(hash, hash, p);
+		mpz_mod(hash_, hash_, p_);
 	}
 	
 	//Last modulo (now in loop)
 	//mpz_mod(hash, hash, p);
 	//copy hash into result
-	mpz_set(result, hash);
-	//free
-	mpz_clear(hash);
-	mpz_clear(buff);
+	mpz_set(result, hash_);
+	// reset the vale 
+	mpz_set_ui(hash_, 1);
+	mpz_set_ui(buff_, 1);
 }
 
 /**
@@ -136,5 +134,30 @@ HHash::~HHash() {
     //  clear the parameter vector
     for (size_t i = 0; i < BLOCK_NUM; i++) {
         mpz_clear(g_[i]);
+    }
+
+    // clear the variable
+    mpz_clear(hash_);
+    mpz_clear(buff_);
+}
+
+
+/**
+ * @brief Recover the secret from share hashes
+ * 
+ * @param hash the array of share hash 
+ * @param powVal the array of share parameter 
+ * @param secret the recovery secret
+ */
+void HHash::RecoverySecretFromHash(mpz_t hash[K], mpz_t powVal[K], mpz_t secret) {
+    for (size_t i = 0; i < K; i++) {
+        mpz_powm_sec(hash[i], hash[i], powVal[i], p_);
+        gmp_printf("Pow-%d: %Zd\n", i, hash[i]);
+    }
+
+    mpz_set_ui(secret, 1);
+    for (size_t i = 0; i < K; i++) {
+        mpz_mul(secret, secret, hash[i]);
+        mpz_mod(secret, secret, p_);
     }
 }

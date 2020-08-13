@@ -23,6 +23,7 @@
 #include "dataStructure.hpp"
 
 #define BLOCK_NUM 4
+#define K 2
 
 class HHash {
 private:
@@ -35,6 +36,10 @@ private:
 
     // random seed
     uint32_t seed_ = 32;
+
+    // hash and buff 
+    mpz_t hash_;
+    mpz_t buff_;
 
     /**
      * @brief generate the g array according p and seed 
@@ -56,11 +61,9 @@ public:
      * @brief Compute the homomorphism hash of the block
      * 
      * @param result the resultant hash 
-     * @param p security parameter
-     * @param g security parameter
      * @param b input block
      */
-    void ComputeBlockHash(mpz_t result, mpz_t p, mpz_t g[BLOCK_NUM], mpz_t b[BLOCK_NUM]);
+    void ComputeBlockHash(mpz_t result, mpz_t b[BLOCK_NUM]);
 
     /**
      * @brief Convert the fp to block
@@ -77,6 +80,16 @@ public:
      * @param mulVal another operand 
      */
     void ComputeMulForBlock(mpz_t block[BLOCK_NUM], mpz_t mulVal);
+
+    /**
+     * @brief Recover the secret from share hashes
+     * 
+     * @param hash the array of share hash 
+     * @param powVal the array of share parameter 
+     * @param secret the recovery secret
+     */
+    void RecoverySecretFromHash(mpz_t hash[K], mpz_t powVal[K], mpz_t secret);
+    
 
     /**
      * @brief Destroy the HHash object
