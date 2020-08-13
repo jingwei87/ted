@@ -11,6 +11,7 @@
 #include <bits/stdc++.h>
 
 #define KEYMANGER_PRIVATE_KEY "key/server.key"
+#define SECRET_SIZE 16
 
 class keyServer {
 private:
@@ -26,7 +27,7 @@ private:
     std::mutex multiThreadEditSketchTableMutex_;
     random_device rd_;
     mt19937_64 gen_;
-    u_char keyServerPrivate_[64];
+    u_char keyServerPrivate_[SECRET_SIZE];
     int optimalSolverComputeItemNumberThreshold_;
     ssl* keySecurityChannel_;
 

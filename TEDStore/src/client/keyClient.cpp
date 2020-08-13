@@ -163,15 +163,18 @@ void keyClient::run()
     int batchNumber = 0;
     u_char chunkKey[CHUNK_ENCRYPT_KEY_SIZE * keyBatchSize_];
     int singleChunkHashSize = 4 * sizeof(int);
-    u_char chunkHash[singleChunkHashSize * keyBatchSize_];
+    // u_char chunkHash[singleChunkHashSize * keyBatchSize_];
+    // TODO: here we define the keyGenEntry_t to define whether using this hash to count 
+    u_char chunkHash[sizeof(keyGenEntry_t) * keyBatchSize_];
     bool JobDoneFlag = false;
     uint32_t maskInt = 0;
     for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
         maskInt &= ~(1 << (32 - i));
     }
     int hashInt[4];
+    
     while (true) {
-
+        keyGenEntry_t tempKeyGenEntry;
         Data_t tempChunk;
         if (inputMQ_->done_ && inputMQ_->isEmpty()) {
             cerr << "KeyClient : Chunker jobs done, queue is empty" << endl;
@@ -193,8 +196,11 @@ void keyClient::run()
             }
             for (int i = 0; i < 4; i++) {
                 hashInt[i] &= maskInt;
-                memcpy(chunkHash + batchNumber * singleChunkHashSize + i * sizeof(int), &hashInt[i], sizeof(int));
+                tempKeyGenEntry.usingCount = true;
+                memcpy(&tempKeyGenEntry.singleChunkHash + i * sizeof(int), &hashInt[i], sizeof(int));
+                // memcpy(chunkHash + batchNumber * singleChunkHashSize + i * sizeof(int), &hashInt[i], sizeof(int));
             }
+            memcpy(chunkHash + batchNumber * sizeof(keyGenEntry_t) , &tempKeyGenEntry, sizeof(keyGenEntry_t));
             batchNumber++;
 #if BREAK_DOWN_DEFINE == 1
             gettimeofday(&timeendKey, NULL);
@@ -322,20 +328,31 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
 
 bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection)
 {
-
-    if (!securityChannel->send(sslConnection, (char*)batchHashList, 4 * sizeof(uint32_t) * batchNumber)) {
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timestartKeySocket, NULL);
+#endif
+    if (!securityChannel->send(sslConnection, (char*)batchHashList, sizeof(keyGenEntry_t) * batchNumber)) {
+    // if (!securityChannel->send(sslConnection, (char*)batchHashList, 4 * sizeof(uint32_t)  * batchNumber)) {
         cerr << "keyClient: send socket error" << endl;
         return false;
     }
-
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timeendKeySocket, NULL);
+    keySocketSendTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
+#endif
     char recvBuffer[CHUNK_ENCRYPT_KEY_SIZE * batchNumber];
     int recvSize;
-
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timestartKeySocket, NULL);
+#endif
     if (!securityChannel->recv(sslConnection, recvBuffer, recvSize)) {
         cerr << "keyClient: recv socket error" << endl;
         return false;
     }
-
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timeendKeySocket, NULL);
+    keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
+#endif
     if (recvSize % CHUNK_ENCRYPT_KEY_SIZE != 0) {
         cerr << "keyClient: recv size % CHUNK_ENCRYPT_KEY_SIZE not equal to 0" << endl;
         return false;

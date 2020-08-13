@@ -4,6 +4,8 @@
 #include <bits/stdc++.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <vector>
+#include <utility>
 
 using namespace std;
 
@@ -31,7 +33,7 @@ using namespace std;
 #define DATA_TYPE_CHUNK 2
 
 #define NETWORK_MESSAGE_DATA_SIZE 18 * 1000 * 1000
-#define CRYPTO_BLOCK_SZIE 16
+#define CRYPTO_BLOCK_SIZE 16
 
 #define KEY_SERVER_UNIFORM_INT_RAND 1
 #define KEY_SERVER_POISSON_RAND 2
@@ -78,7 +80,10 @@ private:
     int _sendChunkBatchSize;
     int _sendRecipeBatchSize;
     int _sendShortHashMaskBitNumber;
+    int _keyManagerNum;
 
+    // key manager ip vector
+    vector<pair<string, int>> _keyManagerIpArray;
 public:
     //  Configure(std::ifstream& confFile); // according to setting json to init configure class
     Configure(std::string path);
@@ -126,6 +131,8 @@ public:
     int getSendChunkBatchSize();
     int getSendRecipeBatchSize();
     int getSendShortHashMaskBitNumber();
+    uint32_t getKeyManagerNumber();
+    vector<pair<string, int>> getKeyManagerIPList();
 };
 
 #endif //TEDSTORE_CONFIGURE_HPP

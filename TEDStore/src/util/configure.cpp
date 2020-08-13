@@ -46,6 +46,19 @@ void Configure::readConf(std::string path)
     _sendChunkBatchSize = root.get<int>("client._sendChunkBatchSize");
     _sendRecipeBatchSize = root.get<int>("client._sendRecipeBatchSize");
     _sendShortHashMaskBitNumber = root.get<int>("client._sendShortHashMaskBitNumber");
+
+    // key manager ip list
+    _keyManagerNum = 0;
+    ptree keyIpList = root.get_child("client").get_child("_keyManagerIPList");
+    for(ptree::iterator iter = keyIpList.begin(); iter != keyIpList.end(); iter++) {
+        string ip = iter->first;
+        int port = atoi(iter->second.data().c_str());
+        fprintf(stdout, "IP: %s\n", ip.c_str());
+        fprintf(stdout, "Port: %d\n", port);
+        _keyManagerIpArray.push_back(make_pair(ip, port));
+    }
+    _keyManagerNum = _keyManagerIpArray.size();
+    fprintf(stdout, "Key Manager Num: %d\n", _keyManagerNum);
 }
 
 // chunking settings
@@ -171,4 +184,12 @@ int Configure::getSendRecipeBatchSize()
 int Configure::getSendShortHashMaskBitNumber()
 {
     return _sendShortHashMaskBitNumber;
+}
+
+uint32_t Configure::getKeyManagerNumber() {
+    return static_cast<uint32_t>(_keyManagerNum);
+}
+
+vector<pair<string, int>> Configure::getKeyManagerIPList() {
+    return _keyManagerIpArray;
 }

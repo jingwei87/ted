@@ -23,7 +23,7 @@ keyServer::keyServer(ssl* keyServerSecurityChannelTemp)
     opSolverFlag_ = false;
     opm_ = sketchTableWidith_ * (1 + config.getStorageBlowPercent());
     gen_ = mt19937_64(rd_());
-    memset(keyServerPrivate_, 1, 64);
+    memset(keyServerPrivate_, 1, SECRET_SIZE);
     optimalSolverComputeItemNumberThreshold_ = config.getOptimalSolverComputeItemNumberThreshold();
 }
 
@@ -216,9 +216,9 @@ void keyServer::runKeyGen(SSL* connection)
     double keySeedGenTime = 0;
     long diff;
     double second;
-    char hash[config.getKeyBatchSize() * 4 * sizeof(uint32_t)];
+    // char hash[config.getKeyBatchSize() * 4 * sizeof(uint32_t)];
+    char hash[config.getKeyBatchSize() * sizeof(keyGenEntry_t)];
     u_int hashNumber[4];
-    u_char newKeyBuffer[64 + 4 * sizeof(uint32_t) + sizeof(int)];
     while (true) {
         int recvSize = 0;
         if (!keySecurityChannel_->recv(connection, hash, recvSize)) {
@@ -239,7 +239,8 @@ void keyServer::runKeyGen(SSL* connection)
 #endif
             return;
         }
-        int recvNumber = recvSize / (4 * sizeof(uint32_t));
+        // int recvNumber = recvSize / (4 * sizeof(uint32_t));
+        int recvNumber = recvSize / sizeof(keyGenEntry_t);
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
         u_char key[recvNumber * CHUNK_ENCRYPT_KEY_SIZE];
         multiThreadEditSketchTableMutex_.lock();
@@ -248,51 +249,65 @@ void keyServer::runKeyGen(SSL* connection)
 #endif
 
         for (int i = 0; i < recvNumber; i++) {
-            int sketchTableSearchCompareNumber = 0;
-            for (int j = 0; j < 4; j++) {
-                memcpy(&hashNumber[j], hash + i * 4 * sizeof(uint32_t) + j * sizeof(uint32_t), sizeof(uint32_t));
-                sketchTable_[j][hashNumber[j] % sketchTableWidith_]++;
-            }
-            sketchTableSearchCompareNumber = sketchTable_[0][hashNumber[0] % sketchTableWidith_];
-            if (sketchTableSearchCompareNumber > sketchTable_[1][hashNumber[1] % sketchTableWidith_]) {
-                sketchTableSearchCompareNumber = sketchTable_[1][hashNumber[1] % sketchTableWidith_];
-            }
-            if (sketchTableSearchCompareNumber > sketchTable_[2][hashNumber[2] % sketchTableWidith_]) {
-                sketchTableSearchCompareNumber = sketchTable_[2][hashNumber[2] % sketchTableWidith_];
-            }
-            if (sketchTableSearchCompareNumber > sketchTable_[3][hashNumber[3] % sketchTableWidith_]) {
-                sketchTableSearchCompareNumber = sketchTable_[3][hashNumber[3] % sketchTableWidith_];
-            }
-
-            int param = floor(sketchTableSearchCompareNumber / T_);
-
-            if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_POISSON_RAND) {
-                int lambda = ceil(param / 2.0);
-                poisson_distribution<> dis(lambda);
-                param = dis(gen_);
-            } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_UNIFORM_INT_RAND) {
-                uniform_int_distribution<> dis(0, param);
-                param = dis(gen_);
-            } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_GEOMETRIC_RAND) {
-                geometric_distribution<> dis;
-                int random = dis(gen_);
-                if (param < random)
-                    param = 0;
-                else
-                    param = param - random;
-            } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_NORMAL_RAND) {
-                normal_distribution<> dis(param, 1);
-                int result = round(dis(gen_));
-                if (result < 0)
-                    param = 0;
-                else
-                    param = result;
-            }
-            memcpy(newKeyBuffer, keyServerPrivate_, 64);
-            memcpy(newKeyBuffer + 64, hash + i * 4 * sizeof(uint32_t), 4 * sizeof(uint32_t));
-            memcpy(newKeyBuffer + 64 + 4 * sizeof(uint32_t), &param, sizeof(int));
+            keyGenEntry_t tempKeyGen;
             unsigned char currentKeySeed[CHUNK_ENCRYPT_KEY_SIZE];
-            cryptoObj_->generateHash(newKeyBuffer, 64 + 4 * sizeof(uint32_t) + sizeof(int), currentKeySeed);
+            u_char newKeyBuffer[SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int)];
+            memcpy(&tempKeyGen, hash + i * sizeof(keyGenEntry_t), sizeof(keyGenEntry_t));
+            // whether to count 
+            if (tempKeyGen.usingCount) {
+                // count for key generation
+                int sketchTableSearchCompareNumber = 0;
+                for (int j = 0; j < 4; j++) {
+                    memcpy(&hashNumber[j], tempKeyGen.singleChunkHash + j * sizeof(uint32_t), sizeof(uint32_t));
+                    sketchTable_[j][hashNumber[j] % sketchTableWidith_]++;
+                }
+
+                // find min counter in the sketch
+                sketchTableSearchCompareNumber = sketchTable_[0][hashNumber[0] % sketchTableWidith_];
+                if (sketchTableSearchCompareNumber > sketchTable_[1][hashNumber[1] % sketchTableWidith_]) {
+                    sketchTableSearchCompareNumber = sketchTable_[1][hashNumber[1] % sketchTableWidith_];
+                }
+                if (sketchTableSearchCompareNumber > sketchTable_[2][hashNumber[2] % sketchTableWidith_]) {
+                    sketchTableSearchCompareNumber = sketchTable_[2][hashNumber[2] % sketchTableWidith_];
+                }
+                if (sketchTableSearchCompareNumber > sketchTable_[3][hashNumber[3] % sketchTableWidith_]) {
+                    sketchTableSearchCompareNumber = sketchTable_[3][hashNumber[3] % sketchTableWidith_];
+                }
+
+                int param = floor(sketchTableSearchCompareNumber / T_);
+
+                if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_POISSON_RAND) {
+                    int lambda = ceil(param / 2.0);
+                    poisson_distribution<> dis(lambda);
+                    param = dis(gen_);
+                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_UNIFORM_INT_RAND) {
+                    uniform_int_distribution<> dis(0, param);
+                    param = dis(gen_);
+                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_GEOMETRIC_RAND) {
+                    geometric_distribution<> dis;
+                    int random = dis(gen_);
+                    if (param < random)
+                        param = 0;
+                    else
+                        param = param - random;
+                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_NORMAL_RAND) {
+                    normal_distribution<> dis(param, 1);
+                    int result = round(dis(gen_));
+                    if (result < 0)
+                        param = 0;
+                    else
+                        param = result;
+                }
+                memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
+                memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
+                memcpy(newKeyBuffer + SECRET_SIZE + 4 * sizeof(uint32_t), &param, sizeof(int));
+                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int), currentKeySeed);
+            } else {
+                // directly return hash 
+                memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
+                memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
+                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t), currentKeySeed);
+            }
             memcpy(key + i * CHUNK_ENCRYPT_KEY_SIZE, currentKeySeed, CHUNK_ENCRYPT_KEY_SIZE);
         }
         sketchTableCounter_ += recvNumber;
