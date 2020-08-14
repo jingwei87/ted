@@ -75,6 +75,7 @@ public:
     // for multiple key managers 
     void runSimple();
     void runSS();
+    // 
     void runKeyGenSimulator();
     bool encodeChunk(Data_t& newChunk);
     bool insertMQFromChunker(Data_t& newChunk);
@@ -84,10 +85,10 @@ public:
     bool setJobDoneFlag();
     bool keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber);
     bool keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection);
+    // for multiple key managers
     bool keyExchangeSimple(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection);
-    // used for multiple key managers
-    bool keyExchangeWithIndex(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, 
-        uint32_t keyManagerIndex);
+    bool keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_char** chunkKeyArray_, int& batchkeyNumber, 
+        ssl** securityChannel, SSL** sslConnection);
 
     
 

@@ -433,6 +433,53 @@ bool keyClient::keyExchangeSimple(u_char* batchHashList, int batchNumber, u_char
     }
 }
 
+bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_char** chunkKeyArray, int& batchkeyNumber, 
+        ssl** securityChannelArray, SSL** sslConnectionArray) {
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timestartKeySocket, NULL);
+#endif
+    for (size_t i = 0; i < this->keyManNum_; i++) {
+        if (!securityChannelArray[i]->send(sslConnectionArray[i], (char*)batchHashList[i], sizeof(keyGenEntry_t) * batchNumber)) {
+            // if (!securityChannel->send(sslConnection, (char*)batchHashList, 4 * sizeof(uint32_t)  * batchNumber)) {
+            cerr << "keyClient: send socket error: for id = " << setbase(10) << i << endl;
+            return false;
+        }
+    }
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timeendKeySocket, NULL);
+    keySocketSendTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
+#endif
+    int recvSize[this->keyManNum_];
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timestartKeySocket, NULL);
+#endif
+    for (size_t i = 0; i < this->keyManNum_; i++) {
+        if (!securityChannelArray[i]->recv(sslConnectionArray[i], (char*)chunkKeyArray[i], recvSize[i])) {
+            cerr << "keyClient: recv socket error: for id = " << setbase(10) << i << endl;
+            return false;
+        }
+        if (recvSize[i] % sizeof(KeySeedReturnEntry_t) != 0) {
+            cerr << "keyClient: recv size % KeySeedReturnEntry_t not equal to 0: for id = " << setbase(10) << i << endl;
+            return false;
+        }
+    }
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timeendKeySocket, NULL);
+    keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
+#endif
+    int batchSize[this->keyManNum_];
+    int tmpBatchSize = recvSize[0] / sizeof(KeySeedReturnEntry_t); 
+    for (size_t i = 0; i < this->keyManNum_; i++) {
+        batchSize[i] = recvSize[i] / sizeof(KeySeedReturnEntry_t);
+        if (tmpBatchSize != batchSize[i]) {
+            return false;
+        } 
+        tmpBatchSize = batchSize[i];
+    }  
+    batchkeyNumber = tmpBatchSize;
+    return true;
+}
+
 
 bool keyClient::encodeChunk(Data_t& newChunk)
 {
@@ -695,11 +742,13 @@ void keyClient::runSimple() {
 #endif
             int batchedKeySize = 0;
             // TODO: add mutiple thread here 
-            bool keyExchangeStatus[this->keyManNum_];
-            for (size_t i = 0; i < this->keyManNum_; i++) {
-                keyExchangeStatus[i] = keyExchangeSimple(chunkHashArray_[i], batchNumber, chunkKeyArray_[i], batchedKeySize, 
-                    this->keySecurityChannelArray_[i], this->sslConnectionArray_[i]);
-            }
+            bool keyExchangeStatus = keyExchangeSimpleAll(chunkHashArray_, batchNumber, chunkKeyArray_, batchedKeySize,
+                keySecurityChannelArray_, sslConnectionArray_);
+            // for (size_t i = 0; i < this->keyManNum_; i++) {
+            //     keyExchangeStatus[i] = keyExchangeSimple(chunkHashArray_[i], batchNumber, chunkKeyArray_[i], batchedKeySize, 
+            //         this->keySecurityChannelArray_[i], this->sslConnectionArray_[i]);
+            // }
+
 #if BREAK_DOWN_DEFINE == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
@@ -707,12 +756,12 @@ void keyClient::runSimple() {
             keyGenTime += second;
             keyExchangeTime += second;
 #endif
-            bool wholeExchangeStatus = true;
-            for (size_t i = 0; i < this->keyManNum_; i++) {
-                wholeExchangeStatus = wholeExchangeStatus && keyExchangeStatus[i];
-            }
-            cerr << "Key Exchange Status: "<< wholeExchangeStatus << endl;
-            if (!wholeExchangeStatus) {
+            // bool wholeExchangeStatus = true;
+            // for (size_t i = 0; i < this->keyManNum_; i++) {
+            //     wholeExchangeStatus = wholeExchangeStatus && keyExchangeStatus[i];
+            // }
+            cerr << "Key Exchange Status: "<< keyExchangeStatus << endl;
+            if (!keyExchangeStatus) {
                 cerr << "KeyClient : error get key for " << setbase(10) << batchNumber << " chunks" << endl;
                 return;
             } else {
@@ -778,7 +827,7 @@ void keyClient::runSimple() {
     cerr << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
     cerr << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
     cerr << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
-    cerr << "KeyClient : key derviation work time = " << keyDerivationTime << " s" << endl;
+    cerr << "KeyClient : key derivation work time = " << keyDerivationTime << " s" << endl;
     cerr << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
     cerr << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
     cerr << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
