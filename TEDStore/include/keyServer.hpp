@@ -35,8 +35,8 @@ public:
     keyServer(ssl* keySecurityChannelTemp);
     ~keyServer();
     void runKeyGen(SSL* connection);
-    void runSimple(SSL* connection);
-    void runSS(SSL* connection);
+    void runKeyGenSimple(SSL* connection);
+    void runKeyGenSS(SSL* connection);
     void runOptimalSolver();
 };
 

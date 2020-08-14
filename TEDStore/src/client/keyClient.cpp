@@ -25,6 +25,7 @@ keyClient::keyClient(Sender* senderObjTemp)
     keySecurityChannelArray_ = new ssl*[this->keyManNum_];
     sslConnectionArray_ = new SSL*[this->keyManNum_];
     chunkHashArray_ = new u_char*[this->keyManNum_];
+    chunkKeyArray_ = new u_char*[this->keyManNum_];
     counterArray_ = new uint32_t[this->keyManNum_];
     for (size_t i = 0; i < keyManNum_; i++) {
         string ip = keyManagerIPList_[i].first;
@@ -32,6 +33,7 @@ keyClient::keyClient(Sender* senderObjTemp)
         keySecurityChannelArray_[i] = new ssl(ip, port, CLIENTSIDE);
         sslConnectionArray_[i] = keySecurityChannelArray_[i]->sslConnect().second;
         chunkHashArray_[i] = new u_char[sizeof(keyGenEntry_t) * this->keyBatchSize_];
+        chunkKeyArray_[i] = new u_char[sizeof(KeySeedReturnEntry_t) * this->keyBatchSize_];
         counterArray_[i] = 0;
     }
     this->recordCache_ = new cache::lru_cache<string, uint32_t>(1000000);
@@ -392,6 +394,46 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
     }
 }
 
+bool keyClient::keyExchangeSimple(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection) {
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timestartKeySocket, NULL);
+#endif
+    if (!securityChannel->send(sslConnection, (char*)batchHashList, sizeof(keyGenEntry_t) * batchNumber)) {
+    // if (!securityChannel->send(sslConnection, (char*)batchHashList, 4 * sizeof(uint32_t)  * batchNumber)) {
+        cerr << "keyClient: send socket error" << endl;
+        return false;
+    }
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timeendKeySocket, NULL);
+    keySocketSendTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
+#endif
+    char recvBuffer[sizeof(KeySeedReturnEntry_t) * batchNumber];
+    int recvSize;
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timestartKeySocket, NULL);
+#endif
+    if (!securityChannel->recv(sslConnection, recvBuffer, recvSize)) {
+        cerr << "keyClient: recv socket error" << endl;
+        return false;
+    }
+#if BREAK_DOWN_DEFINE == 1
+    gettimeofday(&timeendKeySocket, NULL);
+    keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
+#endif
+    if (recvSize % sizeof(KeySeedReturnEntry_t) != 0) {
+        cerr << "keyClient: recv size % CHUNK_ENCRYPT_KEY_SIZE not equal to 0" << endl;
+        return false;
+    }
+    batchkeyNumber = recvSize / sizeof(KeySeedReturnEntry_t);
+    if (batchkeyNumber == batchNumber) {
+        memcpy(batchKeyList, recvBuffer, recvSize);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool keyClient::encodeChunk(Data_t& newChunk)
 {
     bool statusChunk = cryptoObj_->encryptChunk(newChunk.chunk);
@@ -575,11 +617,6 @@ void keyClient::runSimple() {
     vector<Data_t> batchList;
     batchList.reserve(keyBatchSize_);
     int batchNumber = 0;
-    u_char chunkKey[CHUNK_ENCRYPT_KEY_SIZE * keyBatchSize_];
-    int singleChunkHashSize = 4 * sizeof(int);
-    // u_char chunkHash[singleChunkHashSize * keyBatchSize_];
-    // TODO: here we define the keyGenEntry_t to define whether using this hash to count
-    u_char chunkHash[sizeof(keyGenEntry_t) * keyBatchSize_];
     bool JobDoneFlag = false;
     uint32_t maskInt = 0;
     for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
@@ -624,7 +661,7 @@ void keyClient::runSimple() {
                 fprintf(stderr, "keyClient: Error type.\n");
                 exit(EXIT_FAILURE);
             }
-            fprintf(stderr, "Choose key manager index: %u\n", keyManagerIndex);
+            // fprintf(stderr, "Choose key manager index: %u\n", keyManagerIndex);
 
             MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 0, (void*)hash);
             for (int i = 0; i < 4; i++) {
@@ -632,20 +669,18 @@ void keyClient::runSimple() {
             }
             for (int i = 0; i < 4; i++) {
                 hashInt[i] &= maskInt;
-                // for multiple key managers 
                 memcpy(&tempKeyGenEntry.singleChunkHash + i * sizeof(int), &hashInt[i], sizeof(int));
-                // memcpy(chunkHash + batchNumber * singleChunkHashSize + i * sizeof(int), &hashInt[i], sizeof(int));
             }
             for (size_t i = 0; i < this->keyManNum_; i++) {
                 tempKeyGenEntry.usingCount = false;
                 if (i == keyManagerIndex) {
                     tempKeyGenEntry.usingCount = true;
-                    // memcpy(chunkHash + batchNumber * sizeof(keyGenEntry_t) , &tempKeyGenEntry, sizeof(keyGenEntry_t));
                     memcpy(chunkHashArray_[i] + batchNumber * sizeof(keyGenEntry_t) , &tempKeyGenEntry, sizeof(keyGenEntry_t));
                 } 
             }
             batchNumber++;
             counterArray_[keyManagerIndex]++; 
+            this->totalProcessedChunk_++;
 #if BREAK_DOWN_DEFINE == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
@@ -659,13 +694,10 @@ void keyClient::runSimple() {
             gettimeofday(&timestartKey, NULL);
 #endif
             int batchedKeySize = 0;
-            // bool keyExchangeStatus = keyExchange(chunkHash, batchNumber, chunkKey, batchedKeySize);
-            // bool keyExchangeStatus = keyExchange(chunkHash, batchNumber, chunkKey, batchedKeySize, 
-            //     this->keySecurityChannel_, this->sslConnection_);
             // TODO: add mutiple thread here 
             bool keyExchangeStatus[this->keyManNum_];
             for (size_t i = 0; i < this->keyManNum_; i++) {
-                keyExchangeStatus[i] = keyExchange(chunkHashArray_[i], batchNumber, chunkKey, batchedKeySize, 
+                keyExchangeStatus[i] = keyExchangeSimple(chunkHashArray_[i], batchNumber, chunkKeyArray_[i], batchedKeySize, 
                     this->keySecurityChannelArray_[i], this->sslConnectionArray_[i]);
             }
 #if BREAK_DOWN_DEFINE == 1
@@ -679,7 +711,7 @@ void keyClient::runSimple() {
             for (size_t i = 0; i < this->keyManNum_; i++) {
                 wholeExchangeStatus = wholeExchangeStatus && keyExchangeStatus[i];
             }
-            cout << wholeExchangeStatus << endl;
+            cerr << "Key Exchange Status: "<< wholeExchangeStatus << endl;
             if (!wholeExchangeStatus) {
                 cerr << "KeyClient : error get key for " << setbase(10) << batchNumber << " chunks" << endl;
                 return;
@@ -689,8 +721,16 @@ void keyClient::runSimple() {
 #if BREAK_DOWN_DEFINE == 1
                     gettimeofday(&timestartKey, NULL);
 #endif
-                    memcpy(newKeyBuffer, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
-                    memcpy(newKeyBuffer + CHUNK_HASH_SIZE, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
+                    // generate the secret here
+                    KeySeedReturnEntry_t tempKeySeed;
+                    // store the key seed in first 32 bytes of newKeyBuffer 
+                    memset(newKeyBuffer, 1, CHUNK_ENCRYPT_KEY_SIZE);
+                    for (size_t j = 0; j < this->keyManNum_; j++) {
+                        memcpy(&tempKeySeed, chunkKeyArray_[j] + i * sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
+                        XORTwoBuffers((uint64_t*)newKeyBuffer, (uint64_t*)tempKeySeed.simpleKeySeed.shaKeySeed, CHUNK_ENCRYPT_KEY_SIZE);
+                    }
+                    
+                    memcpy(newKeyBuffer + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
                     cryptoObj_->generateHash(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.encryptKey);
 #if BREAK_DOWN_DEFINE == 1
                     gettimeofday(&timeendKey, NULL);
@@ -718,8 +758,10 @@ void keyClient::runSimple() {
                 }
                 batchList.clear();
                 batchList.reserve(keyBatchSize_);
-                memset(chunkHash, 0, singleChunkHashSize * keyBatchSize_);
-                memset(chunkKey, 0, CHUNK_ENCRYPT_KEY_SIZE * keyBatchSize_);
+                for (size_t i = 0; i < this->keyManNum_; i++) {
+                    memset(chunkHashArray_[i], 0, sizeof(keyGenEntry_t) * this->keyBatchSize_);
+                    memset(chunkKeyArray_[i], 0, sizeof(KeySeedReturnEntry_t) * this->keyBatchSize_);
+                }
                 batchNumber = 0;
             }
         }

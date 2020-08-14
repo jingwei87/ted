@@ -115,7 +115,7 @@ typedef struct {
 } keyGenEntry_t;
 
 typedef struct {
-    u_char simpleKeySeed[CHUNK_ENCRYPT_KEY_SIZE];
+    u_char shaKeySeed[CHUNK_ENCRYPT_KEY_SIZE];
 } SimpleKeySeed_t;
 
 typedef struct {

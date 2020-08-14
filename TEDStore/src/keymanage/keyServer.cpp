@@ -357,7 +357,10 @@ void keyServer::runOptimalSolver()
     }
 }
 
-void keyServer::runSimple(SSL* connection) {
+void keyServer::runKeyGenSimple(SSL* connection) {
+
+    cerr << "Zuoru: Using the runSimple" << endl;
+
     double keySeedGenTime = 0;
     long diff;
     double second;
@@ -385,22 +388,20 @@ void keyServer::runSimple(SSL* connection) {
         }
         int recvNumber = recvSize / sizeof(keyGenEntry_t);
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
-        u_char key[recvNumber * CHUNK_ENCRYPT_KEY_SIZE];
+        u_char key[recvNumber * sizeof(KeySeedReturnEntry_t)];
         multiThreadEditSketchTableMutex_.lock();
 #if BREAK_DOWN_DEFINE == 1
         gettimeofday(&timestartKeyServer, NULL);
 #endif
         for (int i = 0; i < recvNumber; i++) {
             keyGenEntry_t tempKeyGen;
-            unsigned char currentKeySeed[CHUNK_ENCRYPT_KEY_SIZE];
+            KeySeedReturnEntry_t tempKeySeed;
+
             u_char newKeyBuffer[SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int)];
             memcpy(&tempKeyGen, hash + i * sizeof(keyGenEntry_t), sizeof(keyGenEntry_t));
-            // whether to count 
+            
             if (tempKeyGen.usingCount) {
                 // count for key generation
-                if (DEBUG) {
-                    fprintf(stderr, "This chunk needs count.\n");
-                }
                 int sketchTableSearchCompareNumber = 0;
                 for (int j = 0; j < 4; j++) {
                     memcpy(&hashNumber[j], tempKeyGen.singleChunkHash + j * sizeof(uint32_t), sizeof(uint32_t));
@@ -446,14 +447,18 @@ void keyServer::runSimple(SSL* connection) {
                 memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
                 memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
                 memcpy(newKeyBuffer + SECRET_SIZE + 4 * sizeof(uint32_t), &param, sizeof(int));
-                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int), currentKeySeed);
+                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int), 
+                    tempKeySeed.simpleKeySeed.shaKeySeed);
+                tempKeySeed.isShare = false;
             } else {
-                // directly return hash 
+                // directly return share 
                 memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
                 memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
-                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t), currentKeySeed);
+                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t), 
+                    tempKeySeed.simpleKeySeed.shaKeySeed);
+                tempKeySeed.isShare = true;
             }
-            memcpy(key + i * CHUNK_ENCRYPT_KEY_SIZE, currentKeySeed, CHUNK_ENCRYPT_KEY_SIZE);
+            memcpy(key + i * sizeof(KeySeedReturnEntry_t), &tempKeySeed, sizeof(KeySeedReturnEntry_t));
         }
         sketchTableCounter_ += recvNumber;
 #if BREAK_DOWN_DEFINE == 1
@@ -465,7 +470,7 @@ void keyServer::runSimple(SSL* connection) {
 
         multiThreadEditSketchTableMutex_.unlock();
 
-        if (!keySecurityChannel_->send(connection, (char*)key, recvNumber * CHUNK_ENCRYPT_KEY_SIZE)) {
+        if (!keySecurityChannel_->send(connection, (char*)key, recvNumber * sizeof(KeySeedReturnEntry_t))) {
             cerr << "KeyServer : error send back chunk key to client" << endl;
             multiThreadEditSketchTableMutex_.lock();
             for (int i = 0; i < sketchTableWidith_; i++) {
@@ -499,9 +504,7 @@ void keyServer::runSimple(SSL* connection) {
             multiThreadEditTMutex_.unlock();
         }
     }
-
     cerr << "keyServer : exit successfully" << endl;
-
 }
 
 

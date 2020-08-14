@@ -21,7 +21,7 @@
 #define ENHANCE_SCHEME 2
 #define FP_SCHEME 3
 #define RR_SCHEME 4
-#define ROUTE_APPROACH 3
+#define ROUTE_APPROACH 4
 
 
 using namespace std;
@@ -52,6 +52,21 @@ private:
     u_char** chunkKeyArray_;
     uint32_t* counterArray_;
     
+    /**
+     * @brief xor two buffer 
+     * 
+     * @param buffer1 store the result in buffer1
+     * @param buffer2 
+     * @param bufferSize the size of buffer in byte
+     */
+    inline void XORTwoBuffers(uint64_t* buffer1, uint64_t* buffer2, size_t bufferSize) {
+        size_t length = bufferSize / sizeof(uint64_t);
+        for (size_t i = 0; i < length; i ++) {
+            buffer1[i] = buffer1[i] ^ buffer2[i];
+        }
+    }
+
+
 public:
     keyClient(Sender* senderObjTemp);
     keyClient(uint64_t keyGenNumber);
@@ -69,10 +84,12 @@ public:
     bool setJobDoneFlag();
     bool keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber);
     bool keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection);
-
+    bool keyExchangeSimple(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection);
     // used for multiple key managers
     bool keyExchangeWithIndex(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, 
         uint32_t keyManagerIndex);
+
+    
 
     /**
      * @brief convert the chunk fp to a value

@@ -26,7 +26,7 @@ int main()
     th = new boost::thread(boost::bind(&keyServer::runOptimalSolver, server));
     while (true) {
         SSL* sslConnection = keySecurityChannelTemp->sslListen().second;
-        th = new boost::thread(boost::bind(&keyServer::runKeyGen, server, sslConnection));
+        th = new boost::thread(boost::bind(&keyServer::runKeyGenSimple, server, sslConnection));
         th->detach();
     }
     // const char* fp = "1234567891234567";
