@@ -93,5 +93,15 @@ int main(int argv, char* argc[])
     cerr << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
     cerr << "System : end work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
 #endif
+    if (strcmp("-r", argc[1]) == 0) { 
+        delete recvDecodeObj;
+        delete retrieverObj;
+    } else if (strcmp("-s", argc[1]) == 0) {
+        delete senderObj;
+        delete keyClientObj;
+        delete chunkerObj;
+    } else {
+        cerr << "Error: operation type" << endl;
+    }
     return 0;
 }

@@ -30,8 +30,7 @@
 		"_sendRecipeBatchSize": 100000,
         "_sendShortHashMaskBitNumber": 12,
         "_keyManagerIPList": {
-            "127.0.0.1": 6666,
-            "127.0.0.1": 6777
+            "127.0.0.1": 6666
         }
 	}
 }

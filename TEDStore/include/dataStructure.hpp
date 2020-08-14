@@ -114,4 +114,21 @@ typedef struct {
     u_char singleChunkHash[4 * sizeof(int)];
 } keyGenEntry_t;
 
+typedef struct {
+    u_char simpleKeySeed[CHUNK_ENCRYPT_KEY_SIZE];
+} SimpleKeySeed_t;
+
+typedef struct {
+    u_char hhashKeySeed[HHASH_KEY_SEED];
+} HHashKeySeed_t;
+
+typedef struct {
+    bool isShare = false;
+    union {
+        SimpleKeySeed_t simpleKeySeed;
+        HHashKeySeed_t hhashKeySeed;
+    };
+} KeySeedReturnEntry_t;
+
+
 #endif //TEDSTORE_CHUNK_HPP

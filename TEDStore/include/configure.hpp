@@ -9,6 +9,9 @@
 
 using namespace std;
 
+// macore for debug
+#define DEBUG 1
+
 // macro for system running types
 #define BREAK_DOWN_DEFINE 1 // 0:breakdown disable| 1:breakdown enable
 #define SINGLE_THREAD_KEY_MANAGER 0 // 0:dual thread key server| 1:single thread key server
@@ -41,6 +44,9 @@ using namespace std;
 #define KEY_SERVER_GEOMETRIC_RAND 4
 #define KEY_SERVER_NO_RAND 5
 #define KEY_SERVER_RANDOM_TYPE KEY_SERVER_NO_RAND
+
+#define SIMPLE_KEY_SEED 32
+#define HHASH_KEY_SEED 16
 
 class Configure {
 private:
