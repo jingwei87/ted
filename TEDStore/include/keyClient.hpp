@@ -9,9 +9,11 @@
 #include "sender.hpp"
 #include "ssl.hpp"
 #include "lruCache.hpp"
+#include "hHash.hpp"
 #include <vector>
 #include <map>
 #include <utility>
+#include <gmp.h>
 
 #define KEYMANGER_PUBLIC_KEY_FILE "key/serverpub.key"
 
@@ -66,6 +68,13 @@ private:
         }
     }
 
+    // for recover secret share 
+    HHash* hHash_;
+    mpz_t share_[K_PARA];
+    mpz_t sharePara_[K_PARA];
+    mpz_t finalSecret_;
+
+    u_char* shareIndexArrayBuffer_;
 
 public:
     keyClient(Sender* senderObjTemp);

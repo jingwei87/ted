@@ -25,6 +25,14 @@ keyServer::keyServer(ssl* keyServerSecurityChannelTemp)
     gen_ = mt19937_64(rd_());
     memset(keyServerPrivate_, 1, SECRET_SIZE);
     optimalSolverComputeItemNumberThreshold_ = config.getOptimalSolverComputeItemNumberThreshold();
+
+    // for multiple key managers 
+    hHash_ = new HHash();
+    for (size_t i = 0; i < BLOCK_NUM; i++) {
+        mpz_init(fpBlock_[i]);
+    }
+    mpz_init(finalHash_);
+    mpz_init_set_ui(secretValue_, 1);
 }
 
 keyServer::~keyServer()
@@ -35,6 +43,14 @@ keyServer::~keyServer()
     free(sketchTable_);
     delete keySecurityChannel_;
     delete cryptoObj_;
+
+    // for multiple key managers
+    delete hHash_;
+    for (size_t i = 0; i < BLOCK_NUM; i++) {
+        mpz_clear(fpBlock_[i]);
+    }
+    mpz_clear(finalHash_);
+    mpz_clear(secretValue_);
 }
 
 #if SINGLE_THREAD_KEY_MANAGER == 1
@@ -456,6 +472,161 @@ void keyServer::runKeyGenSimple(SSL* connection) {
                 memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
                 cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t), 
                     tempKeySeed.simpleKeySeed.shaKeySeed);
+                tempKeySeed.isShare = true;
+            }
+            memcpy(key + i * sizeof(KeySeedReturnEntry_t), &tempKeySeed, sizeof(KeySeedReturnEntry_t));
+        }
+        sketchTableCounter_ += recvNumber;
+#if BREAK_DOWN_DEFINE == 1
+        gettimeofday(&timeendKeyServer, NULL);
+        diff = 1000000 * (timeendKeyServer.tv_sec - timestartKeyServer.tv_sec) + timeendKeyServer.tv_usec - timestartKeyServer.tv_usec;
+        second = diff / 1000000.0;
+        keySeedGenTime += second;
+#endif
+
+        multiThreadEditSketchTableMutex_.unlock();
+
+        if (!keySecurityChannel_->send(connection, (char*)key, recvNumber * sizeof(KeySeedReturnEntry_t))) {
+            cerr << "KeyServer : error send back chunk key to client" << endl;
+            multiThreadEditSketchTableMutex_.lock();
+            for (int i = 0; i < sketchTableWidith_; i++) {
+                sketchTable_[0][i] = 0;
+                sketchTable_[1][i] = 0;
+                sketchTable_[2][i] = 0;
+                sketchTable_[3][i] = 0;
+            }
+            multiThreadEditSketchTableMutex_.unlock();
+            multiThreadEditTMutex_.lock();
+            T_ = 1;
+            multiThreadEditTMutex_.unlock();
+#if BREAK_DOWN_DEFINE == 1
+            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+#endif
+            return;
+        }
+        if (sketchTableCounter_ >= optimalSolverComputeItemNumberThreshold_) {
+            multiThreadEditTMutex_.lock();
+            opInput_.clear();
+            opInput_.reserve(sketchTableWidith_);
+            for (int i = 0; i < sketchTableWidith_; i++) {
+                stringstream ss;
+                ss << i;
+                string strTemp = ss.str();
+                opInput_.push_back(make_pair(strTemp, sketchTable_[0][i]));
+            }
+            cerr << "keyServer : start optimization solver" << endl;
+            sketchTableCounter_ = 0;
+            opSolverFlag_ = true;
+            multiThreadEditTMutex_.unlock();
+        }
+    }
+    cerr << "keyServer : exit successfully" << endl;
+}
+
+void keyServer::runKeyGenSS(SSL* connection) {
+    
+    cerr << "Zuoru: Using the runSimple" << endl;
+
+    double keySeedGenTime = 0;
+    long diff;
+    double second;
+    char hash[config.getKeyBatchSize() * sizeof(keyGenEntry_t)];
+    u_int hashNumber[4];
+    while (true) {
+        int recvSize = 0;
+        if (!keySecurityChannel_->recv(connection, hash, recvSize)) {
+            cerr << "KeyServer : client exit" << endl;
+            multiThreadEditSketchTableMutex_.lock();
+            for (int i = 0; i < sketchTableWidith_; i++) {
+                sketchTable_[0][i] = 0;
+                sketchTable_[1][i] = 0;
+                sketchTable_[2][i] = 0;
+                sketchTable_[3][i] = 0;
+            }
+            multiThreadEditSketchTableMutex_.unlock();
+            multiThreadEditTMutex_.lock();
+            T_ = 1;
+            multiThreadEditTMutex_.unlock();
+#if BREAK_DOWN_DEFINE == 1
+            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+#endif
+            return;
+        }
+        int recvNumber = recvSize / sizeof(keyGenEntry_t);
+        cerr << "KeyServer : recv hash number = " << recvNumber << endl;
+        u_char key[recvNumber * sizeof(KeySeedReturnEntry_t)];
+        multiThreadEditSketchTableMutex_.lock();
+#if BREAK_DOWN_DEFINE == 1
+        gettimeofday(&timestartKeyServer, NULL);
+#endif
+        for (int i = 0; i < recvNumber; i++) {
+            keyGenEntry_t tempKeyGen;
+            KeySeedReturnEntry_t tempKeySeed;
+
+            u_char newKeyBuffer[SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int)];
+            memcpy(&tempKeyGen, hash + i * sizeof(keyGenEntry_t), sizeof(keyGenEntry_t));
+            
+            if (tempKeyGen.usingCount) {
+                // count for key generation
+                int sketchTableSearchCompareNumber = 0;
+                for (int j = 0; j < 4; j++) {
+                    memcpy(&hashNumber[j], tempKeyGen.singleChunkHash + j * sizeof(uint32_t), sizeof(uint32_t));
+                    sketchTable_[j][hashNumber[j] % sketchTableWidith_]++;
+                }
+
+                // find min counter in the sketch
+                sketchTableSearchCompareNumber = sketchTable_[0][hashNumber[0] % sketchTableWidith_];
+                if (sketchTableSearchCompareNumber > sketchTable_[1][hashNumber[1] % sketchTableWidith_]) {
+                    sketchTableSearchCompareNumber = sketchTable_[1][hashNumber[1] % sketchTableWidith_];
+                }
+                if (sketchTableSearchCompareNumber > sketchTable_[2][hashNumber[2] % sketchTableWidith_]) {
+                    sketchTableSearchCompareNumber = sketchTable_[2][hashNumber[2] % sketchTableWidith_];
+                }
+                if (sketchTableSearchCompareNumber > sketchTable_[3][hashNumber[3] % sketchTableWidith_]) {
+                    sketchTableSearchCompareNumber = sketchTable_[3][hashNumber[3] % sketchTableWidith_];
+                }
+
+                int param = floor(sketchTableSearchCompareNumber / T_);
+
+                if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_POISSON_RAND) {
+                    int lambda = ceil(param / 2.0);
+                    poisson_distribution<> dis(lambda);
+                    param = dis(gen_);
+                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_UNIFORM_INT_RAND) {
+                    uniform_int_distribution<> dis(0, param);
+                    param = dis(gen_);
+                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_GEOMETRIC_RAND) {
+                    geometric_distribution<> dis;
+                    int random = dis(gen_);
+                    if (param < random)
+                        param = 0;
+                    else
+                        param = param - random;
+                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_NORMAL_RAND) {
+                    normal_distribution<> dis(param, 1);
+                    int result = round(dis(gen_));
+                    if (result < 0)
+                        param = 0;
+                    else
+                        param = result;
+                }
+                memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
+                memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
+                memcpy(newKeyBuffer + SECRET_SIZE + 4 * sizeof(uint32_t), &param, sizeof(int));
+                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int), 
+                    tempKeySeed.simpleKeySeed.shaKeySeed);
+                tempKeySeed.isShare = false;
+            } else {
+                // compute the hhash of the share
+                // memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
+                // memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
+                // cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t), 
+                //     tempKeySeed.simpleKeySeed.shaKeySeed);
+                hHash_->CovertFPtoBlocks(fpBlock_, (const char*)tempKeyGen.singleChunkHash);
+                hHash_->ComputeMulForBlock(fpBlock_, secretValue_);
+                hHash_->ComputeBlockHash(finalHash_, fpBlock_);
+                size_t length;
+                mpz_export(tempKeySeed.hhashKeySeed.hhashKeySeed, &length, 1, sizeof(char), 1, 0, finalHash_);
                 tempKeySeed.isShare = true;
             }
             memcpy(key + i * sizeof(KeySeedReturnEntry_t), &tempKeySeed, sizeof(KeySeedReturnEntry_t));

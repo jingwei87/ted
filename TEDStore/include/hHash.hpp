@@ -23,7 +23,6 @@
 #include "dataStructure.hpp"
 
 #define BLOCK_NUM 4
-#define K 2
 
 class HHash {
 private:
@@ -88,7 +87,7 @@ public:
      * @param powVal the array of share parameter 
      * @param secret the recovery secret
      */
-    void RecoverySecretFromHash(mpz_t hash[K], mpz_t powVal[K], mpz_t secret);
+    void RecoverySecretFromHash(mpz_t hash[K_PARA], mpz_t powVal[K_PARA], mpz_t secret);
     
 
     /**

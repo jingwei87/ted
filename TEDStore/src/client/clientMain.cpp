@@ -56,7 +56,12 @@ int main(int argv, char* argc[])
 
         th = new boost::thread(attrs, boost::bind(&Chunker::chunking, chunkerObj));
         thList.push_back(th);
-        th = new boost::thread(attrs, boost::bind(&keyClient::runSimple, keyClientObj));
+        if (OLD_VERSION) {
+            th = new boost::thread(attrs, boost::bind(&keyClient::run, keyClientObj));
+        } else {
+            th = new boost::thread(attrs, boost::bind(&keyClient::runSimple, keyClientObj));
+        }
+        
         thList.push_back(th);
         th = new boost::thread(attrs, boost::bind(&Sender::run, senderObj));
         thList.push_back(th);

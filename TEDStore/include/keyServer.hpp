@@ -9,6 +9,7 @@
 #include "optimalSolver.hpp"
 #include "ssl.hpp"
 #include <bits/stdc++.h>
+#include "hHash.hpp"
 
 #define KEYMANGER_PRIVATE_KEY "key/server.key"
 #define SECRET_SIZE 16
@@ -30,6 +31,12 @@ private:
     u_char keyServerPrivate_[SECRET_SIZE];
     int optimalSolverComputeItemNumberThreshold_;
     ssl* keySecurityChannel_;
+
+    // for multiple key managers 
+    mpz_t fpBlock_[BLOCK_NUM];
+    mpz_t finalHash_;
+    mpz_t secretValue_;
+    HHash* hHash_;
 
 public:
     keyServer(ssl* keySecurityChannelTemp);

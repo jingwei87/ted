@@ -1,6 +1,5 @@
 #include "keyServer.hpp"
 #include "ssl.hpp"
-#include "../../include/hHash.hpp"
 
 Configure config("config.json");
 
@@ -35,10 +34,10 @@ int main()
     // mpz_init(result);
     // mpz_t inputBlk[BLOCK_NUM];
 
-    // mpz_t s[K];
-    // mpz_t p[K];
-    // mpz_t share[K];
-    // for (size_t i = 0; i < K; i++) {
+    // mpz_t s[K_PARA];
+    // mpz_t p[K_PARA];
+    // mpz_t share[K_PARA];
+    // for (size_t i = 0; i < K_PARA; i++) {
     //     mpz_init(share[i]);
     // }
     // mpz_t secret;

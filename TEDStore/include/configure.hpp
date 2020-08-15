@@ -11,6 +11,10 @@ using namespace std;
 
 // macore for debug
 #define DEBUG 1
+#define OLD_VERSION 0
+
+// for multiple key manager
+#define K_PARA 2
 
 // macro for system running types
 #define BREAK_DOWN_DEFINE 1 // 0:breakdown disable| 1:breakdown enable

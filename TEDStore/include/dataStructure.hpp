@@ -130,5 +130,10 @@ typedef struct {
     };
 } KeySeedReturnEntry_t;
 
+typedef struct {
+    int tedSeedIndex;
+    int shareIndexArray[K_PARA];
+} ShareIndexEntry_t;
+
 
 #endif //TEDSTORE_CHUNK_HPP
