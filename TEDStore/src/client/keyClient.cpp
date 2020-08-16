@@ -21,16 +21,16 @@ keyClient::keyClient(Sender* senderObjTemp)
     // for multiple key managers
     this->keyManNum_ = config.getKeyManagerNumber();
     this->keyManagerIPList_ = config.getKeyManagerIPList();
-    keySecurityChannelArray_ = new ssl*[this->keyManNum_];
-    sslConnectionArray_ = new SSL*[this->keyManNum_];
-    chunkHashArray_ = new u_char*[this->keyManNum_];
-    chunkKeyArray_ = new u_char*[this->keyManNum_];
-    counterArray_ = new uint32_t[this->keyManNum_];
-    shareIndexArrayBuffer_ = new u_char[sizeof(ShareIndexEntry_t) * this->keyBatchSize_];
     if (OLD_VERSION) {
         keySecurityChannel_ = new ssl(config.getKeyServerIP(), config.getKeyServerPort(), CLIENTSIDE);
         sslConnection_ = keySecurityChannel_->sslConnect().second;
     } else {
+        keySecurityChannelArray_ = new ssl*[this->keyManNum_];
+        sslConnectionArray_ = new SSL*[this->keyManNum_];
+        chunkHashArray_ = new u_char*[this->keyManNum_];
+        chunkKeyArray_ = new u_char*[this->keyManNum_];
+        counterArray_ = new uint32_t[this->keyManNum_];
+        shareIndexArrayBuffer_ = new u_char[sizeof(ShareIndexEntry_t) * this->keyBatchSize_];
         for (size_t i = 0; i < this->keyManNum_; i++) {
             string ip = keyManagerIPList_[i].first;
             int port = keyManagerIPList_[i].second;
@@ -40,16 +40,15 @@ keyClient::keyClient(Sender* senderObjTemp)
             chunkKeyArray_[i] = new u_char[sizeof(KeySeedReturnEntry_t) * this->keyBatchSize_];
             counterArray_[i] = 0;
         }
+        this->recordCache_ = new cache::lru_cache<string, uint32_t>(1000000);
+        // for recover secret share 
+        this->hHash_ = new HHash();
+        for (size_t i = 0; i < K_PARA; i++) {
+            mpz_init(share_[i]);
+            mpz_init_set_ui(sharePara_[i], 1);
+        }
+        mpz_init(finalSecret_);
     }
-    this->recordCache_ = new cache::lru_cache<string, uint32_t>(1000000);
-
-    // for recover secret share 
-    this->hHash_ = new HHash();
-    for (size_t i = 0; i < K_PARA; i++) {
-        mpz_init(share_[i]);
-        mpz_init_set_ui(sharePara_[i], 1);
-    }
-    mpz_init(finalSecret_);
 }
 
 
@@ -69,31 +68,28 @@ keyClient::~keyClient()
     }
     inputMQ_->~messageQueue();
     delete inputMQ_;
-    // for (size_t i = 0; i < this->keyManNum_; i++) {
-    //     delete keySecurityChannelArray_[i];
-    //     delete sslConnectionArray_[i];
-    // }
 
-    // for multiple key managers 
-    for(int i = 0; i < this->keyManNum_; ++i) {
-        delete [] this->chunkHashArray_[i];
-        delete [] this->chunkKeyArray_[i];
-        this->chunkHashArray_[i] = nullptr;
-        this->chunkKeyArray_[i] = nullptr;
-    }   
-
-    delete [] this->chunkHashArray_;
-    delete [] this->chunkKeyArray_;
-    delete [] this->counterArray_;
-    delete [] this->shareIndexArrayBuffer_;
-    delete this->recordCache_;
-    // for recover secret share 
-    delete this->hHash_;
-    for (size_t i = 0; i < K_PARA; i++) {
-        mpz_clear(share_[i]);
-        mpz_clear(sharePara_[i]);
+    if (OLD_VERSION == 0) {
+        // for multiple key managers 
+        for(int i = 0; i < this->keyManNum_; ++i) {
+            delete [] this->chunkHashArray_[i];
+            delete [] this->chunkKeyArray_[i];
+            this->chunkHashArray_[i] = nullptr;
+            this->chunkKeyArray_[i] = nullptr;
+        }   
+        delete [] this->chunkHashArray_;
+        delete [] this->chunkKeyArray_;
+        delete [] this->counterArray_;
+        delete [] this->shareIndexArrayBuffer_;
+        delete this->recordCache_;
+        // for recover secret share 
+        delete this->hHash_;
+        for (size_t i = 0; i < K_PARA; i++) {
+            mpz_clear(share_[i]);
+            mpz_clear(sharePara_[i]);
+        }
+        mpz_clear(finalSecret_);
     }
-    mpz_clear(finalSecret_);
     cerr << "KeyClient: Destory the key client successfully.\n" << endl;
 }
 

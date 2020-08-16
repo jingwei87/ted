@@ -26,13 +26,16 @@ keyServer::keyServer(ssl* keyServerSecurityChannelTemp)
     memset(keyServerPrivate_, 1, SECRET_SIZE);
     optimalSolverComputeItemNumberThreshold_ = config.getOptimalSolverComputeItemNumberThreshold();
 
-    // for multiple key managers 
-    hHash_ = new HHash();
-    for (size_t i = 0; i < BLOCK_NUM; i++) {
-        mpz_init(fpBlock_[i]);
-    }
-    mpz_init(finalHash_);
-    mpz_init_set_ui(secretValue_, 1);
+    // for multiple key managers
+    if (OLD_VERSION  == 0) {
+        hHash_ = new HHash();
+        for (size_t i = 0; i < BLOCK_NUM; i++) {
+            mpz_init(fpBlock_[i]);
+        }
+        mpz_init(finalHash_);
+        mpz_init_set_ui(secretValue_, 1);
+    } 
+    
 }
 
 keyServer::~keyServer()
@@ -44,13 +47,16 @@ keyServer::~keyServer()
     delete keySecurityChannel_;
     delete cryptoObj_;
 
-    // for multiple key managers
-    delete hHash_;
-    for (size_t i = 0; i < BLOCK_NUM; i++) {
-        mpz_clear(fpBlock_[i]);
+    if (OLD_VERSION == 0) {
+        // for multiple key managers
+        delete hHash_;
+        for (size_t i = 0; i < BLOCK_NUM; i++) {
+            mpz_clear(fpBlock_[i]);
+        }
+        mpz_clear(finalHash_);
+        mpz_clear(secretValue_);
     }
-    mpz_clear(finalHash_);
-    mpz_clear(secretValue_);
+    
 }
 
 #if SINGLE_THREAD_KEY_MANAGER == 1
@@ -617,11 +623,6 @@ void keyServer::runKeyGenSS(SSL* connection) {
                     tempKeySeed.simpleKeySeed.shaKeySeed);
                 tempKeySeed.isShare = false;
             } else {
-                // compute the hhash of the share
-                // memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
-                // memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
-                // cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t), 
-                //     tempKeySeed.simpleKeySeed.shaKeySeed);
                 hHash_->CovertFPtoBlocks(fpBlock_, (const char*)tempKeyGen.singleChunkHash);
                 hHash_->ComputeMulForBlock(fpBlock_, secretValue_);
                 hHash_->ComputeBlockHash(finalHash_, fpBlock_);

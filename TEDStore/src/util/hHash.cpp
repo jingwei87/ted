@@ -152,7 +152,6 @@ HHash::~HHash() {
 void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], mpz_t powVal[K_PARA], mpz_t secret) {
     for (size_t i = 0; i < K_PARA; i++) {
         mpz_powm_sec(hash[i], hash[i], powVal[i], p_);
-        gmp_printf("Pow-%d: %Zd\n", i, hash[i]);
     }
 
     mpz_set_ui(secret, 1);

@@ -104,7 +104,7 @@ int main(int argv, char* argc[])
     } else if (strcmp("-s", argc[1]) == 0) {
         delete senderObj;
         delete keyClientObj;
-        delete chunkerObj;
+        // delete chunkerObj;
     } else {
         cerr << "Error: operation type" << endl;
     }
