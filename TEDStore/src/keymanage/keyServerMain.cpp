@@ -28,8 +28,11 @@ int main()
         if (OLD_VERSION){
             th = new boost::thread(boost::bind(&keyServer::runKeyGen, server, sslConnection));
         } else {
-            // th = new boost::thread(boost::bind(&keyServer::runKeyGenSimple, server, sslConnection));
-            th = new boost::thread(boost::bind(&keyServer::runKeyGenSS, server, sslConnection));
+            if (ENABLE_SECRET_SHARE) {
+                th = new boost::thread(boost::bind(&keyServer::runKeyGenSS, server, sslConnection));
+            } else {
+                th = new boost::thread(boost::bind(&keyServer::runKeyGenSimple, server, sslConnection));
+            }    
         }
         th->detach();
     }

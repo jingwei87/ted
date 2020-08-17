@@ -59,8 +59,11 @@ int main(int argv, char* argc[])
         if (OLD_VERSION) {
             th = new boost::thread(attrs, boost::bind(&keyClient::run, keyClientObj));
         } else {
-            th = new boost::thread(attrs, boost::bind(&keyClient::runSimple, keyClientObj));
-            // th = new boost::thread(attrs, boost::bind(&keyClient::runSS, keyClientObj));
+            if (ENABLE_SECRET_SHARE) {
+                th = new boost::thread(attrs, boost::bind(&keyClient::runSS, keyClientObj));
+            } else {
+                th = new boost::thread(attrs, boost::bind(&keyClient::runSimple, keyClientObj));
+            }
         }
         
         thList.push_back(th);
