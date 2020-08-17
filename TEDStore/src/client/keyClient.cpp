@@ -113,7 +113,7 @@ void keyClient::runKeyGenSimulator()
     u_char chunkKey[CHUNK_ENCRYPT_KEY_SIZE * keyBatchSize_];
     int singleChunkHashSize = 4 * sizeof(int);
     u_char chunkHash[singleChunkHashSize * keyBatchSize_];
-    uint32_t maskInt = 0;
+    uint32_t maskInt = ~(1 & 0);
     for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
         maskInt &= ~(1 << (32 - i));
     }
@@ -220,7 +220,7 @@ void keyClient::run()
     int singleChunkHashSize = 4 * sizeof(int);
     u_char chunkHash[singleChunkHashSize * keyBatchSize_];
     bool JobDoneFlag = false;
-    uint32_t maskInt = 0;
+    uint32_t maskInt = ~(1 & 0);
     for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
         maskInt &= ~(1 << (32 - i));
     }
@@ -686,7 +686,7 @@ void keyClient::runSimple() {
     batchList.reserve(keyBatchSize_);
     int batchNumber = 0;
     bool JobDoneFlag = false;
-    uint32_t maskInt = 0;
+    uint32_t maskInt = ~(1 & 0);
     for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
         maskInt &= ~(1 << (32 - i));
     }
@@ -737,7 +737,7 @@ void keyClient::runSimple() {
             }
             for (int i = 0; i < 4; i++) {
                 hashInt[i] &= maskInt;
-                memcpy(&tempKeyGenEntry.singleChunkHash + i * sizeof(int), &hashInt[i], sizeof(int));
+                memcpy(tempKeyGenEntry.singleChunkHash + i * sizeof(int), &hashInt[i], sizeof(int));
             }
             for (size_t i = 0; i < this->keyManNum_; i++) {
                 tempKeyGenEntry.usingCount = false;
@@ -879,7 +879,7 @@ void keyClient::runSS() {
         assignNumberArray[i] = 0;
     }
     bool JobDoneFlag = false;
-    uint32_t maskInt = 0;
+    uint32_t maskInt = ~(1 & 0);
     for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
         maskInt &= ~(1 << (32 - i));
     }
@@ -930,7 +930,7 @@ void keyClient::runSS() {
             }
             for (int i = 0; i < 4; i++) {
                 hashInt[i] &= maskInt;
-                memcpy(&tempKeyGenEntry.singleChunkHash + i * sizeof(int), &hashInt[i], sizeof(int));
+                memcpy(tempKeyGenEntry.singleChunkHash + i * sizeof(int), &hashInt[i], sizeof(int));
             }
 
             // allocate the share to the key managers

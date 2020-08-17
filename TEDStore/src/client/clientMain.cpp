@@ -60,6 +60,7 @@ int main(int argv, char* argc[])
             th = new boost::thread(attrs, boost::bind(&keyClient::run, keyClientObj));
         } else {
             th = new boost::thread(attrs, boost::bind(&keyClient::runSimple, keyClientObj));
+            // th = new boost::thread(attrs, boost::bind(&keyClient::runSS, keyClientObj));
         }
         
         thList.push_back(th);
@@ -104,7 +105,7 @@ int main(int argv, char* argc[])
     } else if (strcmp("-s", argc[1]) == 0) {
         delete senderObj;
         delete keyClientObj;
-        // delete chunkerObj;
+        delete chunkerObj;
     } else {
         cerr << "Error: operation type" << endl;
     }
