@@ -956,6 +956,12 @@ void keyClient::runSS() {
                     }
                 } 
             }
+            if (remainShareNum != K_PARA) {
+                cerr << "The number of key manager:" << this->keyManNum_ 
+                    << " lower than " << K_PARA << endl;
+                exit(EXIT_FAILURE);
+            }
+
             memcpy(shareIndexArrayBuffer_ + batchNumber * sizeof(ShareIndexEntry_t),
                 &tempShareIndex, sizeof(ShareIndexEntry_t));
             batchNumber++;
