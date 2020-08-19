@@ -73,7 +73,7 @@ void HHash::ComputeBlockHash(mpz_t result,  mpz_t b[BLOCK_NUM]) {
 	for (uint32_t i = 0; i < BLOCK_NUM; i++) {
 		// hash = hash * g[i] ^ bij mod p = hash * buff
 		// buff contains g[i] ^ bij mod p
-		mpz_powm_sec(buff_, g_[i], b[i], p_);
+		mpz_powm(buff_, g_[i], b[i], p_);
 		//gmp_printf("Value of buff = %Zd\n", buff);
 		// Aggregate in hash
 		mpz_mul(hash_, hash_, buff_);
@@ -151,7 +151,7 @@ HHash::~HHash() {
  */
 void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], mpz_t powVal[K_PARA], mpz_t secret) {
     for (size_t i = 0; i < K_PARA; i++) {
-        mpz_powm_sec(hash[i], hash[i], powVal[i], p_);
+        mpz_powm(hash[i], hash[i], powVal[i], p_);
     }
 
     mpz_set_ui(secret, 1);
