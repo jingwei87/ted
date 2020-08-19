@@ -675,6 +675,7 @@ uint32_t keyClient::convertFPtoValue(Data_t& newChunk)
 void keyClient::runSimple() {
 #if BREAK_DOWN_DEFINE == 1
     double keyGenTime = 0;
+    double assignTime = 0;
     double shortHashTime = 0;
     double keyDerivationTime = 0;
     double encryptionTime = 0;
@@ -730,7 +731,16 @@ void keyClient::runSimple() {
                 exit(EXIT_FAILURE);
             }
             // fprintf(stderr, "Choose key manager index: %u\n", keyManagerIndex);
-
+#if BREAK_DOWN_DEFINE == 1
+            gettimeofday(&timeendKey, NULL);
+            diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+            second = diff / 1000000.0;
+            keyGenTime += second;
+            assignTime += second;
+#endif
+#if BREAK_DOWN_DEFINE == 1
+            gettimeofday(&timestartKey, NULL);
+#endif
             MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 0, (void*)hash);
             for (int i = 0; i < 4; i++) {
                 memcpy(&hashInt[i], hash + i * sizeof(int), sizeof(int));
@@ -850,6 +860,7 @@ void keyClient::runSimple() {
     }
 #if BREAK_DOWN_DEFINE == 1
     cerr << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
+    cerr << "KeyClient : assign chunk work time = " << assignTime << " s" << endl;
     cerr << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
     cerr << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
     cerr << "KeyClient : key derivation work time = " << keyDerivationTime << " s" << endl;
@@ -864,6 +875,7 @@ void keyClient::runSimple() {
 void keyClient::runSS() {
 #if BREAK_DOWN_DEFINE == 1
     double keyGenTime = 0;
+    double assignTime = 0;
     double shortHashTime = 0;
     double keyDerivationTime = 0;
     double encryptionTime = 0;
@@ -923,7 +935,16 @@ void keyClient::runSS() {
                 exit(EXIT_FAILURE);
             }
             // fprintf(stderr, "Choose key manager index: %u\n", keyManagerIndex);
-
+#if BREAK_DOWN_DEFINE == 1
+            gettimeofday(&timeendKey, NULL);
+            diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
+            second = diff / 1000000.0;
+            keyGenTime += second;
+            assignTime += second;
+#endif
+#if BREAK_DOWN_DEFINE == 1
+            gettimeofday(&timestartKey, NULL);
+#endif
             MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 0, (void*)hash);
             for (int i = 0; i < 4; i++) {
                 memcpy(&hashInt[i], hash + i * sizeof(int), sizeof(int));
@@ -1020,14 +1041,16 @@ void keyClient::runSS() {
                     assignNumberArray[tempShareIndex.tedSeedIndex]++;
                     memcpy(newKeyBuffer, tempKeySeed.simpleKeySeed.shaKeySeed, CHUNK_ENCRYPT_KEY_SIZE);
 
+                    int indexList[K_PARA];
                     for (size_t j = 0; j < K_PARA; j++) {
                         memcpy(&tempKeySeed, chunkKeyArray_[tempShareIndex.shareIndexArray[j]] + assignNumberArray[tempShareIndex.shareIndexArray[j]] 
                             * sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
                         mpz_import(share_[j], HHASH_KEY_SEED, 1, sizeof(char), 1, 0, tempKeySeed.hhashKeySeed.hhashKeySeed);
                         assignNumberArray[tempShareIndex.shareIndexArray[j]]++;
+                        indexList[i] = tempShareIndex.shareIndexArray[i] + 1;
                     }
 
-                    hHash_->RecoverySecretFromHash(share_, sharePara_, finalSecret_);
+                    hHash_->RecoverySecretFromHash(share_, indexList, finalSecret_);
                     u_char tempSecret[HHASH_KEY_SEED] = {0};
                     size_t length;
                     mpz_export(tempSecret, &length, 1, sizeof(char), 1, 0, finalSecret_);
@@ -1085,6 +1108,7 @@ void keyClient::runSS() {
     }
 #if BREAK_DOWN_DEFINE == 1
     cerr << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
+    cerr << "KeyClient : assign chunk work time = " << assignTime << " s" << endl;
     cerr << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
     cerr << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
     cerr << "KeyClient : key derivation work time = " << keyDerivationTime << " s" << endl;

@@ -18,6 +18,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <gmp.h>
+#include <math.h>
 
 #include "configure.hpp"
 #include "dataStructure.hpp"
@@ -39,6 +40,14 @@ private:
     // hash and buff 
     mpz_t hash_;
     mpz_t buff_;
+
+    // temp value
+    mpz_t tempVal_;
+
+    // temp op1_, op2_
+    mpz_t op1_;
+    mpz_t op2_;
+
 
     /**
      * @brief generate the g array according p and seed 
@@ -70,7 +79,7 @@ public:
      * @param result the resultant 
      * @param fp fingerprint
      */
-    void CovertFPtoBlocks(mpz_t result[BLOCK_NUM], const char* fp);
+    void ConvertFPtoBlocks(mpz_t result[BLOCK_NUM], const char* fp);
 
     /**
      * @brief Compute the value of multiplication of block and mulVal
@@ -83,7 +92,7 @@ public:
     /**
      * @brief Recover the secret from share hashes
      * 
-     * @param hash the array of share hash 
+     * @param hash the array of share hashes 
      * @param powVal the array of share parameter 
      * @param secret the recovery secret
      */
@@ -91,10 +100,23 @@ public:
     
 
     /**
+     * @brief Recover the secret from share hashes
+     * 
+     * @param hash the array of share hashes 
+     * @param index the index of the received hashes
+     * @param secret the recovery secret
+     */
+    void RecoverySecretFromHash(mpz_t hash[K_PARA], int index[K_PARA], mpz_t secret);
+
+    /**
      * @brief Destroy the HHash object
      * 
      */
     ~HHash();
+
+    void GetP(mpz_t p) {
+        p = this->p_;
+    }
 };
 
 #endif

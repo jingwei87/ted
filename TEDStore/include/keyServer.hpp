@@ -36,6 +36,7 @@ private:
     mpz_t fpBlock_[BLOCK_NUM];
     mpz_t finalHash_;
     mpz_t secretValue_;
+    uint64_t secretShare_;
     HHash* hHash_;
 
 public:

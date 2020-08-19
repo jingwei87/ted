@@ -74,6 +74,7 @@ private:
     uint64_t _sketchTableWidth;
     double _storageBlowPercent;
     int _optimalSolverComputeItemNumberThreshold;
+    uint64_t _secretShare;
 
     // storage management settings
     uint64_t _storageServerNumber;
@@ -123,6 +124,8 @@ public:
     uint64_t getSketchTableWidth();
     int getOptimalSolverComputeItemNumberThreshold();
     double getStorageBlowPercent();
+    uint64_t getSecretShare();
+
 
     //message queue size setting
     int get_Data_t_MQSize();

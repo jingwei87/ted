@@ -22,13 +22,14 @@ void Configure::readConf(std::string path)
     _averageChunkSize = root.get<uint64_t>("ChunkerConfig._avgChunkSize");
     _ReadSize = root.get<uint64_t>("ChunkerConfig._ReadSize");
 
-    //Key Server Congigure
+    //Key Server Configure
     _keyBatchSize = root.get<uint64_t>("KeyServerConfig._keyBatchSize");
     _keyServerIP = root.get<string>("KeyServerConfig._keyServerIP");
     _keyServerPort = root.get<int>("KeyServerConfig._keyServerPort");
     _sketchTableWidth = root.get<uint64_t>("KeyServerConfig._sketchTableWidth");
     _optimalSolverComputeItemNumberThreshold = root.get<int>("KeyServerConfig._optimalSolverComputeItemNumberThreshold");
     _storageBlowPercent = root.get<double>("KeyServerConfig._storageBlowPercent");
+    _secretShare = root.get<uint64_t>("KeyServerConfig._secretShare");
 
     //Storage Server Configure
     _maxContainerSize = root.get<uint64_t>("SPConfig._maxContainerSize");
@@ -193,3 +194,7 @@ uint32_t Configure::getKeyManagerNumber() {
 vector<pair<string, int>> Configure::getKeyManagerIPList() {
     return _keyManagerIpArray;
 }
+
+uint64_t Configure::getSecretShare() {
+    return _secretShare;
+} 

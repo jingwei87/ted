@@ -11,6 +11,51 @@
 
 #include "../../include/hHash.hpp"
 
+
+// This structure is used for fraction 
+// part handling multiplication 
+// and addition of fractiontion 
+struct fraction { 
+    int num, den; 
+  
+    // A fraction consists of a 
+    // numerator and a denominator 
+    fraction(int n, int d) 
+    { 
+        num = n, den = d; 
+    } 
+  
+    // If the fraction is not 
+    // in its reduced form 
+    // reduce it by dividing 
+    // them with their GCD 
+    void reduce_fraction(fraction& f) 
+    { 
+        int gcd = __gcd(f.num, f.den); 
+        f.num /= gcd, f.den /= gcd; 
+    } 
+  
+    // Performing multiplication on the 
+    // fraction 
+    fraction operator*(fraction f) 
+    { 
+        fraction temp(num * f.num, den * f.den); 
+        reduce_fraction(temp); 
+        return temp; 
+    } 
+  
+    // Performing addition on the 
+    // fraction 
+    fraction operator+(fraction f) 
+    { 
+        fraction temp(num * f.den + den * f.num, 
+                      den * f.den); 
+  
+        reduce_fraction(temp); 
+        return temp; 
+    } 
+}; 
+
 /**
  * @brief Construct a new HHash::HHash object
  * 
@@ -38,6 +83,14 @@ HHash::HHash() {
 		gmp_printf("g[%d] = %Zd\n", i, g_[i]);
 	}
 
+    // init temp value 
+    mpz_init(tempVal_);
+
+    // init op1_, op2_
+    mpz_init(op1_);
+    mpz_init(op2_);
+
+    fprintf(stderr, "Finish.\n");
 }
 
 /**
@@ -96,7 +149,7 @@ void HHash::ComputeBlockHash(mpz_t result,  mpz_t b[BLOCK_NUM]) {
  * @param result the resultant 
  * @param fp fingerprint
  */
-void HHash::CovertFPtoBlocks(mpz_t result[BLOCK_NUM], const char* fp) {
+void HHash::ConvertFPtoBlocks(mpz_t result[BLOCK_NUM], const char* fp) {
     for (size_t i = 0; i < BLOCK_NUM; i++) {
         uint32_t tmp = 0;
         memcpy(&tmp, fp + i * sizeof(uint32_t), sizeof(uint32_t));
@@ -139,6 +192,13 @@ HHash::~HHash() {
     // clear the variable
     mpz_clear(hash_);
     mpz_clear(buff_);
+
+    // clear the temp value
+    mpz_clear(tempVal_);
+
+    // clear the op
+    mpz_clear(op1_);
+    mpz_clear(op2_);
 }
 
 
@@ -157,6 +217,47 @@ void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], mpz_t powVal[K_PARA], mpz
     mpz_set_ui(secret, 1);
     for (size_t i = 0; i < K_PARA; i++) {
         mpz_mul(secret, secret, hash[i]);
+        mpz_mod(secret, secret, p_);
+    }
+}
+
+
+/**
+ * @brief Recover the secret from share hashes
+ * 
+ * @param hash the array of share hashes 
+ * @param index the index of the received hashes
+ * @param secret the recovery secret
+ */
+void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], int index[K_PARA], mpz_t secret) {   
+    mpz_set_ui(secret, 1);
+    // loop to iterate through the given points
+    for (size_t i = 0; i < K_PARA; i++) {
+        // Initializing the parameter
+        fraction tempPara(1, 1);
+        mpz_set(tempVal_, hash[i]);
+        for (size_t j = 0; j < K_PARA; j++) {
+            // computing the lagrange terms 
+            if (i != j) {
+                fraction temp(-index[j], index[i] - index[j]);
+                tempPara = tempPara * temp;
+            }
+        }
+        uint32_t numeratorAbs = static_cast<uint32_t>(abs(tempPara.num));
+        uint32_t denominatorAbs = static_cast<uint32_t>(abs(tempPara.den));
+        // (share)^(numerator/denominator)
+        // step1: share^numerator
+        mpz_powm_ui(tempVal_, tempVal_, numeratorAbs, p_);
+        // step2: covert denominator to (1/denominator)
+        mpz_set_ui(op1_, denominatorAbs);
+        mpz_invert(op1_, op1_, p_);
+        // step3: (share^numerator)^(1/denominator)
+        mpz_powm(tempVal_, tempVal_, op1_, p_);
+
+        if ((tempPara.num * tempPara.den < 0)) {
+            mpz_invert(tempVal_, tempVal_, p_);
+        }
+        mpz_mul(secret, secret, tempVal_);
         mpz_mod(secret, secret, p_);
     }
 }

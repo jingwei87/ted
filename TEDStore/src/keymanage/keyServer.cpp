@@ -33,9 +33,8 @@ keyServer::keyServer(ssl* keyServerSecurityChannelTemp)
             mpz_init(fpBlock_[i]);
         }
         mpz_init(finalHash_);
-        mpz_init_set_ui(secretValue_, 1);
+        mpz_init_set_ui(secretValue_, config.getSecretShare());
     } 
-    
 }
 
 keyServer::~keyServer()
@@ -623,7 +622,7 @@ void keyServer::runKeyGenSS(SSL* connection) {
                     tempKeySeed.simpleKeySeed.shaKeySeed);
                 tempKeySeed.isShare = false;
             } else {
-                hHash_->CovertFPtoBlocks(fpBlock_, (const char*)tempKeyGen.singleChunkHash);
+                hHash_->ConvertFPtoBlocks(fpBlock_, (const char*)tempKeyGen.singleChunkHash);
                 hHash_->ComputeMulForBlock(fpBlock_, secretValue_);
                 hHash_->ComputeBlockHash(finalHash_, fpBlock_);
                 size_t length;

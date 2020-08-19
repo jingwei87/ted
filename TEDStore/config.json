@@ -13,7 +13,8 @@
 		"_keyServerPort": 6666,
 		"_sketchTableWidth": 1048576,
 		"_optimalSolverComputeItemNumberThreshold": 48000,
-		"_storageBlowPercent": 0
+        "_storageBlowPercent": 0,
+        "_secretShare": 64
 	},
 	"SPConfig": {
 		"_storageServerIP": "127.0.0.1",
@@ -25,9 +26,9 @@
 		"_fp2MetaDBame": "db2"
 	},
 	"client": {
-		"_clientID": 1,
-		"_sendChunkBatchSize": 1000,
-		"_sendRecipeBatchSize": 100000,
+        "_clientID": 1,
+        "_sendChunkBatchSize": 1000,
+        "_sendRecipeBatchSize": 100000,
         "_sendShortHashMaskBitNumber": 12,
         "_keyManagerIPList": {
             "127.0.0.1": 6666
