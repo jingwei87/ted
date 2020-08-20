@@ -896,7 +896,6 @@ void keyClient::runSS() {
         maskInt &= ~(1 << (32 - i));
     }
     int hashInt[4];
-    
     while (true) {
         keyGenEntry_t tempKeyGenEntry;
         Data_t tempChunk;
@@ -1047,7 +1046,7 @@ void keyClient::runSS() {
                             * sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
                         mpz_import(share_[j], HHASH_KEY_SEED, 1, sizeof(char), 1, 0, tempKeySeed.hhashKeySeed.hhashKeySeed);
                         assignNumberArray[tempShareIndex.shareIndexArray[j]]++;
-                        indexList[i] = tempShareIndex.shareIndexArray[i] + 1;
+                        indexList[j] = tempShareIndex.shareIndexArray[j] + 1;
                     }
 
                     hHash_->RecoverySecretFromHash(share_, indexList, finalSecret_);

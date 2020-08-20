@@ -106,17 +106,13 @@ public:
      * @param index the index of the received hashes
      * @param secret the recovery secret
      */
-    void RecoverySecretFromHash(mpz_t hash[K_PARA], int index[K_PARA], mpz_t secret);
+    void RecoverySecretFromHash(mpz_t hash[K_PARA], const int* index, mpz_t secret);
 
     /**
      * @brief Destroy the HHash object
      * 
      */
     ~HHash();
-
-    void GetP(mpz_t p) {
-        p = this->p_;
-    }
 };
 
 #endif

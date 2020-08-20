@@ -229,7 +229,7 @@ void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], mpz_t powVal[K_PARA], mpz
  * @param index the index of the received hashes
  * @param secret the recovery secret
  */
-void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], int index[K_PARA], mpz_t secret) {   
+void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], const int* index, mpz_t secret) {   
     mpz_set_ui(secret, 1);
     // loop to iterate through the given points
     for (size_t i = 0; i < K_PARA; i++) {
