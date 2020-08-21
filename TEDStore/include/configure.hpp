@@ -10,8 +10,8 @@
 using namespace std;
 
 // macore for debug
-#define DEBUG 1
-#define OLD_VERSION 0 // 1:using old version| 0:using new version
+#define DEBUG 0
+#define OLD_VERSION 1 // 1:using old version| 0:using new version
 
 #define ENABLE_SECRET_SHARE 0 // 1:using secret sharing | 0:disable secret sharing
 
