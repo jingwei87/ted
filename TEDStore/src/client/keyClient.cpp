@@ -48,6 +48,7 @@ keyClient::keyClient(Sender* senderObjTemp)
             mpz_init_set_ui(sharePara_[i], 1);
         }
         mpz_init(finalSecret_);
+        adjustValue_ = config.getAdjustValue();
     }
 }
 
