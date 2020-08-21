@@ -8,3 +8,7 @@ add_library(murmurHash3 STATIC murmurHash3.cpp)
 add_library(optimalSolver STATIC optimalSolver.cpp)
 add_library(SSL_TLS STATIC ssl.cpp)
 add_library(hhash STATIC hHash.cpp)
+
+add_executable(secretShare ssMain.cpp)
+
+target_link_libraries(secretShare ${LINK_OBJ})

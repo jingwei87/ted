@@ -47,6 +47,7 @@ void Configure::readConf(std::string path)
     _sendChunkBatchSize = root.get<int>("client._sendChunkBatchSize");
     _sendRecipeBatchSize = root.get<int>("client._sendRecipeBatchSize");
     _sendShortHashMaskBitNumber = root.get<int>("client._sendShortHashMaskBitNumber");
+    _adjustValue = root.get<uint64_t>("client._adjustValue");
 
     // key manager ip list
     _keyManagerNum = 0;
@@ -198,3 +199,7 @@ vector<pair<string, int>> Configure::getKeyManagerIPList() {
 uint64_t Configure::getSecretShare() {
     return _secretShare;
 } 
+
+uint64_t Configure::getAdjustValue() {
+    return _adjustValue;
+}

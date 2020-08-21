@@ -228,10 +228,13 @@ void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], mpz_t powVal[K_PARA], mpz
  * @param hash the array of share hashes 
  * @param index the index of the received hashes
  * @param secret the recovery secret
+ * @param adjustValue the value of adjust parameter
  */
-void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], const int* index, mpz_t secret) {   
+void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], const int* index, 
+    mpz_t secret, uint64_t adjustValue) {   
     mpz_set_ui(secret, 1);
     // loop to iterate through the given points
+    fraction adjustVal(adjustValue, 1);
     for (size_t i = 0; i < K_PARA; i++) {
         // Initializing the parameter
         fraction tempPara(1, 1);
@@ -243,6 +246,7 @@ void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], const int* index, mpz_t s
                 tempPara = tempPara * temp;
             }
         }
+        tempPara = tempPara * adjustVal;
         uint32_t numeratorAbs = static_cast<uint32_t>(abs(tempPara.num));
         uint32_t denominatorAbs = static_cast<uint32_t>(abs(tempPara.den));
         // (share)^(numerator/denominator)

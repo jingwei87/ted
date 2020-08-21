@@ -74,6 +74,7 @@ private:
     mpz_t sharePara_[K_PARA];
     mpz_t finalSecret_;
 
+    uint64_t adjustValue_;
     u_char* shareIndexArrayBuffer_;
 
 public:

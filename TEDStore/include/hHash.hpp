@@ -105,8 +105,10 @@ public:
      * @param hash the array of share hashes 
      * @param index the index of the received hashes
      * @param secret the recovery secret
+     * @param adjustValue the value of adjust parameter
      */
-    void RecoverySecretFromHash(mpz_t hash[K_PARA], const int* index, mpz_t secret);
+    void RecoverySecretFromHash(mpz_t hash[K_PARA], const int* index, 
+        mpz_t secret, uint64_t adjustValue);
 
     /**
      * @brief Destroy the HHash object

@@ -1049,7 +1049,7 @@ void keyClient::runSS() {
                         indexList[j] = tempShareIndex.shareIndexArray[j] + 1;
                     }
 
-                    hHash_->RecoverySecretFromHash(share_, indexList, finalSecret_);
+                    hHash_->RecoverySecretFromHash(share_, indexList, finalSecret_, adjustValue_);
                     u_char tempSecret[HHASH_KEY_SEED] = {0};
                     size_t length;
                     mpz_export(tempSecret, &length, 1, sizeof(char), 1, 0, finalSecret_);

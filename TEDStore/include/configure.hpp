@@ -16,7 +16,7 @@ using namespace std;
 #define ENABLE_SECRET_SHARE 0 // 1:using secret sharing | 0:disable secret sharing
 
 // for multiple key manager
-#define K_PARA 2
+#define K_PARA 3
 
 // macro for system running types
 #define BREAK_DOWN_DEFINE 1 // 0:breakdown disable| 1:breakdown enable
@@ -94,6 +94,7 @@ private:
     int _sendRecipeBatchSize;
     int _sendShortHashMaskBitNumber;
     int _keyManagerNum;
+    uint64_t _adjustValue;
 
     // key manager ip vector
     vector<pair<string, int>> _keyManagerIpArray;
@@ -148,6 +149,7 @@ public:
     int getSendShortHashMaskBitNumber();
     uint32_t getKeyManagerNumber();
     vector<pair<string, int>> getKeyManagerIPList();
+    uint64_t getAdjustValue();
 };
 
 #endif //TEDSTORE_CONFIGURE_HPP
