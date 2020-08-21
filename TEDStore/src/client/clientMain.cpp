@@ -56,7 +56,16 @@ int main(int argv, char* argc[])
 
         th = new boost::thread(attrs, boost::bind(&Chunker::chunking, chunkerObj));
         thList.push_back(th);
-        th = new boost::thread(attrs, boost::bind(&keyClient::run, keyClientObj));
+        if (OLD_VERSION) {
+            th = new boost::thread(attrs, boost::bind(&keyClient::run, keyClientObj));
+        } else {
+            if (ENABLE_SECRET_SHARE) {
+                th = new boost::thread(attrs, boost::bind(&keyClient::runSS, keyClientObj));
+            } else {
+                th = new boost::thread(attrs, boost::bind(&keyClient::runSimple, keyClientObj));
+            }
+        }
+        
         thList.push_back(th);
         th = new boost::thread(attrs, boost::bind(&Sender::run, senderObj));
         thList.push_back(th);
@@ -93,5 +102,15 @@ int main(int argv, char* argc[])
     cerr << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
     cerr << "System : end work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
 #endif
+    if (strcmp("-r", argc[1]) == 0) { 
+        delete recvDecodeObj;
+        delete retrieverObj;
+    } else if (strcmp("-s", argc[1]) == 0) {
+        delete senderObj;
+        delete keyClientObj;
+        delete chunkerObj;
+    } else {
+        cerr << "Error: operation type" << endl;
+    }
     return 0;
 }

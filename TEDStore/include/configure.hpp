@@ -4,8 +4,19 @@
 #include <bits/stdc++.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <vector>
+#include <utility>
 
 using namespace std;
+
+// macore for debug
+#define DEBUG 1
+#define OLD_VERSION 0 // 1:using old version| 0:using new version
+
+#define ENABLE_SECRET_SHARE 0 // 1:using secret sharing | 0:disable secret sharing
+
+// for multiple key manager
+#define K_PARA 3
 
 // macro for system running types
 #define BREAK_DOWN_DEFINE 1 // 0:breakdown disable| 1:breakdown enable
@@ -31,7 +42,7 @@ using namespace std;
 #define DATA_TYPE_CHUNK 2
 
 #define NETWORK_MESSAGE_DATA_SIZE 18 * 1000 * 1000
-#define CRYPTO_BLOCK_SZIE 16
+#define CRYPTO_BLOCK_SIZE 16
 
 #define KEY_SERVER_UNIFORM_INT_RAND 1
 #define KEY_SERVER_POISSON_RAND 2
@@ -39,6 +50,9 @@ using namespace std;
 #define KEY_SERVER_GEOMETRIC_RAND 4
 #define KEY_SERVER_NO_RAND 5
 #define KEY_SERVER_RANDOM_TYPE KEY_SERVER_NO_RAND
+
+#define SIMPLE_KEY_SEED 32
+#define HHASH_KEY_SEED 16
 
 class Configure {
 private:
@@ -60,6 +74,7 @@ private:
     uint64_t _sketchTableWidth;
     double _storageBlowPercent;
     int _optimalSolverComputeItemNumberThreshold;
+    uint64_t _secretShare;
 
     // storage management settings
     uint64_t _storageServerNumber;
@@ -78,7 +93,11 @@ private:
     int _sendChunkBatchSize;
     int _sendRecipeBatchSize;
     int _sendShortHashMaskBitNumber;
+    int _keyManagerNum;
+    uint64_t _adjustValue;
 
+    // key manager ip vector
+    vector<pair<string, int>> _keyManagerIpArray;
 public:
     //  Configure(std::ifstream& confFile); // according to setting json to init configure class
     Configure(std::string path);
@@ -106,6 +125,8 @@ public:
     uint64_t getSketchTableWidth();
     int getOptimalSolverComputeItemNumberThreshold();
     double getStorageBlowPercent();
+    uint64_t getSecretShare();
+
 
     //message queue size setting
     int get_Data_t_MQSize();
@@ -126,6 +147,9 @@ public:
     int getSendChunkBatchSize();
     int getSendRecipeBatchSize();
     int getSendShortHashMaskBitNumber();
+    uint32_t getKeyManagerNumber();
+    vector<pair<string, int>> getKeyManagerIPList();
+    uint64_t getAdjustValue();
 };
 
 #endif //TEDSTORE_CONFIGURE_HPP

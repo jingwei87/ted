@@ -25,7 +25,15 @@ int main()
     th = new boost::thread(boost::bind(&keyServer::runOptimalSolver, server));
     while (true) {
         SSL* sslConnection = keySecurityChannelTemp->sslListen().second;
-        th = new boost::thread(boost::bind(&keyServer::runKeyGen, server, sslConnection));
+        if (OLD_VERSION){
+            th = new boost::thread(boost::bind(&keyServer::runKeyGen, server, sslConnection));
+        } else {
+            if (ENABLE_SECRET_SHARE) {
+                th = new boost::thread(boost::bind(&keyServer::runKeyGenSS, server, sslConnection));
+            } else {
+                th = new boost::thread(boost::bind(&keyServer::runKeyGenSimple, server, sslConnection));
+            }    
+        }
         th->detach();
     }
     return 0;

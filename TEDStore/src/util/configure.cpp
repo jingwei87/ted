@@ -22,13 +22,14 @@ void Configure::readConf(std::string path)
     _averageChunkSize = root.get<uint64_t>("ChunkerConfig._avgChunkSize");
     _ReadSize = root.get<uint64_t>("ChunkerConfig._ReadSize");
 
-    //Key Server Congigure
+    //Key Server Configure
     _keyBatchSize = root.get<uint64_t>("KeyServerConfig._keyBatchSize");
     _keyServerIP = root.get<string>("KeyServerConfig._keyServerIP");
     _keyServerPort = root.get<int>("KeyServerConfig._keyServerPort");
     _sketchTableWidth = root.get<uint64_t>("KeyServerConfig._sketchTableWidth");
     _optimalSolverComputeItemNumberThreshold = root.get<int>("KeyServerConfig._optimalSolverComputeItemNumberThreshold");
     _storageBlowPercent = root.get<double>("KeyServerConfig._storageBlowPercent");
+    _secretShare = root.get<uint64_t>("KeyServerConfig._secretShare");
 
     //Storage Server Configure
     _maxContainerSize = root.get<uint64_t>("SPConfig._maxContainerSize");
@@ -46,6 +47,20 @@ void Configure::readConf(std::string path)
     _sendChunkBatchSize = root.get<int>("client._sendChunkBatchSize");
     _sendRecipeBatchSize = root.get<int>("client._sendRecipeBatchSize");
     _sendShortHashMaskBitNumber = root.get<int>("client._sendShortHashMaskBitNumber");
+    _adjustValue = root.get<uint64_t>("client._adjustValue");
+
+    // key manager ip list
+    _keyManagerNum = 0;
+    ptree keyIpList = root.get_child("client").get_child("_keyManagerIPList");
+    for(ptree::iterator iter = keyIpList.begin(); iter != keyIpList.end(); iter++) {
+        string ip = iter->first;
+        int port = atoi(iter->second.data().c_str());
+        fprintf(stdout, "IP: %s\n", ip.c_str());
+        fprintf(stdout, "Port: %d\n", port);
+        _keyManagerIpArray.push_back(make_pair(ip, port));
+    }
+    _keyManagerNum = _keyManagerIpArray.size();
+    fprintf(stdout, "Key Manager Num: %d\n", _keyManagerNum);
 }
 
 // chunking settings
@@ -171,4 +186,20 @@ int Configure::getSendRecipeBatchSize()
 int Configure::getSendShortHashMaskBitNumber()
 {
     return _sendShortHashMaskBitNumber;
+}
+
+uint32_t Configure::getKeyManagerNumber() {
+    return static_cast<uint32_t>(_keyManagerNum);
+}
+
+vector<pair<string, int>> Configure::getKeyManagerIPList() {
+    return _keyManagerIpArray;
+}
+
+uint64_t Configure::getSecretShare() {
+    return _secretShare;
+} 
+
+uint64_t Configure::getAdjustValue() {
+    return _adjustValue;
 }

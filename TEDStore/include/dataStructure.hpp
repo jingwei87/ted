@@ -109,4 +109,31 @@ typedef vector<Chunk_t> ChunkList_t;
 
 typedef vector<RecipeEntry_t> RecipeList_t;
 
+typedef struct {
+    bool usingCount = false;
+    u_char singleChunkHash[4 * sizeof(int)];
+} keyGenEntry_t;
+
+typedef struct {
+    u_char shaKeySeed[CHUNK_ENCRYPT_KEY_SIZE];
+} SimpleKeySeed_t;
+
+typedef struct {
+    u_char hhashKeySeed[HHASH_KEY_SEED];
+} HHashKeySeed_t;
+
+typedef struct {
+    bool isShare = false;
+    union {
+        SimpleKeySeed_t simpleKeySeed;
+        HHashKeySeed_t hhashKeySeed;
+    };
+} KeySeedReturnEntry_t;
+
+typedef struct {
+    int tedSeedIndex;
+    int shareIndexArray[K_PARA];
+} ShareIndexEntry_t;
+
+
 #endif //TEDSTORE_CHUNK_HPP

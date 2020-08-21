@@ -101,7 +101,7 @@ CryptoPrimitive::CryptoPrimitive()
 
     hashSize_ = CHUNK_HASH_SIZE;
     //int keySize_ = CHUNK_ENCRYPT_KEY_SIZE;
-    blockSize_ = CRYPTO_BLOCK_SZIE;
+    blockSize_ = CRYPTO_BLOCK_SIZE;
     md_ = EVP_sha256();
     cipherctx_ = EVP_CIPHER_CTX_new();
     mdctx_ = EVP_MD_CTX_new();
