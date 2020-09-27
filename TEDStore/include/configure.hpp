@@ -4,14 +4,15 @@
 #include <bits/stdc++.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <vector>
 #include <utility>
+#include <vector>
 
 using namespace std;
 
 // macore for debug
 #define DEBUG 0
-#define OLD_VERSION 1 // 1:using old version| 0:using new version
+#define OLD_VERSION 0 // 1:using old version| 0:using new version
+#define SINGLE_MACHINE_TEST 1 //1: test on single machine, key server use cmd input | 0: test on multi-machine, key server use config.json
 
 #define ENABLE_SECRET_SHARE 0 // 1:using secret sharing | 0:disable secret sharing
 
@@ -98,6 +99,7 @@ private:
 
     // key manager ip vector
     vector<pair<string, int>> _keyManagerIpArray;
+
 public:
     //  Configure(std::ifstream& confFile); // according to setting json to init configure class
     Configure(std::string path);
@@ -126,7 +128,6 @@ public:
     int getOptimalSolverComputeItemNumberThreshold();
     double getStorageBlowPercent();
     uint64_t getSecretShare();
-
 
     //message queue size setting
     int get_Data_t_MQSize();

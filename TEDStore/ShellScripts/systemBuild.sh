@@ -26,7 +26,7 @@ if [ ! -d "build" ]; then
 fi
 cd ./build
 rm -rf ./*
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j$(shell grep -c ^processor /proc/cpuinfo 2>/dev/null)
 cd ..
 cd ./bin

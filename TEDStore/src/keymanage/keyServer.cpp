@@ -9,7 +9,26 @@ struct timeval timeendKeyServerTotal;
 struct timeval timestartKeyServerRecv;
 struct timeval timeendKeyServerRecv;
 
+#if OLD_VERSION == 1
 keyServer::keyServer(ssl* keyServerSecurityChannelTemp)
+{
+    cryptoObj_ = new CryptoPrimitive();
+    keySecurityChannel_ = keyServerSecurityChannelTemp;
+    sketchTableWidith_ = config.getSketchTableWidth();
+    sketchTable_ = (u_int**)malloc(sizeof(u_int*) * 4);
+    for (int i = 0; i < 4; i++) {
+        sketchTable_[i] = (u_int*)malloc(sizeof(u_int) * sketchTableWidith_);
+    }
+    sketchTableCounter_ = 0;
+    T_ = 1;
+    opSolverFlag_ = false;
+    opm_ = sketchTableWidith_ * (1 + config.getStorageBlowPercent());
+    gen_ = mt19937_64(rd_());
+    memset(keyServerPrivate_, 1, SECRET_SIZE);
+    optimalSolverComputeItemNumberThreshold_ = config.getOptimalSolverComputeItemNumberThreshold();
+}
+#else
+keyServer::keyServer(ssl* keyServerSecurityChannelTemp, uint64_t secretValue)
 {
     cryptoObj_ = new CryptoPrimitive();
     keySecurityChannel_ = keyServerSecurityChannelTemp;
@@ -27,15 +46,14 @@ keyServer::keyServer(ssl* keyServerSecurityChannelTemp)
     optimalSolverComputeItemNumberThreshold_ = config.getOptimalSolverComputeItemNumberThreshold();
 
     // for multiple key managers
-    if (OLD_VERSION  == 0) {
-        hHash_ = new HHash();
-        for (size_t i = 0; i < BLOCK_NUM; i++) {
-            mpz_init(fpBlock_[i]);
-        }
-        mpz_init(finalHash_);
-        mpz_init_set_ui(secretValue_, config.getSecretShare());
-    } 
+    hHash_ = new HHash();
+    for (size_t i = 0; i < BLOCK_NUM; i++) {
+        mpz_init(fpBlock_[i]);
+    }
+    mpz_init(finalHash_);
+    mpz_init_set_ui(secretValue_, secretValue);
 }
+#endif
 
 keyServer::~keyServer()
 {
@@ -55,7 +73,6 @@ keyServer::~keyServer()
         mpz_clear(finalHash_);
         mpz_clear(secretValue_);
     }
-    
 }
 
 #if SINGLE_THREAD_KEY_MANAGER == 1
@@ -361,8 +378,7 @@ void keyServer::runKeyGen(SSL* connection)
         }
     }
 
-    cerr << "keyServer : exit successfully" << endl; 
-
+    cerr << "keyServer : exit successfully" << endl;
 }
 
 void keyServer::runOptimalSolver()
@@ -378,9 +394,10 @@ void keyServer::runOptimalSolver()
     }
 }
 
-void keyServer::runKeyGenSimple(SSL* connection) {
+void keyServer::runKeyGenSimple(SSL* connection)
+{
 
-    cerr << "Zuoru: Using the runSimple" << endl;
+    cerr << "Zuoru: Using the runKeyGenSimple" << endl;
 
     double keySeedGenTime = 0;
     long diff;
@@ -420,7 +437,7 @@ void keyServer::runKeyGenSimple(SSL* connection) {
 
             u_char newKeyBuffer[SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int)];
             memcpy(&tempKeyGen, hash + i * sizeof(keyGenEntry_t), sizeof(keyGenEntry_t));
-            
+
             if (tempKeyGen.usingCount) {
                 // count for key generation
                 int sketchTableSearchCompareNumber = 0;
@@ -468,14 +485,14 @@ void keyServer::runKeyGenSimple(SSL* connection) {
                 memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
                 memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
                 memcpy(newKeyBuffer + SECRET_SIZE + 4 * sizeof(uint32_t), &param, sizeof(int));
-                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int), 
+                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int),
                     tempKeySeed.simpleKeySeed.shaKeySeed);
                 tempKeySeed.isShare = false;
             } else {
-                // directly return share 
+                // directly return share
                 memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
                 memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
-                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t), 
+                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t),
                     tempKeySeed.simpleKeySeed.shaKeySeed);
                 tempKeySeed.isShare = true;
             }
@@ -528,9 +545,10 @@ void keyServer::runKeyGenSimple(SSL* connection) {
     cerr << "keyServer : exit successfully" << endl;
 }
 
-void keyServer::runKeyGenSS(SSL* connection) {
-    
-    cerr << "Zuoru: Using the runSimple" << endl;
+void keyServer::runKeyGenSS(SSL* connection)
+{
+
+    cerr << "Zuoru: Using the runKeyGenSS" << endl;
 
     double keySeedGenTime = 0;
     long diff;
@@ -570,7 +588,7 @@ void keyServer::runKeyGenSS(SSL* connection) {
 
             u_char newKeyBuffer[SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int)];
             memcpy(&tempKeyGen, hash + i * sizeof(keyGenEntry_t), sizeof(keyGenEntry_t));
-            
+
             if (tempKeyGen.usingCount) {
                 // count for key generation
                 int sketchTableSearchCompareNumber = 0;
@@ -618,7 +636,7 @@ void keyServer::runKeyGenSS(SSL* connection) {
                 memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
                 memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
                 memcpy(newKeyBuffer + SECRET_SIZE + 4 * sizeof(uint32_t), &param, sizeof(int));
-                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int), 
+                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int),
                     tempKeySeed.simpleKeySeed.shaKeySeed);
                 tempKeySeed.isShare = false;
             } else {
@@ -677,6 +695,5 @@ void keyServer::runKeyGenSS(SSL* connection) {
     }
     cerr << "keyServer : exit successfully" << endl;
 }
-
 
 #endif

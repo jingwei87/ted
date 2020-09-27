@@ -1,7 +1,7 @@
 #include "configure.hpp"
 
-Configure::~Configure() {}
-Configure::Configure() {}
+Configure::~Configure() { }
+Configure::Configure() { }
 Configure::Configure(std::string path)
 {
     this->readConf(path);
@@ -52,15 +52,15 @@ void Configure::readConf(std::string path)
     // key manager ip list
     _keyManagerNum = 0;
     ptree keyIpList = root.get_child("client").get_child("_keyManagerIPList");
-    for(ptree::iterator iter = keyIpList.begin(); iter != keyIpList.end(); iter++) {
+    for (ptree::iterator iter = keyIpList.begin(); iter != keyIpList.end(); iter++) {
         string ip = iter->first;
         int port = atoi(iter->second.data().c_str());
-        fprintf(stdout, "IP: %s\n", ip.c_str());
-        fprintf(stdout, "Port: %d\n", port);
+        // fprintf(stdout, "IP: %s\n", ip.c_str());
+        // fprintf(stdout, "Port: %d\n", port);
         _keyManagerIpArray.push_back(make_pair(ip, port));
     }
     _keyManagerNum = _keyManagerIpArray.size();
-    fprintf(stdout, "Key Manager Num: %d\n", _keyManagerNum);
+    // fprintf(stdout, "Key Manager Num: %d\n", _keyManagerNum);
 }
 
 // chunking settings
@@ -188,18 +188,22 @@ int Configure::getSendShortHashMaskBitNumber()
     return _sendShortHashMaskBitNumber;
 }
 
-uint32_t Configure::getKeyManagerNumber() {
+uint32_t Configure::getKeyManagerNumber()
+{
     return static_cast<uint32_t>(_keyManagerNum);
 }
 
-vector<pair<string, int>> Configure::getKeyManagerIPList() {
+vector<pair<string, int>> Configure::getKeyManagerIPList()
+{
     return _keyManagerIpArray;
 }
 
-uint64_t Configure::getSecretShare() {
+uint64_t Configure::getSecretShare()
+{
     return _secretShare;
-} 
+}
 
-uint64_t Configure::getAdjustValue() {
+uint64_t Configure::getAdjustValue()
+{
     return _adjustValue;
 }

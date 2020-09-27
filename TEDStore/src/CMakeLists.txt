@@ -32,8 +32,13 @@ set(CLIENT_OBJ chunker keyClient sender  recvDecode  retriever)
 set(SERVER_OBJ dataSR  dedupCore storage) 
 set(KEYSERVER_OBJ keyServer)
 
-set(CMAKE_BUILD_TYPE "Release")
-# set(CMAKE_BUILD_TYPE "Debug")
+set (CMAKE_SYSTEM_NAME Linux )
+if (NOT CMAKE_BUILD_TYPE)
+   set (CMAKE_BUILD_TYPE "Release")
+   message (
+      STATUS "No CMAKE_BUILD_TYPE selected, defaulting to ${CMAKE_BUILD_TYPE}"
+   )
+endif ()
 
 set(CMAKE_C_FLAGS_DEBUG "-Wall -std=c1x -g -ggdb -g2") 
 set(CMAKE_CXX_FLAGS_DEBUG "-Wall -std=c++17 -g -ggdb -g2 -fsanitize=leak -fno-omit-frame-pointer")

@@ -13,12 +13,12 @@
 		"_keyServerPort": 6666,
 		"_sketchTableWidth": 1048576,
 		"_optimalSolverComputeItemNumberThreshold": 48000,
-        "_storageBlowPercent": 0,
-        "_secretShare": 64
+		"_storageBlowPercent": 0,
+		"_secretShare": 64
 	},
 	"SPConfig": {
 		"_storageServerIP": "127.0.0.1",
-		"_storageServerPort": 6668,
+		"_storageServerPort": 7001,
 		"_maxContainerSize": 8388608,
 		"_RecipeRootPath": "Recipes/",
 		"_containerRootPath": "Containers/",
@@ -26,13 +26,16 @@
 		"_fp2MetaDBame": "db2"
 	},
 	"client": {
-        "_clientID": 1,
-        "_sendChunkBatchSize": 1000,
-        "_sendRecipeBatchSize": 100000,
-        "_sendShortHashMaskBitNumber": 12,
-        "_keyManagerIPList": {
-            "127.0.0.1": 6666
-        },
-        "_adjustValue": 3
+		"_clientID": 1,
+		"_sendChunkBatchSize": 1000,
+		"_sendRecipeBatchSize": 100000,
+		"_sendShortHashMaskBitNumber": 12,
+		"_keyManagerIPList": {
+			"127.0.0.1": 6666,
+			"127.0.0.1": 6667,
+			"127.0.0.1": 6668,
+			"127.0.0.1": 6669
+		},
+		"_adjustValue": 3
 	}
 }
