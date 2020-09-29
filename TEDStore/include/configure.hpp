@@ -14,7 +14,7 @@ using namespace std;
 #define OLD_VERSION 0 // 1:using old version| 0:using new version
 #define SINGLE_MACHINE_TEST 1 //1: test on single machine, key server use cmd input | 0: test on multi-machine, key server use config.json
 
-#define ENABLE_SECRET_SHARE 0 // 1:using secret sharing | 0:disable secret sharing
+#define ENABLE_SECRET_SHARE 1 // 1:using secret sharing | 0:disable secret sharing
 
 // for multiple key manager
 #define K_PARA 3
