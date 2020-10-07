@@ -65,7 +65,7 @@ int main(int argv, char* argc[])
                 th = new boost::thread(attrs, boost::bind(&keyClient::runSimple, keyClientObj));
             }
         }
-        
+
         thList.push_back(th);
         th = new boost::thread(attrs, boost::bind(&Sender::run, senderObj));
         thList.push_back(th);
@@ -97,12 +97,12 @@ int main(int argv, char* argc[])
     gettimeofday(&timeend, NULL);
     long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
     double second = diff / 1000000.0;
-    cerr << "System : total work time is " << diff << " us = " << second << " s" << endl;
+    cout << "System : total work time is " << diff << " us = " << second << " s" << endl;
 #if BREAK_DOWN_DEFINE == 1
-    cerr << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
-    cerr << "System : end work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
+    cout << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
+    cout << "System : end work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
 #endif
-    if (strcmp("-r", argc[1]) == 0) { 
+    if (strcmp("-r", argc[1]) == 0) {
         delete recvDecodeObj;
         delete retrieverObj;
     } else if (strcmp("-s", argc[1]) == 0) {

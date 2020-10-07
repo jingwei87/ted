@@ -170,7 +170,7 @@ void DataSR::run(Socket socket)
                     gettimeofday(&timeendDataSR, NULL);
                     int diff = 1000000 * (timeendDataSR.tv_sec - timestartDataSR.tv_sec) + timeendDataSR.tv_usec - timestartDataSR.tv_usec;
                     double second = diff / 1000000.0;
-                    cerr << "DataSR : restore " << restoredChunkList.size() << "  chunk time  = " << second << " s" << endl;
+                    cout << "DataSR : restore " << restoredChunkList.size() << "  chunk time  = " << second << " s" << endl;
 #endif
                     socket.Send(sendBuffer, sendSize);
                 }
