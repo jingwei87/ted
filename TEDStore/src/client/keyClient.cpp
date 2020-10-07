@@ -978,7 +978,7 @@ void keyClient::runSS()
                         tempShareIndex.shareIndexArray[remainShareNum] = static_cast<int>(i);
                         remainShareNum++;
                     } else {
-                        break;
+                        continue;
                     }
                 }
             }
