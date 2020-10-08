@@ -122,10 +122,10 @@ void keyServer::runKeyGen(SSL* connection)
             gettimeofday(&timeendKeyServerTotal, NULL);
             diff = 1000000 * (timeendKeyServerTotal.tv_sec - timestartKeyServerTotal.tv_sec) + timeendKeyServerTotal.tv_usec - timestartKeyServerTotal.tv_usec;
             second = diff / 1000000.0;
-            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
-            cerr << "keyServer : compute optimal time = " << optimalComputeTime << " s" << endl;
-            cerr << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
-            cerr << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
+            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cout << "keyServer : compute optimal time = " << optimalComputeTime << " s" << endl;
+            cout << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
+            cout << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
 #endif
             return;
         }
@@ -210,10 +210,10 @@ void keyServer::runKeyGen(SSL* connection)
             gettimeofday(&timeendKeyServerTotal, NULL);
             diff = 1000000 * (timeendKeyServerTotal.tv_sec - timestartKeyServerTotal.tv_sec) + timeendKeyServerTotal.tv_usec - timestartKeyServerTotal.tv_usec;
             second = diff / 1000000.0;
-            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
-            cerr << "keyServer : compute optimal time = " << optimalComputeTime << " s" << endl;
-            cerr << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
-            cerr << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
+            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cout << "keyServer : compute optimal time = " << optimalComputeTime << " s" << endl;
+            cout << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
+            cout << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
 #endif
             return;
         }
@@ -273,7 +273,7 @@ void keyServer::runKeyGen(SSL* connection)
             T_ = 1;
             multiThreadEditTMutex_.unlock();
 #if BREAK_DOWN_DEFINE == 1
-            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             return;
         }
@@ -357,7 +357,7 @@ void keyServer::runKeyGen(SSL* connection)
             T_ = 1;
             multiThreadEditTMutex_.unlock();
 #if BREAK_DOWN_DEFINE == 1
-            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             return;
         }
@@ -420,7 +420,7 @@ void keyServer::runKeyGenSimple(SSL* connection)
             T_ = 1;
             multiThreadEditTMutex_.unlock();
 #if BREAK_DOWN_DEFINE == 1
-            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             return;
         }
@@ -522,7 +522,7 @@ void keyServer::runKeyGenSimple(SSL* connection)
             T_ = 1;
             multiThreadEditTMutex_.unlock();
 #if BREAK_DOWN_DEFINE == 1
-            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             return;
         }
@@ -571,7 +571,7 @@ void keyServer::runKeyGenSS(SSL* connection)
             T_ = 1;
             multiThreadEditTMutex_.unlock();
 #if BREAK_DOWN_DEFINE == 1
-            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             return;
         }
@@ -673,7 +673,7 @@ void keyServer::runKeyGenSS(SSL* connection)
             T_ = 1;
             multiThreadEditTMutex_.unlock();
 #if BREAK_DOWN_DEFINE == 1
-            cerr << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
+            cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             return;
         }

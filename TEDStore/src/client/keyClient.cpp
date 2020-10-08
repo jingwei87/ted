@@ -15,7 +15,7 @@ keyClient::keyClient(Sender* senderObjTemp)
     senderObj_ = senderObjTemp;
     cryptoObj_ = new CryptoPrimitive();
     keyBatchSize_ = (int)config.getKeyBatchSize();
-    
+
     sendShortHashMaskBitNumber = config.getSendShortHashMaskBitNumber();
 
     // for multiple key managers
@@ -41,7 +41,7 @@ keyClient::keyClient(Sender* senderObjTemp)
             counterArray_[i] = 0;
         }
         this->recordCache_ = new cache::lru_cache<string, uint32_t>(1000000);
-        // for recover secret share 
+        // for recover secret share
         this->hHash_ = new HHash();
         for (size_t i = 0; i < K_PARA; i++) {
             mpz_init(share_[i]);
@@ -53,7 +53,6 @@ keyClient::keyClient(Sender* senderObjTemp)
     tPool_ = new ThreadPool(this->keyManNum_);
 }
 
-
 keyClient::keyClient(uint64_t keyGenNumber)
 {
     inputMQ_ = new messageQueue<Data_t>;
@@ -64,7 +63,7 @@ keyClient::keyClient(uint64_t keyGenNumber)
 }
 
 keyClient::~keyClient()
-{   
+{
     if (cryptoObj_ != NULL) {
         delete cryptoObj_;
     }
@@ -72,19 +71,19 @@ keyClient::~keyClient()
     delete inputMQ_;
 
     if (OLD_VERSION == 0) {
-        // for multiple key managers 
-        for(int i = 0; i < this->keyManNum_; ++i) {
-            delete [] this->chunkHashArray_[i];
-            delete [] this->chunkKeyArray_[i];
+        // for multiple key managers
+        for (int i = 0; i < this->keyManNum_; ++i) {
+            delete[] this->chunkHashArray_[i];
+            delete[] this->chunkKeyArray_[i];
             this->chunkHashArray_[i] = nullptr;
             this->chunkKeyArray_[i] = nullptr;
-        }   
-        delete [] this->chunkHashArray_;
-        delete [] this->chunkKeyArray_;
-        delete [] this->counterArray_;
-        delete [] this->shareIndexArrayBuffer_;
+        }
+        delete[] this->chunkHashArray_;
+        delete[] this->chunkKeyArray_;
+        delete[] this->counterArray_;
+        delete[] this->shareIndexArrayBuffer_;
         delete this->recordCache_;
-        // for recover secret share 
+        // for recover secret share
         delete this->hHash_;
         for (size_t i = 0; i < K_PARA; i++) {
             mpz_clear(share_[i]);
@@ -197,10 +196,10 @@ void keyClient::runKeyGenSimulator()
         }
     }
 #if BREAK_DOWN_DEFINE == 1
-    cerr << "KeyClient : key exchange work time = " << keyGenTime << " s, total key generated is " << currentKeyGenNumber << endl;
-    cerr << "KeyClient : Short hash time = " << shortHashTime << " s" << endl;
-    cerr << "KeyClient : key exchange time = " << keyExchangeTime << " s" << endl;
-    cerr << "KeyClient : key derivation time = " << keyDerivationTime << " s" << endl;
+    cout << "KeyClient : key exchange work time = " << keyGenTime << " s, total key generated is " << currentKeyGenNumber << endl;
+    cout << "KeyClient : Short hash time = " << shortHashTime << " s" << endl;
+    cout << "KeyClient : key exchange time = " << keyExchangeTime << " s" << endl;
+    cout << "KeyClient : key derivation time = " << keyDerivationTime << " s" << endl;
 #endif
     return;
 }
@@ -328,13 +327,13 @@ void keyClient::run()
         }
     }
 #if BREAK_DOWN_DEFINE == 1
-    cerr << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
-    cerr << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
-    cerr << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
-    cerr << "KeyClient : key derivation work time = " << keyDerivationTime << " s" << endl;
-    cerr << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
-    cerr << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
-    cerr << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
+    cout << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
+    cout << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
+    cout << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
+    cout << "KeyClient : key derivation work time = " << keyDerivationTime << " s" << endl;
+    cout << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
+    cout << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
+    cout << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
 #endif
     return;
 }
@@ -384,7 +383,7 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     if (!securityChannel->send(sslConnection, (char*)batchHashList, sizeof(keyGenEntry_t) * batchNumber)) {
-    // if (!securityChannel->send(sslConnection, (char*)batchHashList, 4 * sizeof(uint32_t)  * batchNumber)) {
+        // if (!securityChannel->send(sslConnection, (char*)batchHashList, 4 * sizeof(uint32_t)  * batchNumber)) {
         cerr << "keyClient: send socket error" << endl;
         return false;
     }
@@ -418,12 +417,13 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
     }
 }
 
-bool keyClient::keyExchangeSimple(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection) {
+bool keyClient::keyExchangeSimple(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection)
+{
 #if BREAK_DOWN_DEFINE == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     if (!securityChannel->send(sslConnection, (char*)batchHashList, sizeof(keyGenEntry_t) * batchNumber)) {
-    // if (!securityChannel->send(sslConnection, (char*)batchHashList, 4 * sizeof(uint32_t)  * batchNumber)) {
+        // if (!securityChannel->send(sslConnection, (char*)batchHashList, 4 * sizeof(uint32_t)  * batchNumber)) {
         cerr << "keyClient: send socket error" << endl;
         return false;
     }
@@ -457,8 +457,9 @@ bool keyClient::keyExchangeSimple(u_char* batchHashList, int batchNumber, u_char
     }
 }
 
-bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_char** chunkKeyArray, int& batchkeyNumber, 
-        ssl** securityChannelArray, SSL** sslConnectionArray) {
+bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_char** chunkKeyArray, int& batchkeyNumber,
+    ssl** securityChannelArray, SSL** sslConnectionArray)
+{
 #if BREAK_DOWN_DEFINE == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
@@ -496,18 +497,17 @@ bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_
     keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
     int batchSize[this->keyManNum_];
-    int tmpBatchSize = recvSize[0] / sizeof(KeySeedReturnEntry_t); 
+    int tmpBatchSize = recvSize[0] / sizeof(KeySeedReturnEntry_t);
     for (size_t i = 0; i < this->keyManNum_; i++) {
         batchSize[i] = recvSize[i] / sizeof(KeySeedReturnEntry_t);
         if (tmpBatchSize != batchSize[i]) {
             return false;
-        } 
+        }
         tmpBatchSize = batchSize[i];
-    }  
+    }
     batchkeyNumber = tmpBatchSize;
     return true;
 }
-
 
 bool keyClient::encodeChunk(Data_t& newChunk)
 {
@@ -555,10 +555,10 @@ bool keyClient::editJobDoneFlag()
  * @param fpValue the value of fingerprint
  * @return uint32_t the index of the key manager
  */
-uint32_t keyClient::keyAssignment(uint32_t fpValue) {
+uint32_t keyClient::keyAssignment(uint32_t fpValue)
+{
     return fpValue % this->keyManNum_;
 }
-
 
 /**
  * @brief RR-based approach
@@ -566,7 +566,8 @@ uint32_t keyClient::keyAssignment(uint32_t fpValue) {
  * @param totalCounter the total counter of processed chunks
  * @return uint32_t the index of the target key manager
  */
-uint32_t keyClient::keyAssignment(uint32_t fpValue, uint32_t totalCounter) {
+uint32_t keyClient::keyAssignment(uint32_t fpValue, uint32_t totalCounter)
+{
     return totalCounter % this->keyManNum_;
 }
 
@@ -577,7 +578,8 @@ uint32_t keyClient::keyAssignment(uint32_t fpValue, uint32_t totalCounter) {
  * @param counterArray current counter array
  * @return uint32_t the index of target key manager
  */
-uint32_t keyClient::keyAssignment(uint32_t fpValue, uint32_t* counterArray) {
+uint32_t keyClient::keyAssignment(uint32_t fpValue, uint32_t* counterArray)
+{
     uint32_t currentKeyID;
     uint32_t status;
     status = this->checkKeyMangerStatus(counterArray);
@@ -597,7 +599,8 @@ uint32_t keyClient::keyAssignment(uint32_t fpValue, uint32_t* counterArray) {
  * @param counterArray the current counter distribution
  * @return uint32_t the key manager with the minimum key manager
  */
-uint32_t keyClient::checkKeyMangerStatus(uint32_t* counterArray) {
+uint32_t keyClient::checkKeyMangerStatus(uint32_t* counterArray)
+{
     std::vector<uint32_t> counterVec;
     for (size_t i = 0; i < this->keyManNum_; i++) {
         counterVec.push_back(counterArray[i]);
@@ -625,7 +628,8 @@ uint32_t keyClient::checkKeyMangerStatus(uint32_t* counterArray) {
  * @param fp the chunk fingerprint
  * @return uint32_t the index of target key manager
  */
-uint32_t keyClient::keyAssignment(uint32_t fpValue, uint32_t* counterArray, string fp) {
+uint32_t keyClient::keyAssignment(uint32_t fpValue, uint32_t* counterArray, string fp)
+{
     uint32_t status;
     uint32_t tmpRes;
     uint32_t currentKeyID;
@@ -639,21 +643,19 @@ uint32_t keyClient::keyAssignment(uint32_t fpValue, uint32_t* counterArray, stri
         // bool cacheStatus = this->lastKeyManager_.contains(keyStr);
         if (cacheStatus) {
             // exists
-            currentKeyID = this->recordCache_->get(fp);    
+            currentKeyID = this->recordCache_->get(fp);
             if (currentKeyID == this->GetMaxIndex(counterArray)) {
                 currentKeyID = status;
                 this->recordCache_->put(fp, currentKeyID);
-            }    
+            }
         } else {
             // not exists
             currentKeyID = status;
-            this->recordCache_->put(fp, currentKeyID);   
+            this->recordCache_->put(fp, currentKeyID);
         }
-        
     }
     return currentKeyID;
 }
-
 
 /**
  * @brief get the maximum index of counter array
@@ -661,7 +663,8 @@ uint32_t keyClient::keyAssignment(uint32_t fpValue, uint32_t* counterArray, stri
  * @param counterArray the current counter distribution
  * @return uint32_t the key manager with the maximum key manager
  */
-uint32_t keyClient::GetMaxIndex(uint32_t* counterArray) {
+uint32_t keyClient::GetMaxIndex(uint32_t* counterArray)
+{
     std::vector<uint64_t> counterVec;
     for (size_t i = 0; i < this->keyManNum_; i++) {
         counterVec.push_back(counterArray[i]);
@@ -670,7 +673,7 @@ uint32_t keyClient::GetMaxIndex(uint32_t* counterArray) {
     return maxIndex;
 }
 
-uint32_t keyClient::convertFPtoValue(Data_t& newChunk) 
+uint32_t keyClient::convertFPtoValue(Data_t& newChunk)
 {
     uint32_t res = 0;
     for (size_t i = 0; i < CHUNK_HASH_SIZE; i++) {
@@ -679,7 +682,8 @@ uint32_t keyClient::convertFPtoValue(Data_t& newChunk)
     return res;
 }
 
-void keyClient::runSimple() {
+void keyClient::runSimple()
+{
 #if BREAK_DOWN_DEFINE == 1
     double keyGenTime = 0;
     double assignTime = 0;
@@ -699,7 +703,7 @@ void keyClient::runSimple() {
         maskInt &= ~(1 << (32 - i));
     }
     int hashInt[4];
-    
+
     while (true) {
         keyGenEntry_t tempKeyGenEntry;
         Data_t tempChunk;
@@ -723,7 +727,7 @@ void keyClient::runSimple() {
             uint32_t keyManagerIndex = 0;
             fpValue = convertFPtoValue(tempChunk);
 
-            // assign the key manager here 
+            // assign the key manager here
             if (ROUTE_APPROACH == FP_SCHEME) {
                 keyManagerIndex = this->keyAssignment(fpValue);
             } else if (ROUTE_APPROACH == RR_SCHEME) {
@@ -760,15 +764,15 @@ void keyClient::runSimple() {
                 tempKeyGenEntry.usingCount = false;
                 if (i == keyManagerIndex) {
                     tempKeyGenEntry.usingCount = true;
-                    memcpy(chunkHashArray_[i] + batchNumber * sizeof(keyGenEntry_t), 
+                    memcpy(chunkHashArray_[i] + batchNumber * sizeof(keyGenEntry_t),
                         &tempKeyGenEntry, sizeof(keyGenEntry_t));
                 } else {
-                    memcpy(chunkHashArray_[i] + batchNumber * sizeof(keyGenEntry_t), 
+                    memcpy(chunkHashArray_[i] + batchNumber * sizeof(keyGenEntry_t),
                         &tempKeyGenEntry, sizeof(keyGenEntry_t));
                 }
             }
             batchNumber++;
-            counterArray_[keyManagerIndex]++; 
+            counterArray_[keyManagerIndex]++;
             this->totalProcessedChunk_++;
 #if BREAK_DOWN_DEFINE == 1
             gettimeofday(&timeendKey, NULL);
@@ -783,11 +787,11 @@ void keyClient::runSimple() {
             gettimeofday(&timestartKey, NULL);
 #endif
             int batchedKeySize = 0;
-            // TODO: add mutiple thread here 
+            // TODO: add mutiple thread here
             bool keyExchangeStatus = keyExchangeSimpleAll(chunkHashArray_, batchNumber, chunkKeyArray_, batchedKeySize,
                 keySecurityChannelArray_, sslConnectionArray_);
             // for (size_t i = 0; i < this->keyManNum_; i++) {
-            //     keyExchangeStatus[i] = keyExchangeSimple(chunkHashArray_[i], batchNumber, chunkKeyArray_[i], batchedKeySize, 
+            //     keyExchangeStatus[i] = keyExchangeSimple(chunkHashArray_[i], batchNumber, chunkKeyArray_[i], batchedKeySize,
             //         this->keySecurityChannelArray_[i], this->sslConnectionArray_[i]);
             // }
 
@@ -802,7 +806,6 @@ void keyClient::runSimple() {
             // for (size_t i = 0; i < this->keyManNum_; i++) {
             //     wholeExchangeStatus = wholeExchangeStatus && keyExchangeStatus[i];
             // }
-            // cerr << "Key Exchange Status: "<< keyExchangeStatus << endl;
             if (!keyExchangeStatus) {
                 cerr << "KeyClient : error get key for " << setbase(10) << batchNumber << " chunks" << endl;
                 return;
@@ -814,13 +817,13 @@ void keyClient::runSimple() {
 #endif
                     // generate the secret here
                     KeySeedReturnEntry_t tempKeySeed;
-                    // store the key seed in first 32 bytes of newKeyBuffer 
+                    // store the key seed in first 32 bytes of newKeyBuffer
                     memset(newKeyBuffer, 1, CHUNK_ENCRYPT_KEY_SIZE);
                     for (size_t j = 0; j < this->keyManNum_; j++) {
                         memcpy(&tempKeySeed, chunkKeyArray_[j] + i * sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
                         XORTwoBuffers((uint64_t*)newKeyBuffer, (uint64_t*)tempKeySeed.simpleKeySeed.shaKeySeed, CHUNK_ENCRYPT_KEY_SIZE);
                     }
-                    
+
                     memcpy(newKeyBuffer + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
                     cryptoObj_->generateHash(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.encryptKey);
 #if BREAK_DOWN_DEFINE == 1
@@ -866,20 +869,20 @@ void keyClient::runSimple() {
         }
     }
 #if BREAK_DOWN_DEFINE == 1
-    cerr << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
-    cerr << "KeyClient : assign chunk work time = " << assignTime << " s" << endl;
-    cerr << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
-    cerr << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
-    cerr << "KeyClient : key derivation work time = " << keyDerivationTime << " s" << endl;
-    cerr << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
-    cerr << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
-    cerr << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
+    cout << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
+    cout << "KeyClient : assign chunk work time = " << assignTime << " s" << endl;
+    cout << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
+    cout << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
+    cout << "KeyClient : key derivation work time = " << keyDerivationTime << " s" << endl;
+    cout << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
+    cout << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
+    cout << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
 #endif
     return;
 }
 
-
-void keyClient::runSS() {
+void keyClient::runSS()
+{
 #if BREAK_DOWN_DEFINE == 1
     double keyGenTime = 0;
     double assignTime = 0;
@@ -926,7 +929,7 @@ void keyClient::runSS() {
             uint32_t keyManagerIndex = 0;
             fpValue = convertFPtoValue(tempChunk);
 
-            // assign the key manager here 
+            // assign the key manager here
             if (ROUTE_APPROACH == FP_SCHEME) {
                 keyManagerIndex = this->keyAssignment(fpValue);
             } else if (ROUTE_APPROACH == RR_SCHEME) {
@@ -962,12 +965,12 @@ void keyClient::runSS() {
 
             // allocate the share to the key managers
             int remainShareNum = 0;
-            ShareIndexEntry_t tempShareIndex; 
+            ShareIndexEntry_t tempShareIndex;
             for (size_t i = 0; i < this->keyManNum_; i++) {
                 tempKeyGenEntry.usingCount = false;
                 if (i == keyManagerIndex) {
                     tempKeyGenEntry.usingCount = true;
-                    memcpy(chunkHashArray_[i] + assignNumberArray[i] * sizeof(keyGenEntry_t), 
+                    memcpy(chunkHashArray_[i] + assignNumberArray[i] * sizeof(keyGenEntry_t),
                         &tempKeyGenEntry, sizeof(keyGenEntry_t));
                     assignNumberArray[i]++;
                     tempShareIndex.tedSeedIndex = keyManagerIndex;
@@ -981,21 +984,18 @@ void keyClient::runSS() {
 		    } else {
 			continue;
 		    }
-                    // } else {
-                    //   break;
-                    // }
                 } 
             }
             if (remainShareNum != K_PARA) {
-                cerr << "The number of key manager:" << this->keyManNum_ 
-                    << " lower than " << K_PARA << endl;
+                cerr << "The number of key manager:" << this->keyManNum_
+                     << " lower than " << K_PARA << endl;
                 exit(EXIT_FAILURE);
             }
 
             memcpy(shareIndexArrayBuffer_ + batchNumber * sizeof(ShareIndexEntry_t),
                 &tempShareIndex, sizeof(ShareIndexEntry_t));
             batchNumber++;
-            counterArray_[keyManagerIndex]++; 
+            counterArray_[keyManagerIndex]++;
             this->totalProcessedChunk_++;
 
 #if BREAK_DOWN_DEFINE == 1
@@ -1011,7 +1011,7 @@ void keyClient::runSS() {
             gettimeofday(&timestartKey, NULL);
 #endif
             int batchedKeySize = 0;
-            // TODO: add mutiple thread here 
+            // TODO: add mutiple thread here
             bool keyExchangeStatus = keyExchangeSimpleAll(chunkHashArray_, batchNumber, chunkKeyArray_, batchedKeySize,
                 keySecurityChannelArray_, sslConnectionArray_);
 #if BREAK_DOWN_DEFINE == 1
@@ -1021,8 +1021,6 @@ void keyClient::runSS() {
             keyGenTime += second;
             keyExchangeTime += second;
 #endif
-            
-            // cerr << "Key Exchange Status: "<< keyExchangeStatus << endl;
             if (!keyExchangeStatus) {
                 cerr << "KeyClient : error get key for " << setbase(10) << batchNumber << " chunks" << endl;
                 return;
@@ -1035,11 +1033,11 @@ void keyClient::runSS() {
 #if BREAK_DOWN_DEFINE == 1
                     gettimeofday(&timestartKey, NULL);
 #endif
-                    
+
                     // generate the secret here
                     KeySeedReturnEntry_t tempKeySeed;
                     ShareIndexEntry_t tempShareIndex;
-                    // store the key seed in first 32 bytes of newKeyBuffer 
+                    // store the key seed in first 32 bytes of newKeyBuffer
                     memset(newKeyBuffer, 1, CHUNK_ENCRYPT_KEY_SIZE + HHASH_KEY_SEED + CHUNK_HASH_SIZE);
                     // recover the share index
                     memcpy(&tempShareIndex, shareIndexArrayBuffer_ + i * sizeof(ShareIndexEntry_t),
@@ -1052,21 +1050,20 @@ void keyClient::runSS() {
 
                     int indexList[K_PARA];
                     for (size_t j = 0; j < K_PARA; j++) {
-                        memcpy(&tempKeySeed, chunkKeyArray_[tempShareIndex.shareIndexArray[j]] + assignNumberArray[tempShareIndex.shareIndexArray[j]] 
-                            * sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
+                        memcpy(&tempKeySeed, chunkKeyArray_[tempShareIndex.shareIndexArray[j]] + assignNumberArray[tempShareIndex.shareIndexArray[j]] * sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
                         mpz_import(share_[j], HHASH_KEY_SEED, 1, sizeof(char), 1, 0, tempKeySeed.hhashKeySeed.hhashKeySeed);
                         assignNumberArray[tempShareIndex.shareIndexArray[j]]++;
                         indexList[j] = tempShareIndex.shareIndexArray[j] + 1;
                     }
                     hHash_->RecoverySecretFromHash(share_, indexList, finalSecret_, adjustValue_);
-                    u_char tempSecret[HHASH_KEY_SEED] = {0};
+                    u_char tempSecret[HHASH_KEY_SEED] = { 0 };
                     size_t length;
                     mpz_export(tempSecret, &length, 1, sizeof(char), 1, 0, finalSecret_);
-                    
+
                     memcpy(newKeyBuffer + CHUNK_ENCRYPT_KEY_SIZE, tempSecret, HHASH_KEY_SEED);
-                    memcpy(newKeyBuffer + CHUNK_ENCRYPT_KEY_SIZE + HHASH_KEY_SEED, 
+                    memcpy(newKeyBuffer + CHUNK_ENCRYPT_KEY_SIZE + HHASH_KEY_SEED,
                         batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
-                    cryptoObj_->generateHash(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + HHASH_KEY_SEED + CHUNK_HASH_SIZE, 
+                    cryptoObj_->generateHash(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + HHASH_KEY_SEED + CHUNK_HASH_SIZE,
                         batchList[i].chunk.encryptKey);
 #if BREAK_DOWN_DEFINE == 1
                     gettimeofday(&timeendKey, NULL);
@@ -1115,14 +1112,14 @@ void keyClient::runSS() {
         }
     }
 #if BREAK_DOWN_DEFINE == 1
-    cerr << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
-    cerr << "KeyClient : assign chunk work time = " << assignTime << " s" << endl;
-    cerr << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
-    cerr << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
-    cerr << "KeyClient : key derivation work time = " << keyDerivationTime << " s" << endl;
-    cerr << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
-    cerr << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
-    cerr << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
+    cout << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
+    cout << "KeyClient : assign chunk work time = " << assignTime << " s" << endl;
+    cout << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
+    cout << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
+    cout << "KeyClient : key derivation work time = " << keyDerivationTime << " s" << endl;
+    cout << "KeyClient : encryption work time = " << encryptionTime << " s" << endl;
+    cout << "KeyClient : socket send time = " << keySocketSendTime << " s" << endl;
+    cout << "KeyClient : socket recv time = " << keySocketRecvTime << " s" << endl;
 #endif
     return;
 }

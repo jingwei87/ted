@@ -335,10 +335,10 @@ void Chunker::fixSizeChunking()
     if (setJobDoneFlag() == false) {
         cerr << "Chunker : set chunking done flag error" << endl;
     }
-    cerr << "Chunker : Fixed chunking over:\nTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
+    cout << "Chunker : Fixed chunking over:\nTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
 #if BREAK_DOWN_DEFINE == 1
-    cerr << "Chunker : total chunking time = " << chunkTime << " s" << endl;
-    cerr << "Chunker : total hashing time = " << hashTime << " s" << endl;
+    cout << "Chunker : total chunking time = " << chunkTime << " s" << endl;
+    cout << "Chunker : total hashing time = " << hashTime << " s" << endl;
 #endif
 }
 
@@ -424,10 +424,10 @@ void Chunker::traceDrivenChunkingFSL()
     if (setJobDoneFlag() == false) {
         cerr << "Chunker : set chunking done flag error" << endl;
     }
-    cerr << "Chunker : trace gen over:\nTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
+    cout << "Chunker : trace gen over:\nTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
 #if BREAK_DOWN_DEFINE == 1
-    cerr << "Chunker : total chunking time = " << chunkTime << " s" << endl;
-    cerr << "Chunker : total hashing time = " << hashTime << " s" << endl;
+    cout << "Chunker : total chunking time = " << chunkTime << " s" << endl;
+    cout << "Chunker : total hashing time = " << hashTime << " s" << endl;
 #endif
 }
 
@@ -514,10 +514,10 @@ void Chunker::traceDrivenChunkingUBC()
     if (setJobDoneFlag() == false) {
         cerr << "Chunker : set chunking done flag error" << endl;
     }
-    cerr << "Chunker : trace gen over:\nTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
+    cout << "Chunker : trace gen over:\nTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
 #if BREAK_DOWN_DEFINE == 1
-    cerr << "Chunker : total chunking time is" << chunkTime << " s" << endl;
-    cerr << "Chunker : total hashing time is" << hashTime << " s" << endl;
+    cout << "Chunker : total chunking time is" << chunkTime << " s" << endl;
+    cout << "Chunker : total hashing time is" << hashTime << " s" << endl;
 #endif
 }
 
@@ -693,13 +693,13 @@ void Chunker::varSizeChunking()
         cerr << "Chunker: set chunking done flag error" << endl;
         return;
     }
-    cerr << "Chunker : variable size chunking over:\nTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
+    cout << "Chunker : variable size chunking over:\nTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
 #if BREAK_DOWN_DEFINE == 1
     gettimeofday(&timeendChunker, NULL);
     diff = 1000000 * (timeendChunker.tv_sec - timestartChunker.tv_sec) + timeendChunker.tv_usec - timestartChunker.tv_usec;
     second = diff / 1000000.0;
-    cerr << "Chunker : total chunking time = " << setbase(10) << second - (insertTime + hashTime) << " s" << endl;
-    cerr << "Chunker : total hashing time = " << hashTime << " s" << endl;
+    cout << "Chunker : total chunking time = " << setbase(10) << second - (insertTime + hashTime) << " s" << endl;
+    cout << "Chunker : total hashing time = " << hashTime << " s" << endl;
 #endif
     return;
 }

@@ -239,7 +239,7 @@ void Sender::run()
         }
     }
 #if BREAK_DOWN_DEFINE == 1
-    cerr << "Sender : send chunk time = " << totalSendChunkTime << " s" << endl;
+    cout << "Sender : send chunk time = " << totalSendChunkTime << " s" << endl;
 #endif
 #if BREAK_DOWN_DEFINE == 1
     gettimeofday(&timestartSender, NULL);
@@ -256,8 +256,8 @@ void Sender::run()
     diff = 1000000 * (timeendSender.tv_sec - timestartSender.tv_sec) + timeendSender.tv_usec - timestartSender.tv_usec;
     second = diff / 1000000.0;
     totalSendRecipeTime += second;
-    cerr << "Sender : ssembleTime recipe list time = " << totalRecipeAssembleTime << " s" << endl;
-    cerr << "Sender : send recipe list time = " << totalSendRecipeTime << " s" << endl;
+    cout << "Sender : ssembleTime recipe list time = " << totalRecipeAssembleTime << " s" << endl;
+    cout << "Sender : send recipe list time = " << totalSendRecipeTime << " s" << endl;
 #endif
     free(sendChunkBatchBuffer);
     bool serverJobDoneFlag = sendEndFlag();
