@@ -14,6 +14,7 @@
 #include <map>
 #include <utility>
 #include <gmp.h>
+#include "threadPool.h"
 
 #define KEYMANGER_PUBLIC_KEY_FILE "key/serverpub.key"
 
@@ -46,6 +47,7 @@ private:
     uint32_t deivationThreshold_ = 5000;
     uint32_t totalProcessedChunk_ = 0;
     cache::lru_cache<std::string, uint32_t>* recordCache_;
+    ThreadPool* tPool_;
 
     // for multiple key managers
     ssl** keySecurityChannelArray_;

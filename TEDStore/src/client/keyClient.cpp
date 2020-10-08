@@ -50,6 +50,7 @@ keyClient::keyClient(Sender* senderObjTemp)
         mpz_init(finalSecret_);
         adjustValue_ = config.getAdjustValue();
     }
+    tPool_ = new ThreadPool(this->keyManNum_);
 }
 
 
@@ -91,6 +92,7 @@ keyClient::~keyClient()
         }
         mpz_clear(finalSecret_);
     }
+    delete tPool_;
     cerr << "KeyClient: Destory the key client successfully.\n" << endl;
 }
 
@@ -460,13 +462,17 @@ bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_
 #if BREAK_DOWN_DEFINE == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
-    for (size_t i = 0; i < this->keyManNum_; i++) {
-        if (!securityChannelArray[i]->send(sslConnectionArray[i], (char*)batchHashList[i], sizeof(keyGenEntry_t) * batchNumber)) {
+    //for (size_t i = 0; i < this->keyManNum_; i++) {
+    //    if (!securityChannelArray[i]->send(sslConnectionArray[i], (char*)batchHashList[i], sizeof(keyGenEntry_t) * batchNumber)) {
             // if (!securityChannel->send(sslConnection, (char*)batchHashList, 4 * sizeof(uint32_t)  * batchNumber)) {
-            cerr << "keyClient: send socket error: for id = " << setbase(10) << i << endl;
-            return false;
-        }
+    //        cerr << "keyClient: send socket error: for id = " << setbase(10) << i << endl;
+    //        return false;
+    //    }
+    // }
+    for (size_t i = 0; i < this->keyManNum_; i++) {
+	tPool_->enqueue(&ssl::send, securityChannelArray[i], sslConnectionArray[i], (char*)batchHashList[i], sizeof(keyGenEntry_t) * batchNumber);
     }
+    tPool_->wait_until_nothing_in_flight();
 #if BREAK_DOWN_DEFINE == 1
     gettimeofday(&timeendKeySocket, NULL);
     keySocketSendTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
@@ -796,7 +802,7 @@ void keyClient::runSimple() {
             // for (size_t i = 0; i < this->keyManNum_; i++) {
             //     wholeExchangeStatus = wholeExchangeStatus && keyExchangeStatus[i];
             // }
-            cerr << "Key Exchange Status: "<< keyExchangeStatus << endl;
+            // cerr << "Key Exchange Status: "<< keyExchangeStatus << endl;
             if (!keyExchangeStatus) {
                 cerr << "KeyClient : error get key for " << setbase(10) << batchNumber << " chunks" << endl;
                 return;
@@ -972,9 +978,12 @@ void keyClient::runSS() {
                         assignNumberArray[i]++;
                         tempShareIndex.shareIndexArray[remainShareNum] = static_cast<int>(i);
                         remainShareNum++;  
-                    } else {
-                        break;
-                    }
+		    } else {
+			continue;
+		    }
+                    // } else {
+                    //   break;
+                    // }
                 } 
             }
             if (remainShareNum != K_PARA) {
@@ -1013,7 +1022,7 @@ void keyClient::runSS() {
             keyExchangeTime += second;
 #endif
             
-            cerr << "Key Exchange Status: "<< keyExchangeStatus << endl;
+            // cerr << "Key Exchange Status: "<< keyExchangeStatus << endl;
             if (!keyExchangeStatus) {
                 cerr << "KeyClient : error get key for " << setbase(10) << batchNumber << " chunks" << endl;
                 return;
@@ -1035,7 +1044,7 @@ void keyClient::runSS() {
                     // recover the share index
                     memcpy(&tempShareIndex, shareIndexArrayBuffer_ + i * sizeof(ShareIndexEntry_t),
                         sizeof(ShareIndexEntry_t));                    
-                    // copy ted seed to newKeyBuffer 
+                    // copy ted seed to newKeyBuffer
                     memcpy(&tempKeySeed, chunkKeyArray_[tempShareIndex.tedSeedIndex] + assignNumberArray[tempShareIndex.tedSeedIndex] * 
                         sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
                     assignNumberArray[tempShareIndex.tedSeedIndex]++;
@@ -1049,7 +1058,6 @@ void keyClient::runSS() {
                         assignNumberArray[tempShareIndex.shareIndexArray[j]]++;
                         indexList[j] = tempShareIndex.shareIndexArray[j] + 1;
                     }
-
                     hHash_->RecoverySecretFromHash(share_, indexList, finalSecret_, adjustValue_);
                     u_char tempSecret[HHASH_KEY_SEED] = {0};
                     size_t length;
