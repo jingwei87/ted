@@ -44,14 +44,6 @@ keyServer::keyServer(ssl* keyServerSecurityChannelTemp, uint64_t secretValue)
     gen_ = mt19937_64(rd_());
     memset(keyServerPrivate_, 1, SECRET_SIZE);
     optimalSolverComputeItemNumberThreshold_ = config.getOptimalSolverComputeItemNumberThreshold();
-
-    // for multiple key managers
-    hHash_ = new HHash();
-    for (size_t i = 0; i < BLOCK_NUM; i++) {
-        mpz_init(fpBlock_[i]);
-    }
-    mpz_init(finalHash_);
-    mpz_init_set_ui(secretValue_, secretValue);
 }
 #endif
 
@@ -63,16 +55,6 @@ keyServer::~keyServer()
     free(sketchTable_);
     delete keySecurityChannel_;
     delete cryptoObj_;
-
-    if (OLD_VERSION == 0) {
-        // for multiple key managers
-        delete hHash_;
-        for (size_t i = 0; i < BLOCK_NUM; i++) {
-            mpz_clear(fpBlock_[i]);
-        }
-        mpz_clear(finalHash_);
-        mpz_clear(secretValue_);
-    }
 }
 
 #if SINGLE_THREAD_KEY_MANAGER == 1
@@ -106,7 +88,7 @@ void keyServer::runKeyGen(SSL* connection)
         totalRecvTime += second;
 #endif
         if (!recvStatus) {
-            cerr << "KeyServer : client exit" << endl;
+            cerr << "KeyServer : client exit with no income data" << endl;
             multiThreadEditSketchTableMutex_.lock();
             for (int i = 0; i < sketchTableWidith_; i++) {
                 sketchTable_[0][i] = 0;
@@ -127,7 +109,7 @@ void keyServer::runKeyGen(SSL* connection)
             cout << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
             cout << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
 #endif
-            return;
+            break;
         }
         int recvNumber = recvSize / (4 * sizeof(uint32_t));
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
@@ -215,7 +197,7 @@ void keyServer::runKeyGen(SSL* connection)
             cout << "keyServer : total work time = " << second - totalRecvTime << " s" << endl;
             cout << "keyServer : total recv time = " << totalRecvTime << " s" << endl;
 #endif
-            return;
+            break;
         }
         if (sketchTableCounter_ >= optimalSolverComputeItemNumberThreshold_) {
             multiThreadEditTMutex_.lock();
@@ -245,6 +227,8 @@ void keyServer::runKeyGen(SSL* connection)
             multiThreadEditTMutex_.unlock();
         }
     }
+    cerr << "keyServer : exit successfully" << endl;
+    return;
 }
 
 #else
@@ -260,7 +244,7 @@ void keyServer::runKeyGen(SSL* connection)
     while (true) {
         int recvSize = 0;
         if (!keySecurityChannel_->recv(connection, hash, recvSize)) {
-            cerr << "KeyServer : client exit" << endl;
+            cerr << "KeyServer : client exit with no income data" << endl;
             multiThreadEditSketchTableMutex_.lock();
             for (int i = 0; i < sketchTableWidith_; i++) {
                 sketchTable_[0][i] = 0;
@@ -275,7 +259,7 @@ void keyServer::runKeyGen(SSL* connection)
 #if BREAK_DOWN_DEFINE == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
-            return;
+            break;
         }
         int recvNumber = recvSize / (4 * sizeof(uint32_t));
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
@@ -359,7 +343,7 @@ void keyServer::runKeyGen(SSL* connection)
 #if BREAK_DOWN_DEFINE == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
-            return;
+            break;
         }
         if (sketchTableCounter_ >= optimalSolverComputeItemNumberThreshold_) {
             multiThreadEditTMutex_.lock();
@@ -379,6 +363,7 @@ void keyServer::runKeyGen(SSL* connection)
     }
 
     cerr << "keyServer : exit successfully" << endl;
+    return;
 }
 
 void keyServer::runOptimalSolver()
@@ -422,7 +407,7 @@ void keyServer::runKeyGenSimple(SSL* connection)
 #if BREAK_DOWN_DEFINE == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
-            return;
+            break;
         }
         int recvNumber = recvSize / sizeof(keyGenEntry_t);
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
@@ -524,7 +509,7 @@ void keyServer::runKeyGenSimple(SSL* connection)
 #if BREAK_DOWN_DEFINE == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
-            return;
+            break;
         }
         if (sketchTableCounter_ >= optimalSolverComputeItemNumberThreshold_) {
             multiThreadEditTMutex_.lock();
@@ -543,12 +528,24 @@ void keyServer::runKeyGenSimple(SSL* connection)
         }
     }
     cerr << "keyServer : exit successfully" << endl;
+    return;
 }
 
 void keyServer::runKeyGenSS(SSL* connection)
 {
 
     cerr << "Zuoru: Using the runKeyGenSS" << endl;
+    // for hHash function
+    mpz_t fpBlock[BLOCK_NUM];
+    mpz_t finalHash;
+    mpz_t secretValue;
+    uint64_t secretShare;
+    HHash* hHash = new HHash();
+    for (size_t i = 0; i < BLOCK_NUM; i++) {
+        mpz_init(fpBlock[i]);
+    }
+    mpz_init(finalHash);
+    mpz_init_set_ui(secretValue, secretValue_);
 
     double keySeedGenTime = 0;
     long diff;
@@ -573,7 +570,7 @@ void keyServer::runKeyGenSS(SSL* connection)
 #if BREAK_DOWN_DEFINE == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
-            return;
+            break;
         }
         int recvNumber = recvSize / sizeof(keyGenEntry_t);
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
@@ -640,11 +637,11 @@ void keyServer::runKeyGenSS(SSL* connection)
                     tempKeySeed.simpleKeySeed.shaKeySeed);
                 tempKeySeed.isShare = false;
             } else {
-                hHash_->ConvertFPtoBlocks(fpBlock_, (const char*)tempKeyGen.singleChunkHash);
-                hHash_->ComputeMulForBlock(fpBlock_, secretValue_);
-                hHash_->ComputeBlockHash(finalHash_, fpBlock_);
+                hHash->ConvertFPtoBlocks(fpBlock, (const char*)tempKeyGen.singleChunkHash);
+                hHash->ComputeMulForBlock(fpBlock, secretValue);
+                hHash->ComputeBlockHash(finalHash, fpBlock);
                 size_t length;
-                mpz_export(tempKeySeed.hhashKeySeed.hhashKeySeed, &length, 1, sizeof(char), 1, 0, finalHash_);
+                mpz_export(tempKeySeed.hhashKeySeed.hhashKeySeed, &length, 1, sizeof(char), 1, 0, finalHash);
                 tempKeySeed.isShare = true;
             }
             memcpy(key + i * sizeof(KeySeedReturnEntry_t), &tempKeySeed, sizeof(KeySeedReturnEntry_t));
@@ -675,7 +672,7 @@ void keyServer::runKeyGenSS(SSL* connection)
 #if BREAK_DOWN_DEFINE == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
-            return;
+            break;
         }
         if (sketchTableCounter_ >= optimalSolverComputeItemNumberThreshold_) {
             multiThreadEditTMutex_.lock();
@@ -694,6 +691,14 @@ void keyServer::runKeyGenSS(SSL* connection)
         }
     }
     cerr << "keyServer : exit successfully" << endl;
+    // clean up hHash function
+    delete hHash;
+    for (size_t i = 0; i < BLOCK_NUM; i++) {
+        mpz_clear(fpBlock[i]);
+    }
+    mpz_clear(finalHash);
+    mpz_clear(secretValue);
+    return;
 }
 
 #endif

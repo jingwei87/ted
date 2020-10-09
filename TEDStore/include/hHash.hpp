@@ -10,15 +10,15 @@
  */
 
 #ifndef TEDSTORE_HHASH_HPP
-#define TEDSTORE_HHASH_HPP 
+#define TEDSTORE_HHASH_HPP
 
+#include <gmp.h>
+#include <inttypes.h>
+#include <math.h>
 #include <stdio.h>
-#include <time.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
-#include <gmp.h>
-#include <math.h>
+#include <time.h>
 
 #include "configure.hpp"
 #include "dataStructure.hpp"
@@ -27,7 +27,6 @@
 
 class HHash {
 private:
-    
     // two big prime
     mpz_t p_, q_;
 
@@ -37,7 +36,7 @@ private:
     // random seed
     uint32_t seed_ = 32;
 
-    // hash and buff 
+    // hash and buff
     mpz_t hash_;
     mpz_t buff_;
 
@@ -47,7 +46,6 @@ private:
     // temp op1_, op2_
     mpz_t op1_;
     mpz_t op2_;
-
 
     /**
      * @brief generate the g array according p and seed 
@@ -97,7 +95,6 @@ public:
      * @param secret the recovery secret
      */
     void RecoverySecretFromHash(mpz_t hash[K_PARA], mpz_t powVal[K_PARA], mpz_t secret);
-    
 
     /**
      * @brief Recover the secret from share hashes
@@ -107,7 +104,7 @@ public:
      * @param secret the recovery secret
      * @param adjustValue the value of adjust parameter
      */
-    void RecoverySecretFromHash(mpz_t hash[K_PARA], const int* index, 
+    void RecoverySecretFromHash(mpz_t hash[K_PARA], const int* index,
         mpz_t secret, uint64_t adjustValue);
 
     /**

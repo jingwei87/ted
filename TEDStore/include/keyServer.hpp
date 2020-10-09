@@ -33,11 +33,7 @@ private:
     ssl* keySecurityChannel_;
 
     // for multiple key managers
-    mpz_t fpBlock_[BLOCK_NUM];
-    mpz_t finalHash_;
-    mpz_t secretValue_;
-    uint64_t secretShare_;
-    HHash* hHash_;
+    uint64_t secretValue_;
 
 public:
 #if OLD_VERSION == 1

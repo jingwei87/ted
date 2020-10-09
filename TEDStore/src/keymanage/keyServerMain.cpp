@@ -2,14 +2,34 @@
 #include "ssl.hpp"
 
 Configure config("config.json");
+keyServer* server;
+ssl* keySecurityChannelTemp;
+
+void CTRLC(int s)
+{
+    cerr << " key server close" << endl;
+    if (keySecurityChannelTemp != nullptr)
+        delete keySecurityChannelTemp;
+    if (server != nullptr)
+        delete server;
+    exit(0);
+}
 
 #if SINGLE_THREAD_KEY_MANAGER == 1
 
 int main()
 {
+    struct sigaction sa;
+    sa.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &sa, 0);
+
+    sa.sa_handler = CTRLC;
+    sigaction(SIGKILL, &sa, 0);
+    sigaction(SIGINT, &sa, 0);
+
     ssl* keySecurityChannelTemp = new ssl(config.getKeyServerIP(), config.getKeyServerPort(), SERVERSIDE);
     boost::thread* th;
-    keyServer* server = new keyServer(keySecurityChannelTemp);
+    server = new keyServer(keySecurityChannelTemp);
     while (true) {
         SSL* sslConnection = keySecurityChannelTemp->sslListen().second;
         th = new boost::thread(boost::bind(&keyServer::runKeyGen, server, sslConnection));
@@ -23,14 +43,22 @@ int main()
 int main(int argc, char* argv[])
 {
 
+    struct sigaction sa;
+    sa.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &sa, 0);
+
+    sa.sa_handler = CTRLC;
+    sigaction(SIGKILL, &sa, 0);
+    sigaction(SIGINT, &sa, 0);
+
 #if SINGLE_MACHINE_TEST == 1
-    ssl* keySecurityChannelTemp = new ssl("127.0.0.1", atoi(argv[1]), SERVERSIDE);
+    keySecurityChannelTemp = new ssl("127.0.0.1", atoi(argv[1]), SERVERSIDE);
 #else
-    ssl* keySecurityChannelTemp = new ssl(config.getKeyServerIP(), config.getKeyServerPort(), SERVERSIDE);
+    keySecurityChannelTemp = new ssl(config.getKeyServerIP(), config.getKeyServerPort(), SERVERSIDE);
 #endif
     boost::thread* th;
 #if OLD_VERSION == 1
-    keyServer* server = new keyServer(keySecurityChannelTemp);
+    server = new keyServer(keySecurityChannelTemp);
 #else
     uint64_t secretValue;
 #if SINGLE_MACHINE_TEST == 1
@@ -38,7 +66,7 @@ int main(int argc, char* argv[])
 #else
     secretValue = config.getSecretShare();
 #endif
-    keyServer* server = new keyServer(keySecurityChannelTemp, secretValue);
+    server = new keyServer(keySecurityChannelTemp, secretValue);
 #endif
     th = new boost::thread(boost::bind(&keyServer::runOptimalSolver, server));
     while (true) {

@@ -48,6 +48,7 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
     memcpy(requestBufferFirst, &requestBodySize, sizeof(NetworkHeadStruct_t));
     if (!socket_.Send(requestBufferFirst, sendSize)) {
         free(requestBufferFirst);
+        free(recipeBuffer);
         cerr << "Sender : error sending file resipces size, peer may close" << endl;
         return false;
     } else {
@@ -63,15 +64,16 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
         cryptoObj_->encryptWithKey(recipeBuffer, totalRecipeNumber * sizeof(RecipeEntry_t), clientKey, requestBuffer + sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t));
         if (!socket_.Send(requestBuffer, sendSize)) {
             free(requestBuffer);
+            free(recipeBuffer);
             cerr << "Sender : error sending file resipces, peer may close" << endl;
             return false;
         } else {
             free(requestBuffer);
+            free(recipeBuffer);
             cerr << "Sender : send recipe done" << endl;
+            return true;
         }
     }
-
-    return true;
 }
 
 bool Sender::sendChunkList(char* requestBufferIn, int sendBufferSize, int sendChunkNumber, int& status)
