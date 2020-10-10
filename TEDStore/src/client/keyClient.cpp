@@ -115,7 +115,7 @@ void keyClient::runKeyGenSimulator()
     u_char chunkKey[CHUNK_ENCRYPT_KEY_SIZE * keyBatchSize_];
     int singleChunkHashSize = 4 * sizeof(int);
     u_char chunkHash[singleChunkHashSize * keyBatchSize_];
-    uint32_t maskInt = ~(1 & 0);
+    uint32_t maskInt = ~ (0); 
     for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
         maskInt &= ~(1 << (32 - i));
     }
@@ -222,7 +222,7 @@ void keyClient::run()
     int singleChunkHashSize = 4 * sizeof(int);
     u_char chunkHash[singleChunkHashSize * keyBatchSize_];
     bool JobDoneFlag = false;
-    uint32_t maskInt = ~(1 & 0);
+    uint32_t maskInt = ~(0);
     for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
         maskInt &= ~(1 << (32 - i));
     }
@@ -698,7 +698,7 @@ void keyClient::runSimple()
     batchList.reserve(keyBatchSize_);
     int batchNumber = 0;
     bool JobDoneFlag = false;
-    uint32_t maskInt = ~(1 & 0);
+    uint32_t maskInt = ~(0);
     for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
         maskInt &= ~(1 << (32 - i));
     }
@@ -901,7 +901,7 @@ void keyClient::runSS()
         assignNumberArray[i] = 0;
     }
     bool JobDoneFlag = false;
-    uint32_t maskInt = ~(1 & 0);
+    uint32_t maskInt = ~(0);
     for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
         maskInt &= ~(1 << (32 - i));
     }
@@ -1047,14 +1047,20 @@ void keyClient::runSS()
                         sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
                     assignNumberArray[tempShareIndex.tedSeedIndex]++;
                     memcpy(newKeyBuffer, tempKeySeed.simpleKeySeed.shaKeySeed, CHUNK_ENCRYPT_KEY_SIZE);
-
+		    //cout << "key seed: ";
+		    //for (size_t j = 0; j < CHUNK_ENCRYPT_KEY_SIZE; j++) {
+		       // printf("%x", tempKeySeed.simpleKeySeed.shaKeySeed[j]);
+		    //}
+		    //cout << endl;
                     int indexList[K_PARA];
                     for (size_t j = 0; j < K_PARA; j++) {
                         memcpy(&tempKeySeed, chunkKeyArray_[tempShareIndex.shareIndexArray[j]] + assignNumberArray[tempShareIndex.shareIndexArray[j]] * sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
                         mpz_import(share_[j], HHASH_KEY_SEED, 1, sizeof(char), 1, 0, tempKeySeed.hhashKeySeed.hhashKeySeed);
                         assignNumberArray[tempShareIndex.shareIndexArray[j]]++;
                         indexList[j] = tempShareIndex.shareIndexArray[j] + 1;
+			// cout << indexList[j] << " ";
                     }
+		    // cout << endl;
                     hHash_->RecoverySecretFromHash(share_, indexList, finalSecret_, adjustValue_);
                     u_char tempSecret[HHASH_KEY_SEED] = { 0 };
                     size_t length;
@@ -1063,8 +1069,19 @@ void keyClient::runSS()
                     memcpy(newKeyBuffer + CHUNK_ENCRYPT_KEY_SIZE, tempSecret, HHASH_KEY_SEED);
                     memcpy(newKeyBuffer + CHUNK_ENCRYPT_KEY_SIZE + HHASH_KEY_SEED,
                         batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
+		    //cout << "chunk hash: ";
+	 	    //for (size_t j = 0; j < CHUNK_HASH_SIZE; j++) {
+                    //    printf("%x", batchList[i].chunk.chunkHash[j]);
+                    //}
+                    //cout << endl;
                     cryptoObj_->generateHash(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + HHASH_KEY_SEED + CHUNK_HASH_SIZE,
                         batchList[i].chunk.encryptKey);
+		    //cout << "Encryption key: ";
+		    //for (size_t j = 0; j < CHUNK_HASH_SIZE; j++) {
+		    //	printf("%x", batchList[i].chunk.encryptKey[j]);
+		    // }
+		    // cout << endl;
+
 #if BREAK_DOWN_DEFINE == 1
                     gettimeofday(&timeendKey, NULL);
                     diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;

@@ -16,13 +16,18 @@ OpSolver::OpSolver(int m, vector<pair<string, int>> inputDistribution)
     maxEntropy_ = 0;
     originalEntropy_ = 0;
     sum_ = 0;
+    n_ = 0;
     for (auto iter = inputDistribution.begin(); iter != inputDistribution.end(); iter++) {
+	if (iter->second != 0) {
+	    n_ ++; 
+	}
         sum_ += iter->second;
         //cerr << sum_ << "\t" << iter->second << " ";
     }
     //cerr << endl;
 
     /**Initialization */
+    m_ = storageBlow_ * n_;
     double average = static_cast<double>(sum_) / m_;
     // if (sum_ % m_ != 0) {
     //     printf("the output maybe double\n");
@@ -125,6 +130,9 @@ double OpSolver::GetOptimal()
     }
     for (int i = startIndex + 1; i < m_; i++) {
         outputFeqDistr_[i] = newAverage;
+    }
+    if (storageBlow_ == 1) {
+	newAverage = (1 << 30);
     }
     return newAverage;
 }
