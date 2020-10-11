@@ -56,41 +56,19 @@ void DataSR::run(Socket socket)
             }
             case CLIENT_UPLOAD_ENCRYPTED_RECIPE: {
                 int recipeListSize = netBody.dataSize;
-                cerr << "DataSR : recv file recipe size = " << recipeListSize << endl;
-                if (recipeListSize <= 0) {
-                    cerr << "DataSR : client send recipe list size error, recved recipe list size = " << recipeListSize << endl;
-                    netBody.messageType = ERROR_CLOSE;
-                    netBody.dataSize = 0;
-                    sendSize = sizeof(NetworkHeadStruct_t);
-                    memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
-                    memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
-                    socket.Send(sendBuffer, sendSize);
-                    break;
-                } else {
-                    u_char* recipeListBuffer = (u_char*)malloc(sizeof(u_char) * recipeListSize + sizeof(NetworkHeadStruct_t));
-                    if (!socket.Recv(recipeListBuffer, recvSize)) {
-                        cerr << "DataSR : client closed socket connect, recipe store failed,  fd = " << socket.fd_ << " Thread exit now" << endl;
-                        netBody.messageType = ERROR_CLOSE;
-                        netBody.dataSize = 0;
-                        sendSize = sizeof(NetworkHeadStruct_t);
-                        memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
-                        memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
-                        socket.Send(sendBuffer, sendSize);
-                        break;
-                    } else {
-                        Recipe_t newFileRecipe;
-                        memcpy(&newFileRecipe, recipeListBuffer + sizeof(NetworkHeadStruct_t), sizeof(Recipe_t));
-                        storageObj_->storeRecipes((char*)newFileRecipe.fileRecipeHead.fileNameHash, recipeListBuffer + sizeof(NetworkHeadStruct_t), recipeListSize);
-                        free(recipeListBuffer);
-                        netBody.messageType = SUCCESS;
-                        netBody.dataSize = 0;
-                        sendSize = sizeof(NetworkHeadStruct_t);
-                        memset(sendBuffer, 0, NETWORK_MESSAGE_DATA_SIZE);
-                        memcpy(sendBuffer, &netBody, sizeof(NetworkHeadStruct_t));
-                        socket.Send(sendBuffer, sendSize);
-                        break;
-                    }
+                cout << "DataSR : recv file recipe size = " << recipeListSize << endl;
+                u_char* recipeListBuffer = (u_char*)malloc(sizeof(u_char) * recipeListSize + sizeof(NetworkHeadStruct_t));
+                if (!socket.Recv(recipeListBuffer, recvSize)) {
+                    cout << "DataSR : client closed socket connect, recipe store failed, Thread exit now" << endl;
+                    cerr << "DataSR : data thread exit now due to client connection lost" << endl;
+                    free(recipeListBuffer);
+                    return;
                 }
+                Recipe_t newFileRecipe;
+                memcpy(&newFileRecipe, recipeListBuffer + sizeof(NetworkHeadStruct_t), sizeof(Recipe_t));
+                storageObj_->storeRecipes((char*)newFileRecipe.fileRecipeHead.fileNameHash, recipeListBuffer + sizeof(NetworkHeadStruct_t), recipeListSize);
+                free(recipeListBuffer);
+                break;
             }
             case CLIENT_UPLOAD_DECRYPTED_RECIPE: {
                 // cerr << "DataSR : current recipe size = " << recipeSize << ", toatl chunk number = " << restoredFileRecipe.fileRecipeHead.totalChunkNumber << endl;

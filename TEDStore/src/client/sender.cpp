@@ -36,51 +36,35 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
     for (int i = 0; i < totalRecipeNumber; i++) {
         memcpy(recipeBuffer + i * sizeof(RecipeEntry_t), &recipeList[i], sizeof(RecipeEntry_t));
     }
-    u_char clientKey[32];
-    memset(clientKey, 1, 32);
-
-    NetworkHeadStruct_t requestBodySize;
-    requestBodySize.clientID = clientID_;
-    requestBodySize.messageType = CLIENT_UPLOAD_ENCRYPTED_RECIPE;
+    NetworkHeadStruct_t requestBody;
+    requestBody.clientID = clientID_;
+    requestBody.messageType = CLIENT_UPLOAD_ENCRYPTED_RECIPE;
     int sendSize = sizeof(NetworkHeadStruct_t);
-    requestBodySize.dataSize = totalRecipeSize;
+    requestBody.dataSize = totalRecipeSize;
     u_char* requestBufferFirst = (u_char*)malloc(sizeof(u_char) * sendSize);
-    memcpy(requestBufferFirst, &requestBodySize, sizeof(NetworkHeadStruct_t));
+    memcpy(requestBufferFirst, &requestBody, sizeof(NetworkHeadStruct_t));
     if (!socket_.Send(requestBufferFirst, sendSize)) {
-        free(requestBufferFirst);
         free(recipeBuffer);
+        free(requestBufferFirst);
         cerr << "Sender : error sending file resipces size, peer may close" << endl;
         return false;
     } else {
         free(requestBufferFirst);
-        NetworkHeadStruct_t requestBodyRecipe;
-        requestBodyRecipe.clientID = clientID_;
-        requestBodyRecipe.messageType = CLIENT_UPLOAD_ENCRYPTED_RECIPE;
-        int sendSize = sizeof(NetworkHeadStruct_t) + totalRecipeSize;
-        requestBodyRecipe.dataSize = totalRecipeSize;
+        sendSize = sizeof(NetworkHeadStruct_t) + totalRecipeSize;
+        requestBody.dataSize = totalRecipeSize;
         u_char* requestBuffer = (u_char*)malloc(sizeof(u_char) * sendSize);
-        memcpy(requestBuffer, &requestBodyRecipe, sizeof(NetworkHeadStruct_t));
+        memcpy(requestBuffer, &requestBody, sizeof(NetworkHeadStruct_t));
         memcpy(requestBuffer + sizeof(NetworkHeadStruct_t), &request, sizeof(Recipe_t));
-        cryptoObj_->encryptWithKey(recipeBuffer, totalRecipeNumber * sizeof(RecipeEntry_t), clientKey, requestBuffer + sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t));
+        cryptoObj_->encryptWithKey(recipeBuffer, totalRecipeNumber * sizeof(RecipeEntry_t), cryptoObj_->chunkKeyEncryptionKey_, (u_char*)requestBuffer + sizeof(NetworkHeadStruct_t) + sizeof(Recipe_t));
         if (!socket_.Send(requestBuffer, sendSize)) {
-            free(requestBuffer);
             free(recipeBuffer);
+            free(requestBuffer);
             cerr << "Sender : error sending file resipces, peer may close" << endl;
             return false;
         } else {
-            u_char responedBuffer[sizeof(NetworkHeadStruct_t)];
-            int recvSize = 0;
-            if (!socket_.Recv(responedBuffer, recvSize)) {
-                free(requestBuffer);
-                free(recipeBuffer);
-                cerr << "Sender : error sending file resipces, peer may close" << endl;
-                return false;
-            }
-            NetworkHeadStruct_t responedHead;
-            memcpy(&responedHead, responedBuffer, sizeof(NetworkHeadStruct_t));
-            free(requestBuffer);
             free(recipeBuffer);
-            cerr << "Sender : send recipe done" << endl;
+            free(requestBuffer);
+            cerr << "Sender : successed sending file resipces" << endl;
             return true;
         }
     }
@@ -138,6 +122,7 @@ bool Sender::sendEndFlag()
         cerr << "Sender : send data error peer closed" << endl;
         return false;
     } else {
+        cerr << "Sender : recv end flag ack" << endl;
         memcpy(&responseBody, responseBuffer, sizeof(NetworkHeadStruct_t));
         if (responseBody.messageType == SERVER_JOB_DONE_EXIT_PERMIT) {
             return true;
@@ -259,8 +244,6 @@ void Sender::run()
     // cerr << "Sender : start send file recipes" << endl;
     if (!this->sendRecipe(fileRecipe, recipeList, status)) {
         cerr << "Sender : send recipe list error, upload fail " << endl;
-        free(sendChunkBatchBuffer);
-        return;
     }
 #if BREAK_DOWN_DEFINE == 1
     gettimeofday(&timeendSender, NULL);
@@ -273,6 +256,7 @@ void Sender::run()
     free(sendChunkBatchBuffer);
     bool serverJobDoneFlag = sendEndFlag();
     if (serverJobDoneFlag) {
+        cerr << "Sender : server job done flag success" << endl;
         return;
     } else {
         cerr << "Sender : server job done flag error, server may shutdown, upload may faild" << endl;
