@@ -68,6 +68,16 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
             cerr << "Sender : error sending file resipces, peer may close" << endl;
             return false;
         } else {
+            u_char responedBuffer[sizeof(NetworkHeadStruct_t)];
+            int recvSize = 0;
+            if (!socket_.Recv(responedBuffer, recvSize)) {
+                free(requestBuffer);
+                free(recipeBuffer);
+                cerr << "Sender : error sending file resipces, peer may close" << endl;
+                return false;
+            }
+            NetworkHeadStruct_t responedHead;
+            memcpy(&responedHead, responedBuffer, sizeof(NetworkHeadStruct_t));
             free(requestBuffer);
             free(recipeBuffer);
             cerr << "Sender : send recipe done" << endl;
@@ -250,7 +260,6 @@ void Sender::run()
     if (!this->sendRecipe(fileRecipe, recipeList, status)) {
         cerr << "Sender : send recipe list error, upload fail " << endl;
         free(sendChunkBatchBuffer);
-        sendEndFlag();
         return;
     }
 #if BREAK_DOWN_DEFINE == 1
