@@ -57,12 +57,16 @@ void DataSR::run(Socket socket)
             case CLIENT_UPLOAD_ENCRYPTED_RECIPE: {
                 int recipeListSize = netBody.dataSize;
                 cout << "DataSR : recv file recipe size = " << recipeListSize << endl;
+                if (recipeListSize <= 0) {
+                    cerr << "Sender : file resipces size error, stop recving" << endl;
+                    break;
+                }
                 u_char* recipeListBuffer = (u_char*)malloc(sizeof(u_char) * recipeListSize + sizeof(NetworkHeadStruct_t));
                 if (!socket.Recv(recipeListBuffer, recvSize)) {
                     cout << "DataSR : client closed socket connect, recipe store failed, Thread exit now" << endl;
                     cerr << "DataSR : data thread exit now due to client connection lost" << endl;
                     free(recipeListBuffer);
-                    return;
+                    break;
                 }
                 Recipe_t newFileRecipe;
                 memcpy(&newFileRecipe, recipeListBuffer + sizeof(NetworkHeadStruct_t), sizeof(Recipe_t));

@@ -32,6 +32,11 @@ bool Sender::sendRecipe(Recipe_t request, RecipeList_t recipeList, int& status)
 {
     int totalRecipeNumber = recipeList.size();
     int totalRecipeSize = totalRecipeNumber * sizeof(RecipeEntry_t) + sizeof(Recipe_t);
+    cerr << "Sender : total recipe size = " << totalRecipeSize << endl;
+    if (totalRecipeSize <= 0) {
+        cerr << "Sender : file resipces size error, stop sending" << endl;
+        return true;
+    }
     u_char* recipeBuffer = (u_char*)malloc(sizeof(u_char) * totalRecipeNumber * sizeof(RecipeEntry_t));
     for (int i = 0; i < totalRecipeNumber; i++) {
         memcpy(recipeBuffer + i * sizeof(RecipeEntry_t), &recipeList[i], sizeof(RecipeEntry_t));
