@@ -633,20 +633,28 @@ void keyServer::runKeyGenSS(SSL* connection)
                     else
                         param = result;
                 }
-		if (config.getStorageBlowPercent() == 0) {
-		    param = 1;
-		}
-                memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
-                memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
-                memcpy(newKeyBuffer + SECRET_SIZE + 4 * sizeof(uint32_t), &param, sizeof(int));
-		//cout << "para: " << param << endl;
-                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int),
-                    tempKeySeed.simpleKeySeed.shaKeySeed);
-		// cout << "Key seed: ";
-		//for (size_t j = 0; j < 32; j++) {
-		//	printf("%x", tempKeySeed.simpleKeySeed.shaKeySeed[j]);	
-		//}
-		//cout << endl;
+		        if (config.getStorageBlowPercent() == 0) {
+		            param = 1;
+		        }
+                // memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
+                // memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
+                // memcpy(newKeyBuffer + SECRET_SIZE + 4 * sizeof(uint32_t), &param, sizeof(int));
+		        //cout << "para: " << param << endl;
+                // cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int),
+                //     tempKeySeed.simpleKeySeed.shaKeySeed);
+                hHash->ConvertFPtoBlocks(fpBlock, (const char*)tempKeyGen.singleChunkHash);
+                hHash->ComputeMulForBlock(fpBlock, secretValue);
+                mpz_set_ui(finalHash, static_cast<unsigned long>(param));
+                hHash->ComputeMulForBlock(fpBlock, finalHash);
+                mpz_set_ui(finalHash, 0);
+                hHash->ComputeBlockHash(finalHash, fpBlock);
+                size_t length;
+                mpz_export(tempKeySeed.hhashKeySeed.hhashKeySeed, &length, 1, sizeof(char), 1, 0, finalHash);
+                // cout << "Key seed: ";
+                //for (size_t j = 0; j < 32; j++) {
+                //	printf("%x", tempKeySeed.simpleKeySeed.shaKeySeed[j]);	
+                //}
+                //cout << endl;
                 tempKeySeed.isShare = false;
             } else {
                 hHash->ConvertFPtoBlocks(fpBlock, (const char*)tempKeyGen.singleChunkHash);

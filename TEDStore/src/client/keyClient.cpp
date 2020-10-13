@@ -975,18 +975,18 @@ void keyClient::runSS()
                     assignNumberArray[i]++;
                     tempShareIndex.tedSeedIndex = keyManagerIndex;
                 } else {
-                    if (remainShareNum != K_PARA) {
+                    if (remainShareNum != (K_PARA - 1)) {
                         memcpy(chunkHashArray_[i] + assignNumberArray[i] * sizeof(keyGenEntry_t),
                             &tempKeyGenEntry, sizeof(keyGenEntry_t));
                         assignNumberArray[i]++;
                         tempShareIndex.shareIndexArray[remainShareNum] = static_cast<int>(i);
                         remainShareNum++;  
-		    } else {
-			continue;
-		    }
+		            } else {
+			            continue;
+		            }
                 } 
             }
-            if (remainShareNum != K_PARA) {
+            if (remainShareNum != (K_PARA - 1)) {
                 cerr << "The number of key manager:" << this->keyManNum_
                      << " lower than " << K_PARA << endl;
                 exit(EXIT_FAILURE);
@@ -1025,7 +1025,7 @@ void keyClient::runSS()
                 cerr << "KeyClient : error get key for " << setbase(10) << batchNumber << " chunks" << endl;
                 return;
             } else {
-                u_char newKeyBuffer[CHUNK_ENCRYPT_KEY_SIZE + HHASH_KEY_SEED + CHUNK_ENCRYPT_KEY_SIZE];
+                u_char newKeyBuffer[CHUNK_HASH_SIZE + HHASH_KEY_SEED];
                 for (size_t i = 0; i < this->keyManNum_; i++) {
                     assignNumberArray[i] = 0;
                 }
@@ -1033,12 +1033,12 @@ void keyClient::runSS()
 #if BREAK_DOWN_DEFINE == 1
                     gettimeofday(&timestartKey, NULL);
 #endif
-
                     // generate the secret here
                     KeySeedReturnEntry_t tempKeySeed;
                     ShareIndexEntry_t tempShareIndex;
+                    int indexList[K_PARA];
                     // store the key seed in first 32 bytes of newKeyBuffer
-                    memset(newKeyBuffer, 1, CHUNK_ENCRYPT_KEY_SIZE + HHASH_KEY_SEED + CHUNK_HASH_SIZE);
+                    memset(newKeyBuffer, 0, CHUNK_HASH_SIZE + HHASH_KEY_SEED);
                     // recover the share index
                     memcpy(&tempShareIndex, shareIndexArrayBuffer_ + i * sizeof(ShareIndexEntry_t),
                         sizeof(ShareIndexEntry_t));                    
@@ -1046,42 +1046,35 @@ void keyClient::runSS()
                     memcpy(&tempKeySeed, chunkKeyArray_[tempShareIndex.tedSeedIndex] + assignNumberArray[tempShareIndex.tedSeedIndex] * 
                         sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
                     assignNumberArray[tempShareIndex.tedSeedIndex]++;
-                    memcpy(newKeyBuffer, tempKeySeed.simpleKeySeed.shaKeySeed, CHUNK_ENCRYPT_KEY_SIZE);
-		    //cout << "key seed: ";
-		    //for (size_t j = 0; j < CHUNK_ENCRYPT_KEY_SIZE; j++) {
-		       // printf("%x", tempKeySeed.simpleKeySeed.shaKeySeed[j]);
-		    //}
-		    //cout << endl;
-                    int indexList[K_PARA];
-                    for (size_t j = 0; j < K_PARA; j++) {
+
+                    indexList[0] = tempShareIndex.tedSeedIndex + 1;
+                    mpz_import(share_[0], HHASH_KEY_SEED, 1, sizeof(char), 1, 0,  tempKeySeed.hhashKeySeed.hhashKeySeed);
+                    
+                    for (size_t j = 0; j < K_PARA - 1; j++) {
                         memcpy(&tempKeySeed, chunkKeyArray_[tempShareIndex.shareIndexArray[j]] + assignNumberArray[tempShareIndex.shareIndexArray[j]] * sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
-                        mpz_import(share_[j], HHASH_KEY_SEED, 1, sizeof(char), 1, 0, tempKeySeed.hhashKeySeed.hhashKeySeed);
+                        mpz_import(share_[j + 1], HHASH_KEY_SEED, 1, sizeof(char), 1, 0, tempKeySeed.hhashKeySeed.hhashKeySeed);
                         assignNumberArray[tempShareIndex.shareIndexArray[j]]++;
-                        indexList[j] = tempShareIndex.shareIndexArray[j] + 1;
-			// cout << indexList[j] << " ";
+                        indexList[j + 1] = tempShareIndex.shareIndexArray[j] + 1;
                     }
-		    // cout << endl;
                     hHash_->RecoverySecretFromHash(share_, indexList, finalSecret_, adjustValue_);
                     u_char tempSecret[HHASH_KEY_SEED] = { 0 };
                     size_t length;
                     mpz_export(tempSecret, &length, 1, sizeof(char), 1, 0, finalSecret_);
-
-                    memcpy(newKeyBuffer + CHUNK_ENCRYPT_KEY_SIZE, tempSecret, HHASH_KEY_SEED);
-                    memcpy(newKeyBuffer + CHUNK_ENCRYPT_KEY_SIZE + HHASH_KEY_SEED,
-                        batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
-		    //cout << "chunk hash: ";
-	 	    //for (size_t j = 0; j < CHUNK_HASH_SIZE; j++) {
+                    
+                    memcpy(newKeyBuffer, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
+                    memcpy(newKeyBuffer + CHUNK_HASH_SIZE, tempSecret, HHASH_KEY_SEED);
+		            //cout << "chunk hash: ";
+	 	            //for (size_t j = 0; j < CHUNK_HASH_SIZE; j++) {
                     //    printf("%x", batchList[i].chunk.chunkHash[j]);
                     //}
                     //cout << endl;
-                    cryptoObj_->generateHash(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + HHASH_KEY_SEED + CHUNK_HASH_SIZE,
+                    cryptoObj_->generateHash(newKeyBuffer, CHUNK_HASH_SIZE + HHASH_KEY_SEED,
                         batchList[i].chunk.encryptKey);
-		    //cout << "Encryption key: ";
-		    //for (size_t j = 0; j < CHUNK_HASH_SIZE; j++) {
-		    //	printf("%x", batchList[i].chunk.encryptKey[j]);
-		    // }
-		    // cout << endl;
-
+		            //cout << "Encryption key: ";
+		            //for (size_t j = 0; j < CHUNK_HASH_SIZE; j++) {
+		            //	printf("%x", batchList[i].chunk.encryptKey[j]);
+		            // }
+		            // cout << endl;
 #if BREAK_DOWN_DEFINE == 1
                     gettimeofday(&timeendKey, NULL);
                     diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;

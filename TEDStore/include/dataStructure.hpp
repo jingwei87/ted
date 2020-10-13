@@ -132,7 +132,7 @@ typedef struct {
 
 typedef struct {
     int tedSeedIndex;
-    int shareIndexArray[K_PARA];
+    int shareIndexArray[K_PARA - 1];
 } ShareIndexEntry_t;
 
 
