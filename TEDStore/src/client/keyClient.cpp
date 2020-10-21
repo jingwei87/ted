@@ -471,7 +471,7 @@ bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_
     //    }
     // }
     for (size_t i = 0; i < this->keyManNum_; i++) {
-	tPool_->enqueue(&ssl::send, securityChannelArray[i], sslConnectionArray[i], (char*)batchHashList[i], sizeof(keyGenEntry_t) * batchNumber);
+	    tPool_->enqueue(&ssl::send, securityChannelArray[i], sslConnectionArray[i], (char*)batchHashList[i], sizeof(keyGenEntry_t) * batchNumber);
     }
     tPool_->wait_until_nothing_in_flight();
 #if BREAK_DOWN_DEFINE == 1
@@ -728,20 +728,7 @@ void keyClient::runSimple()
             fpValue = convertFPtoValue(tempChunk);
 
             // assign the key manager here
-            if (ROUTE_APPROACH == FP_SCHEME) {
-                keyManagerIndex = this->keyAssignment(fpValue);
-            } else if (ROUTE_APPROACH == RR_SCHEME) {
-                keyManagerIndex = this->keyAssignment(fpValue, this->totalProcessedChunk_);
-            } else if (ROUTE_APPROACH == BASIC_SCHEME) {
-                keyManagerIndex = this->keyAssignment(fpValue, counterArray_);
-            } else if (ROUTE_APPROACH == ENHANCE_SCHEME) {
-                string fp((char*)tempChunk.chunk.chunkHash, CHUNK_HASH_SIZE);
-                keyManagerIndex = this->keyAssignment(fpValue, counterArray_, fp);
-            } else {
-                fprintf(stderr, "keyClient: Error type.\n");
-                exit(EXIT_FAILURE);
-            }
-            // fprintf(stderr, "Choose key manager index: %u\n", keyManagerIndex);
+            keyManagerIndex = this->keyAssignment(fpValue);
 #if BREAK_DOWN_DEFINE == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
@@ -930,19 +917,7 @@ void keyClient::runSS()
             fpValue = convertFPtoValue(tempChunk);
 
             // assign the key manager here
-            if (ROUTE_APPROACH == FP_SCHEME) {
-                keyManagerIndex = this->keyAssignment(fpValue);
-            } else if (ROUTE_APPROACH == RR_SCHEME) {
-                keyManagerIndex = this->keyAssignment(fpValue, this->totalProcessedChunk_);
-            } else if (ROUTE_APPROACH == BASIC_SCHEME) {
-                keyManagerIndex = this->keyAssignment(fpValue, counterArray_);
-            } else if (ROUTE_APPROACH == ENHANCE_SCHEME) {
-                string fp((char*)tempChunk.chunk.chunkHash, CHUNK_HASH_SIZE);
-                keyManagerIndex = this->keyAssignment(fpValue, counterArray_, fp);
-            } else {
-                fprintf(stderr, "keyClient: Error type.\n");
-                exit(EXIT_FAILURE);
-            }
+            keyManagerIndex = this->keyAssignment(fpValue);
             // fprintf(stderr, "Choose key manager index: %u\n", keyManagerIndex);
 #if BREAK_DOWN_DEFINE == 1
             gettimeofday(&timeendKey, NULL);
@@ -975,14 +950,18 @@ void keyClient::runSS()
                     assignNumberArray[i]++;
                     tempShareIndex.tedSeedIndex = keyManagerIndex;
                 } else {
-                    if (remainShareNum != (K_PARA - 1)) {
+                    if (remainShareNum < (K_PARA - 1)) {
+                        tempKeyGenEntry.usingCount = true;
                         memcpy(chunkHashArray_[i] + assignNumberArray[i] * sizeof(keyGenEntry_t),
                             &tempKeyGenEntry, sizeof(keyGenEntry_t));
                         assignNumberArray[i]++;
                         tempShareIndex.shareIndexArray[remainShareNum] = static_cast<int>(i);
                         remainShareNum++;  
 		            } else {
-			            continue;
+			            tempKeyGenEntry.usingCount = false;
+                        memcpy(chunkHashArray_[i] + assignNumberArray[i] * sizeof(keyGenEntry_t),
+                            &tempKeyGenEntry, sizeof(keyGenEntry_t));
+                        assignNumberArray[i]++;
 		            }
                 } 
             }
@@ -1045,7 +1024,7 @@ void keyClient::runSS()
                     // copy ted seed to newKeyBuffer
                     memcpy(&tempKeySeed, chunkKeyArray_[tempShareIndex.tedSeedIndex] + assignNumberArray[tempShareIndex.tedSeedIndex] * 
                         sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
-                    assignNumberArray[tempShareIndex.tedSeedIndex]++;
+                    // assignNumberArray[tempShareIndex.tedSeedIndex]++;
 
                     indexList[0] = tempShareIndex.tedSeedIndex + 1;
                     mpz_import(share_[0], HHASH_KEY_SEED, 1, sizeof(char), 1, 0,  tempKeySeed.hhashKeySeed.hhashKeySeed);
@@ -1053,7 +1032,7 @@ void keyClient::runSS()
                     for (size_t j = 0; j < K_PARA - 1; j++) {
                         memcpy(&tempKeySeed, chunkKeyArray_[tempShareIndex.shareIndexArray[j]] + assignNumberArray[tempShareIndex.shareIndexArray[j]] * sizeof(KeySeedReturnEntry_t), sizeof(KeySeedReturnEntry_t));
                         mpz_import(share_[j + 1], HHASH_KEY_SEED, 1, sizeof(char), 1, 0, tempKeySeed.hhashKeySeed.hhashKeySeed);
-                        assignNumberArray[tempShareIndex.shareIndexArray[j]]++;
+                        // assignNumberArray[tempShareIndex.shareIndexArray[j]]++;
                         indexList[j + 1] = tempShareIndex.shareIndexArray[j] + 1;
                     }
                     hHash_->RecoverySecretFromHash(share_, indexList, finalSecret_, adjustValue_);
@@ -1098,6 +1077,11 @@ void keyClient::runSS()
                         cerr << "KeyClient : encode chunk error, exiting" << endl;
                         return;
                     }
+
+                    for (size_t i = 0; i < this->keyManNum_; i++) {
+                        assignNumberArray[i]++;
+                    }
+
                 }
                 batchList.clear();
                 batchList.reserve(keyBatchSize_);

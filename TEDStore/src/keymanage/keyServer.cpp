@@ -423,28 +423,28 @@ void keyServer::runKeyGenSimple(SSL* connection)
             u_char newKeyBuffer[SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int)];
             memcpy(&tempKeyGen, hash + i * sizeof(keyGenEntry_t), sizeof(keyGenEntry_t));
 
+            // count for key generation
+            int sketchTableSearchCompareNumber = 0;
+            for (int j = 0; j < 4; j++) {
+                memcpy(&hashNumber[j], tempKeyGen.singleChunkHash + j * sizeof(uint32_t), sizeof(uint32_t));
+                sketchTable_[j][hashNumber[j] % sketchTableWidith_]++;
+            }
+
+            // find min counter in the sketch
+            sketchTableSearchCompareNumber = sketchTable_[0][hashNumber[0] % sketchTableWidith_];
+            if (sketchTableSearchCompareNumber > sketchTable_[1][hashNumber[1] % sketchTableWidith_]) {
+                sketchTableSearchCompareNumber = sketchTable_[1][hashNumber[1] % sketchTableWidith_];
+            }
+            if (sketchTableSearchCompareNumber > sketchTable_[2][hashNumber[2] % sketchTableWidith_]) {
+                sketchTableSearchCompareNumber = sketchTable_[2][hashNumber[2] % sketchTableWidith_];
+            }
+            if (sketchTableSearchCompareNumber > sketchTable_[3][hashNumber[3] % sketchTableWidith_]) {
+                sketchTableSearchCompareNumber = sketchTable_[3][hashNumber[3] % sketchTableWidith_];
+            }
+
+            int param = floor(sketchTableSearchCompareNumber / T_);
+
             if (tempKeyGen.usingCount) {
-                // count for key generation
-                int sketchTableSearchCompareNumber = 0;
-                for (int j = 0; j < 4; j++) {
-                    memcpy(&hashNumber[j], tempKeyGen.singleChunkHash + j * sizeof(uint32_t), sizeof(uint32_t));
-                    sketchTable_[j][hashNumber[j] % sketchTableWidith_]++;
-                }
-
-                // find min counter in the sketch
-                sketchTableSearchCompareNumber = sketchTable_[0][hashNumber[0] % sketchTableWidith_];
-                if (sketchTableSearchCompareNumber > sketchTable_[1][hashNumber[1] % sketchTableWidith_]) {
-                    sketchTableSearchCompareNumber = sketchTable_[1][hashNumber[1] % sketchTableWidith_];
-                }
-                if (sketchTableSearchCompareNumber > sketchTable_[2][hashNumber[2] % sketchTableWidith_]) {
-                    sketchTableSearchCompareNumber = sketchTable_[2][hashNumber[2] % sketchTableWidith_];
-                }
-                if (sketchTableSearchCompareNumber > sketchTable_[3][hashNumber[3] % sketchTableWidith_]) {
-                    sketchTableSearchCompareNumber = sketchTable_[3][hashNumber[3] % sketchTableWidith_];
-                }
-
-                int param = floor(sketchTableSearchCompareNumber / T_);
-
                 if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_POISSON_RAND) {
                     int lambda = ceil(param / 2.0);
                     poisson_distribution<> dis(lambda);
@@ -467,23 +467,17 @@ void keyServer::runKeyGenSimple(SSL* connection)
                     else
                         param = result;
                 }
-		if (config.getStorageBlowPercent() == 0) {
-		    param = 1;
-		}
-                memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
-                memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
-                memcpy(newKeyBuffer + SECRET_SIZE + 4 * sizeof(uint32_t), &param, sizeof(int));
-                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int),
-                    tempKeySeed.simpleKeySeed.shaKeySeed);
-                tempKeySeed.isShare = false;
-            } else {
-                // directly return share
-                memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
-                memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
-                cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t),
-                    tempKeySeed.simpleKeySeed.shaKeySeed);
-                tempKeySeed.isShare = true;
             }
+            
+            if (config.getStorageBlowPercent() == 0) {
+                param = 1;
+            }
+            memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
+            memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
+            memcpy(newKeyBuffer + SECRET_SIZE + 4 * sizeof(uint32_t), &param, sizeof(int));
+            cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int),
+                tempKeySeed.simpleKeySeed.shaKeySeed);
+            tempKeySeed.isShare = false;
             memcpy(key + i * sizeof(KeySeedReturnEntry_t), &tempKeySeed, sizeof(KeySeedReturnEntry_t));
         }
         sketchTableCounter_ += recvNumber;
@@ -589,14 +583,15 @@ void keyServer::runKeyGenSS(SSL* connection)
             u_char newKeyBuffer[SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int)];
             memcpy(&tempKeyGen, hash + i * sizeof(keyGenEntry_t), sizeof(keyGenEntry_t));
 
-            if (tempKeyGen.usingCount) {
-                // count for key generation
-                int sketchTableSearchCompareNumber = 0;
-                for (int j = 0; j < 4; j++) {
-                    memcpy(&hashNumber[j], tempKeyGen.singleChunkHash + j * sizeof(uint32_t), sizeof(uint32_t));
-                    sketchTable_[j][hashNumber[j] % sketchTableWidith_]++;
-                }
+            
+            // count for key generation
+            int sketchTableSearchCompareNumber = 0;
+            for (int j = 0; j < 4; j++) {
+                memcpy(&hashNumber[j], tempKeyGen.singleChunkHash + j * sizeof(uint32_t), sizeof(uint32_t));
+                sketchTable_[j][hashNumber[j] % sketchTableWidith_]++;
+            }
 
+            if (tempKeyGen.usingCount) {
                 // find min counter in the sketch
                 sketchTableSearchCompareNumber = sketchTable_[0][hashNumber[0] % sketchTableWidith_];
                 if (sketchTableSearchCompareNumber > sketchTable_[1][hashNumber[1] % sketchTableWidith_]) {
@@ -655,14 +650,9 @@ void keyServer::runKeyGenSS(SSL* connection)
                 //	printf("%x", tempKeySeed.simpleKeySeed.shaKeySeed[j]);	
                 //}
                 //cout << endl;
-                tempKeySeed.isShare = false;
-            } else {
-                hHash->ConvertFPtoBlocks(fpBlock, (const char*)tempKeyGen.singleChunkHash);
-                hHash->ComputeMulForBlock(fpBlock, secretValue);
-                hHash->ComputeBlockHash(finalHash, fpBlock);
-                size_t length;
-                mpz_export(tempKeySeed.hhashKeySeed.hhashKeySeed, &length, 1, sizeof(char), 1, 0, finalHash);
                 tempKeySeed.isShare = true;
+            } else {
+                tempKeySeed.isShare = false;
             }
             memcpy(key + i * sizeof(KeySeedReturnEntry_t), &tempKeySeed, sizeof(KeySeedReturnEntry_t));
         }
