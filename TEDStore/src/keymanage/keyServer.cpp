@@ -44,6 +44,7 @@ keyServer::keyServer(ssl* keyServerSecurityChannelTemp, uint64_t secretValue)
     gen_ = mt19937_64(rd_());
     memset(keyServerPrivate_, 1, SECRET_SIZE);
     optimalSolverComputeItemNumberThreshold_ = config.getOptimalSolverComputeItemNumberThreshold();
+    
 }
 #endif
 

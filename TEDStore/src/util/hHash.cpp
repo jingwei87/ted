@@ -65,6 +65,7 @@ HHash::HHash()
     mpz_init_set_str(p_, "225232741022919503494335621622594011137", 10);
     mpz_init_set_str(q_, "5685673727", 10);
 
+
     // initialize the array g_
     for (size_t i = 0; i < BLOCK_NUM; i++) {
         mpz_init(g_[i]);
