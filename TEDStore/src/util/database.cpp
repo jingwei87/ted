@@ -2,15 +2,13 @@
 
 bool Database::query(std::string key, std::string& value)
 {
-    std::lock_guard<std::mutex> locker(this->mutexDataBase_);
-    leveldb::Status queryStatus = this->levelDBObj_->Get(leveldb::ReadOptions(), key, &value);
+    rocksdb::Status queryStatus = this->rocksDBObj_->Get(rocksdb::ReadOptions(), key, &value);
     return queryStatus.ok();
 }
 
 bool Database::insert(std::string key, std::string value)
 {
-    std::lock_guard<std::mutex> locker(this->mutexDataBase_);
-    leveldb::Status insertStatus = this->levelDBObj_->Put(leveldb::WriteOptions(), key, value);
+    rocksdb::Status insertStatus = this->rocksDBObj_->Put(rocksdb::WriteOptions(), key, value);
     return insertStatus.ok();
 }
 
@@ -25,9 +23,11 @@ bool Database::openDB(std::string dbName)
     }
     dbName_ = dbName;
 
-    leveldb::Options options;
+    rocksdb::Options options;
     options.create_if_missing = true;
-    leveldb::Status status = leveldb::DB::Open(options, dbName, &this->levelDBObj_);
+    options.IncreaseParallelism();
+    options.OptimizeLevelStyleCompaction();
+    rocksdb::Status status = rocksdb::DB::Open(options, dbName, &this->rocksDBObj_);
     assert(status.ok());
     if (status.ok()) {
         return true;

@@ -2,15 +2,14 @@
 #define TEDSTORE_DATABASE_HPP
 
 #include "dataStructure.hpp"
-#include "leveldb/db.h"
+#include <rocksdb/db.h>
 #include <bits/stdc++.h>
 #include <boost/thread.hpp>
 using namespace std;
 
 class Database {
 private:
-    leveldb::DB* levelDBObj_ = nullptr;
-    std::mutex mutexDataBase_;
+    rocksdb::DB* rocksDBObj_ = nullptr;
     std::string dbName_;
 
 public:

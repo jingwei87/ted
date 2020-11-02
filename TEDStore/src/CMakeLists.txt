@@ -22,7 +22,7 @@ set(BOOST_LIBRARY_OBJ boost_thread boost_system boost_serialization)
 set(GNU_MP_OBJ m gmp)
 set(SYSTEM_LIBRARY_OBJ pthread rt dl)
 set(OPENSSL_LIBRARY_OBJ ssl crypto)
-set(LEVELDB_LIBRARY_OBJ pthread leveldb snappy)
+set(LEVELDB_LIBRARY_OBJ pthread leveldb snappy rocksdb)
 set(UTIL_OBJ configure cryptoPrimitive Sock database murmurHash3 optimalSolver SSL_TLS hhash)
 
 set(LINK_OBJ ${UTIL_OBJ} ${OPENSSL_LIBRARY_OBJ} ${LEVELDB_LIBRARY_OBJ}
