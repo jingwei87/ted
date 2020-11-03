@@ -1,13 +1,15 @@
-#ifndef TEDSTORE_STORAGECORE_HPP
-#define TEDSTORE_STORAGECORE_HPP
+#ifndef SGXDEDUP_STORAGECORE_HPP
+#define SGXDEDUP_STORAGECORE_HPP
 
+#if STORAGE_CORE_READ_CACHE == 1
+#include "cache.hpp"
+#endif
 #include "configure.hpp"
 #include "cryptoPrimitive.hpp"
 #include "dataStructure.hpp"
 #include "database.hpp"
 #include "messageQueue.hpp"
 #include "protocol.hpp"
-#include "socket.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -16,8 +18,8 @@ class Container {
 public:
     uint32_t used_ = 0;
     char body_[2 << 23]; //8 M container size
-    Container() {}
-    ~Container() {}
+    Container() { }
+    ~Container() { }
     bool saveTOFile(string fileName);
 };
 
@@ -35,26 +37,38 @@ private:
     uint64_t maxContainerSize_;
     bool writeContainer(keyForChunkHashDB_t& key, char* data);
     bool readContainer(keyForChunkHashDB_t key, char* data);
-    double queryDBTime = 0;
+#if SYSTEM_BREAK_DOWN == 1
+    double storeChunkInsertDBTime = 0;
+    double restoreChunkQueryDBTime = 0;
     double readContainerTime = 0;
-    int readContainerNumber = 0;
-    double queryDBTimeUpload = 0;
-    double insertDBTimeUpload = 0;
     double writeContainerTime = 0;
-    int uniqueChunkNumber = 0;
+    int readContainerNumber = 0;
+    uint64_t uniqueChunkNumber = 0;
+#if TRACE_DRIVEN_TEST == 1
+    uint64_t notFoundChunkNumber = 0;
+#endif
+#endif
 
+#if MULTI_CLIENT_UPLOAD_TEST == 1
+    std::mutex mutexContainerOperation_;
+#endif
 public:
     StorageCore();
     ~StorageCore();
-
+#if STORAGE_CORE_READ_CACHE == 1
+    Cache containerCache;
+#endif
     bool restoreChunks(NetworkHeadStruct_t& networkHead, char* data);
     bool storeRecipes(char* fileNameHash, u_char* recipeContent, uint64_t recipeSize);
-    bool restoreRecipeAndChunk(RecipeList_t recipeList, uint32_t startID, uint32_t endID, ChunkList_t& restoredChunkList);
+    bool restoreRecipeAndChunk(char* recipeList, uint32_t startID, uint32_t endID, char* restoredChunkList, int& restoredChunkNumber, int& restoredChunkSize);
     bool storeChunk(string chunkHash, char* chunkData, int chunkSize);
     bool storeChunks(NetworkHeadStruct_t& networkHead, char* data);
     bool restoreChunk(std::string chunkHash, std::string& chunkDataStr);
     bool restoreRecipes(char* fileNameHash, u_char* recipeContent, uint64_t& recipeSize);
     bool restoreRecipesSize(char* fileNameHash, uint64_t& recipeSize);
+#if SYSTEM_BREAK_DOWN == 1
+    bool clientExitSystemStatusOutput(bool type); // type true == upload, false == download
+#endif
 };
 
-#endif
+#endif //SGXDEDUP_STORAGECORE_HPP

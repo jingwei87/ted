@@ -44,7 +44,7 @@ int main(int argv, char* argc[])
         retrieverObj = new Retriever(fileName, recvDecodeObj);
         th = new boost::thread(attrs, boost::bind(&RecvDecode::run, recvDecodeObj));
         thList.push_back(th);
-        th = new boost::thread(attrs, boost::bind(&Retriever::recvThread, retrieverObj));
+        th = new boost::thread(attrs, boost::bind(&Retriever::run, retrieverObj));
         thList.push_back(th);
 
     } else if (strcmp("-s", argc[1]) == 0) {
@@ -98,7 +98,7 @@ int main(int argv, char* argc[])
     long diff = 1000000 * (timeend.tv_sec - timestart.tv_sec) + timeend.tv_usec - timestart.tv_usec;
     double second = diff / 1000000.0;
     cout << "System : total work time is " << diff << " us = " << second << " s" << endl;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     cout << "System : start work time is " << timestart.tv_sec << " s, " << timestart.tv_usec << " us" << endl;
     cout << "System : end work time is " << timeend.tv_sec << " s, " << timeend.tv_usec << " us" << endl;
 #endif

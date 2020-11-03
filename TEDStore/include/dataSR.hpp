@@ -20,7 +20,7 @@ class DataSR {
 private:
     StorageCore* storageObj_;
     DedupCore* dedupCoreObj_;
-    uint32_t restoreChunkBatchSize;
+    uint32_t restoreChunkBatchNumber_;
 
 public:
     DataSR(StorageCore* storageObj, DedupCore* dedupCoreObj);

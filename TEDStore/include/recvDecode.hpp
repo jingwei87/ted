@@ -32,8 +32,9 @@ public:
     bool processRecipe(Recipe_t& recipeHead, RecipeList_t& recipeList, u_char* fileNameHash);
     bool recvChunks(ChunkList_t& recvChunk, int& chunkNumber, uint32_t& startID, uint32_t& endID);
     Recipe_t getFileRecipeHead();
-    bool insertMQToRetriever(RetrieverData_t& newChunk);
-    bool extractMQToRetriever(RetrieverData_t& newChunk);
+    bool insertMQ(RetrieverData_t& newChunk);
+    bool extractMQ(RetrieverData_t& newChunk);
+    bool getJobDoneFlag();
 };
 
 #endif //TEDSTORE_RECIVER_HPP

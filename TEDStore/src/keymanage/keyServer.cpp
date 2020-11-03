@@ -62,7 +62,7 @@ keyServer::~keyServer()
 
 void keyServer::runKeyGen(SSL* connection)
 {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     double keySeedGenTime = 0;
     double totalThreadTime = 0;
     double optimalComputeTime = 0;
@@ -73,16 +73,16 @@ void keyServer::runKeyGen(SSL* connection)
     char hash[config.getKeyBatchSize() * 4 * sizeof(uint32_t)];
     u_int hashNumber[4];
     u_char newKeyBuffer[64 + 4 * sizeof(uint32_t) + sizeof(int)];
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartKeyServerTotal, NULL);
 #endif
     while (true) {
         int recvSize = 0;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
         gettimeofday(&timestartKeyServerRecv, NULL);
 #endif
         bool recvStatus = keySecurityChannel_->recv(connection, hash, recvSize);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
         gettimeofday(&timeendKeyServerRecv, NULL);
         diff = 1000000 * (timeendKeyServerRecv.tv_sec - timestartKeyServerRecv.tv_sec) + timeendKeyServerRecv.tv_usec - timestartKeyServerRecv.tv_usec;
         second = diff / 1000000.0;
@@ -101,7 +101,7 @@ void keyServer::runKeyGen(SSL* connection)
             multiThreadEditTMutex_.lock();
             T_ = 1;
             multiThreadEditTMutex_.unlock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKeyServerTotal, NULL);
             diff = 1000000 * (timeendKeyServerTotal.tv_sec - timestartKeyServerTotal.tv_sec) + timeendKeyServerTotal.tv_usec - timestartKeyServerTotal.tv_usec;
             second = diff / 1000000.0;
@@ -116,7 +116,7 @@ void keyServer::runKeyGen(SSL* connection)
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
         u_char key[recvNumber * CHUNK_ENCRYPT_KEY_SIZE];
         multiThreadEditSketchTableMutex_.lock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
         gettimeofday(&timestartKeyServer, NULL);
 #endif
         for (int i = 0; i < recvNumber; i++) {
@@ -168,7 +168,7 @@ void keyServer::runKeyGen(SSL* connection)
             memcpy(key + i * CHUNK_ENCRYPT_KEY_SIZE, currentKeySeed, CHUNK_ENCRYPT_KEY_SIZE);
         }
         sketchTableCounter_ += recvNumber;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
         gettimeofday(&timeendKeyServer, NULL);
         diff = 1000000 * (timeendKeyServer.tv_sec - timestartKeyServer.tv_sec) + timeendKeyServer.tv_usec - timestartKeyServer.tv_usec;
         second = diff / 1000000.0;
@@ -189,7 +189,7 @@ void keyServer::runKeyGen(SSL* connection)
             multiThreadEditTMutex_.lock();
             T_ = 1;
             multiThreadEditTMutex_.unlock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKeyServerTotal, NULL);
             diff = 1000000 * (timeendKeyServerTotal.tv_sec - timestartKeyServerTotal.tv_sec) + timeendKeyServerTotal.tv_usec - timestartKeyServerTotal.tv_usec;
             second = diff / 1000000.0;
@@ -202,7 +202,7 @@ void keyServer::runKeyGen(SSL* connection)
         }
         if (sketchTableCounter_ >= optimalSolverComputeItemNumberThreshold_) {
             multiThreadEditTMutex_.lock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartKeyServer, NULL);
 #endif
 
@@ -219,7 +219,7 @@ void keyServer::runKeyGen(SSL* connection)
             OpSolver* solver = new OpSolver(opm_, opInput_);
             T_ = solver->GetOptimal();
             delete solver;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKeyServer, NULL);
             diff = 1000000 * (timeendKeyServer.tv_sec - timestartKeyServer.tv_sec) + timeendKeyServer.tv_usec - timestartKeyServer.tv_usec;
             second = diff / 1000000.0;
@@ -257,7 +257,7 @@ void keyServer::runKeyGen(SSL* connection)
             multiThreadEditTMutex_.lock();
             T_ = 1;
             multiThreadEditTMutex_.unlock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             break;
@@ -266,7 +266,7 @@ void keyServer::runKeyGen(SSL* connection)
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
         u_char key[recvNumber * CHUNK_ENCRYPT_KEY_SIZE];
         multiThreadEditSketchTableMutex_.lock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
         gettimeofday(&timestartKeyServer, NULL);
 #endif
 
@@ -319,7 +319,7 @@ void keyServer::runKeyGen(SSL* connection)
             memcpy(key + i * CHUNK_ENCRYPT_KEY_SIZE, currentKeySeed, CHUNK_ENCRYPT_KEY_SIZE);
         }
         sketchTableCounter_ += recvNumber;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
         gettimeofday(&timeendKeyServer, NULL);
         diff = 1000000 * (timeendKeyServer.tv_sec - timestartKeyServer.tv_sec) + timeendKeyServer.tv_usec - timestartKeyServer.tv_usec;
         second = diff / 1000000.0;
@@ -341,7 +341,7 @@ void keyServer::runKeyGen(SSL* connection)
             multiThreadEditTMutex_.lock();
             T_ = 1;
             multiThreadEditTMutex_.unlock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             break;
@@ -405,7 +405,7 @@ void keyServer::runKeyGenSimple(SSL* connection)
             multiThreadEditTMutex_.lock();
             T_ = 1;
             multiThreadEditTMutex_.unlock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             break;
@@ -414,7 +414,7 @@ void keyServer::runKeyGenSimple(SSL* connection)
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
         u_char key[recvNumber * sizeof(KeySeedReturnEntry_t)];
         multiThreadEditSketchTableMutex_.lock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
         gettimeofday(&timestartKeyServer, NULL);
 #endif
         for (int i = 0; i < recvNumber; i++) {
@@ -482,7 +482,7 @@ void keyServer::runKeyGenSimple(SSL* connection)
             memcpy(key + i * sizeof(KeySeedReturnEntry_t), &tempKeySeed, sizeof(KeySeedReturnEntry_t));
         }
         sketchTableCounter_ += recvNumber;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
         gettimeofday(&timeendKeyServer, NULL);
         diff = 1000000 * (timeendKeyServer.tv_sec - timestartKeyServer.tv_sec) + timeendKeyServer.tv_usec - timestartKeyServer.tv_usec;
         second = diff / 1000000.0;
@@ -504,7 +504,7 @@ void keyServer::runKeyGenSimple(SSL* connection)
             multiThreadEditTMutex_.lock();
             T_ = 1;
             multiThreadEditTMutex_.unlock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             break;
@@ -565,7 +565,7 @@ void keyServer::runKeyGenSS(SSL* connection)
             multiThreadEditTMutex_.lock();
             T_ = 1;
             multiThreadEditTMutex_.unlock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             break;
@@ -574,7 +574,7 @@ void keyServer::runKeyGenSS(SSL* connection)
         cerr << "KeyServer : recv hash number = " << recvNumber << endl;
         u_char key[recvNumber * sizeof(KeySeedReturnEntry_t)];
         multiThreadEditSketchTableMutex_.lock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
         gettimeofday(&timestartKeyServer, NULL);
 #endif
         for (int i = 0; i < recvNumber; i++) {
@@ -658,7 +658,7 @@ void keyServer::runKeyGenSS(SSL* connection)
             memcpy(key + i * sizeof(KeySeedReturnEntry_t), &tempKeySeed, sizeof(KeySeedReturnEntry_t));
         }
         sketchTableCounter_ += recvNumber;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
         gettimeofday(&timeendKeyServer, NULL);
         diff = 1000000 * (timeendKeyServer.tv_sec - timestartKeyServer.tv_sec) + timeendKeyServer.tv_usec - timestartKeyServer.tv_usec;
         second = diff / 1000000.0;
@@ -680,7 +680,7 @@ void keyServer::runKeyGenSS(SSL* connection)
             multiThreadEditTMutex_.lock();
             T_ = 1;
             multiThreadEditTMutex_.unlock();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             cout << "keyServer : generate key seed time = " << keySeedGenTime << " s" << endl;
 #endif
             break;

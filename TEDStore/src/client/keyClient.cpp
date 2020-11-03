@@ -98,7 +98,7 @@ keyClient::~keyClient()
 void keyClient::runKeyGenSimulator()
 {
 
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     double keyGenTime = 0;
     double shortHashTime = 0;
     double keyDerivationTime = 0;
@@ -127,7 +127,7 @@ void keyClient::runKeyGenSimulator()
 
             u_char chunkTemp[5 * CHUNK_HASH_SIZE];
             memset(chunkTemp, currentKeyGenNumber, 5 * CHUNK_HASH_SIZE);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartKeySimulator, NULL);
 #endif
             char hash[16];
@@ -139,7 +139,7 @@ void keyClient::runKeyGenSimulator()
                 hashInt[i] &= maskInt;
                 memcpy(chunkHash + batchNumber * singleChunkHashSize + i * sizeof(int), &hashInt[i], sizeof(int));
             }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKeySimulator, NULL);
             diff = 1000000 * (timeendKeySimulator.tv_sec - timestartKeySimulator.tv_sec) + timeendKeySimulator.tv_usec - timestartKeySimulator.tv_usec;
             second = diff / 1000000.0;
@@ -154,11 +154,11 @@ void keyClient::runKeyGenSimulator()
 
         if (batchNumber == keyBatchSize_ || JobDoneFlag) {
             int batchedKeySize = 0;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartKeySimulator, NULL);
 #endif
             bool keyExchangeStatus = keyExchange(chunkHash, batchNumber, chunkKey, batchedKeySize, keySecurityChannel, sslConnection);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKeySimulator, NULL);
             diff = 1000000 * (timeendKeySimulator.tv_sec - timestartKeySimulator.tv_sec) + timeendKeySimulator.tv_usec - timestartKeySimulator.tv_usec;
             second = diff / 1000000.0;
@@ -174,14 +174,14 @@ void keyClient::runKeyGenSimulator()
             } else {
                 u_char newKeyBuffer[CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE];
                 for (int i = 0; i < batchNumber; i++) {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timestartKeySimulator, NULL);
 #endif
                     u_char tempKey[32];
                     memset(newKeyBuffer, 1, CHUNK_HASH_SIZE);
                     memcpy(newKeyBuffer + CHUNK_HASH_SIZE, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
                     cryptoObj_->generateHash(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, tempKey);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timeendKeySimulator, NULL);
                     diff = 1000000 * (timeendKeySimulator.tv_sec - timestartKeySimulator.tv_sec) + timeendKeySimulator.tv_usec - timestartKeySimulator.tv_usec;
                     second = diff / 1000000.0;
@@ -195,7 +195,7 @@ void keyClient::runKeyGenSimulator()
             break;
         }
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     cout << "KeyClient : key exchange work time = " << keyGenTime << " s, total key generated is " << currentKeyGenNumber << endl;
     cout << "KeyClient : Short hash time = " << shortHashTime << " s" << endl;
     cout << "KeyClient : key exchange time = " << keyExchangeTime << " s" << endl;
@@ -206,7 +206,7 @@ void keyClient::runKeyGenSimulator()
 
 void keyClient::run()
 {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     double keyGenTime = 0;
     double shortHashTime = 0;
     double keyDerivationTime = 0;
@@ -239,7 +239,7 @@ void keyClient::run()
                 insertMQToSender(tempChunk);
                 continue;
             }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartKey, NULL);
 #endif
             batchList.push_back(tempChunk);
@@ -253,7 +253,7 @@ void keyClient::run()
                 memcpy(chunkHash + batchNumber * singleChunkHashSize + i * sizeof(int), &hashInt[i], sizeof(int));
             }
             batchNumber++;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
             second = diff / 1000000.0;
@@ -262,12 +262,12 @@ void keyClient::run()
 #endif
         }
         if (batchNumber == keyBatchSize_ || JobDoneFlag) {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartKey, NULL);
 #endif
             int batchedKeySize = 0;
             bool keyExchangeStatus = keyExchange(chunkHash, batchNumber, chunkKey, batchedKeySize);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
             second = diff / 1000000.0;
@@ -280,24 +280,24 @@ void keyClient::run()
             } else {
                 u_char newKeyBuffer[CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE];
                 for (int i = 0; i < batchNumber; i++) {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timestartKey, NULL);
 #endif
                     memcpy(newKeyBuffer, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
                     memcpy(newKeyBuffer + CHUNK_HASH_SIZE, chunkKey + i * CHUNK_ENCRYPT_KEY_SIZE, CHUNK_ENCRYPT_KEY_SIZE);
                     cryptoObj_->generateHash(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.encryptKey);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timeendKey, NULL);
                     diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
                     second = diff / 1000000.0;
                     keyGenTime += second;
                     keyDerivationTime += second;
 #endif
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timestartKey, NULL);
 #endif
                     bool encodeChunkStatus = encodeChunk(batchList[i]);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timeendKey, NULL);
                     diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
                     second = diff / 1000000.0;
@@ -326,7 +326,7 @@ void keyClient::run()
             break;
         }
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     cout << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
     cout << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
     cout << "KeyClient : key exchange work time = " << keyExchangeTime << " s" << endl;
@@ -340,27 +340,27 @@ void keyClient::run()
 
 bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber)
 {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     if (!keySecurityChannel_->send(sslConnection_, (char*)batchHashList, 4 * sizeof(uint32_t) * batchNumber)) {
         cerr << "keyClient: send socket error" << endl;
         return false;
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timeendKeySocket, NULL);
     keySocketSendTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
     char recvBuffer[CHUNK_ENCRYPT_KEY_SIZE * batchNumber];
     int recvSize;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     if (!keySecurityChannel_->recv(sslConnection_, recvBuffer, recvSize)) {
         cerr << "keyClient: recv socket error" << endl;
         return false;
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timeendKeySocket, NULL);
     keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
@@ -379,7 +379,7 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
 
 bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection)
 {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     if (!securityChannel->send(sslConnection, (char*)batchHashList, sizeof(keyGenEntry_t) * batchNumber)) {
@@ -387,20 +387,20 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
         cerr << "keyClient: send socket error" << endl;
         return false;
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timeendKeySocket, NULL);
     keySocketSendTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
     char recvBuffer[CHUNK_ENCRYPT_KEY_SIZE * batchNumber];
     int recvSize;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     if (!securityChannel->recv(sslConnection, recvBuffer, recvSize)) {
         cerr << "keyClient: recv socket error" << endl;
         return false;
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timeendKeySocket, NULL);
     keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
@@ -419,7 +419,7 @@ bool keyClient::keyExchange(u_char* batchHashList, int batchNumber, u_char* batc
 
 bool keyClient::keyExchangeSimple(u_char* batchHashList, int batchNumber, u_char* batchKeyList, int& batchkeyNumber, ssl* securityChannel, SSL* sslConnection)
 {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     if (!securityChannel->send(sslConnection, (char*)batchHashList, sizeof(keyGenEntry_t) * batchNumber)) {
@@ -427,20 +427,20 @@ bool keyClient::keyExchangeSimple(u_char* batchHashList, int batchNumber, u_char
         cerr << "keyClient: send socket error" << endl;
         return false;
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timeendKeySocket, NULL);
     keySocketSendTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
     char recvBuffer[sizeof(KeySeedReturnEntry_t) * batchNumber];
     int recvSize;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     if (!securityChannel->recv(sslConnection, recvBuffer, recvSize)) {
         cerr << "keyClient: recv socket error" << endl;
         return false;
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timeendKeySocket, NULL);
     keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
@@ -460,7 +460,7 @@ bool keyClient::keyExchangeSimple(u_char* batchHashList, int batchNumber, u_char
 bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_char** chunkKeyArray, int& batchkeyNumber,
     ssl** securityChannelArray, SSL** sslConnectionArray)
 {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     //for (size_t i = 0; i < this->keyManNum_; i++) {
@@ -474,12 +474,12 @@ bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_
 	    tPool_->enqueue(&ssl::send, securityChannelArray[i], sslConnectionArray[i], (char*)batchHashList[i], sizeof(keyGenEntry_t) * batchNumber);
     }
     tPool_->wait_until_nothing_in_flight();
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timeendKeySocket, NULL);
     keySocketSendTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
     int recvSize[this->keyManNum_];
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     for (size_t i = 0; i < this->keyManNum_; i++) {
@@ -492,7 +492,7 @@ bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_
             return false;
         }
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timeendKeySocket, NULL);
     keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
@@ -684,7 +684,7 @@ uint32_t keyClient::convertFPtoValue(Data_t& newChunk)
 
 void keyClient::runSimple()
 {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     double keyGenTime = 0;
     double assignTime = 0;
     double shortHashTime = 0;
@@ -716,7 +716,7 @@ void keyClient::runSimple()
                 insertMQToSender(tempChunk);
                 continue;
             }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartKey, NULL);
 #endif
             batchList.push_back(tempChunk);
@@ -729,14 +729,14 @@ void keyClient::runSimple()
 
             // assign the key manager here
             keyManagerIndex = this->keyAssignment(fpValue);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
             second = diff / 1000000.0;
             keyGenTime += second;
             assignTime += second;
 #endif
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartKey, NULL);
 #endif
             MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 0, (void*)hash);
@@ -761,7 +761,7 @@ void keyClient::runSimple()
             batchNumber++;
             counterArray_[keyManagerIndex]++;
             this->totalProcessedChunk_++;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
             second = diff / 1000000.0;
@@ -770,7 +770,7 @@ void keyClient::runSimple()
 #endif
         }
         if (batchNumber == keyBatchSize_ || JobDoneFlag) {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartKey, NULL);
 #endif
             int batchedKeySize = 0;
@@ -782,7 +782,7 @@ void keyClient::runSimple()
             //         this->keySecurityChannelArray_[i], this->sslConnectionArray_[i]);
             // }
 
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
             second = diff / 1000000.0;
@@ -799,7 +799,7 @@ void keyClient::runSimple()
             } else {
                 u_char newKeyBuffer[CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE];
                 for (int i = 0; i < batchNumber; i++) {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timestartKey, NULL);
 #endif
                     // generate the secret here
@@ -813,18 +813,18 @@ void keyClient::runSimple()
 
                     memcpy(newKeyBuffer + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
                     cryptoObj_->generateHash(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.encryptKey);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timeendKey, NULL);
                     diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
                     second = diff / 1000000.0;
                     keyGenTime += second;
                     keyDerivationTime += second;
 #endif
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timestartKey, NULL);
 #endif
                     bool encodeChunkStatus = encodeChunk(batchList[i]);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timeendKey, NULL);
                     diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
                     second = diff / 1000000.0;
@@ -855,7 +855,7 @@ void keyClient::runSimple()
             break;
         }
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     cout << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
     cout << "KeyClient : assign chunk work time = " << assignTime << " s" << endl;
     cout << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;
@@ -870,7 +870,7 @@ void keyClient::runSimple()
 
 void keyClient::runSS()
 {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     double keyGenTime = 0;
     double assignTime = 0;
     double shortHashTime = 0;
@@ -905,7 +905,7 @@ void keyClient::runSS()
                 insertMQToSender(tempChunk);
                 continue;
             }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartKey, NULL);
 #endif
             batchList.push_back(tempChunk);
@@ -919,14 +919,14 @@ void keyClient::runSS()
             // assign the key manager here
             keyManagerIndex = this->keyAssignment(fpValue);
             // fprintf(stderr, "Choose key manager index: %u\n", keyManagerIndex);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
             second = diff / 1000000.0;
             keyGenTime += second;
             assignTime += second;
 #endif
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartKey, NULL);
 #endif
             MurmurHash3_x64_128((void const*)tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, 0, (void*)hash);
@@ -977,7 +977,7 @@ void keyClient::runSS()
             counterArray_[keyManagerIndex]++;
             this->totalProcessedChunk_++;
 
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
             second = diff / 1000000.0;
@@ -986,14 +986,14 @@ void keyClient::runSS()
 #endif
         }
         if (batchNumber == keyBatchSize_ || JobDoneFlag) {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timestartKey, NULL);
 #endif
             int batchedKeySize = 0;
             // TODO: add mutiple thread here
             bool keyExchangeStatus = keyExchangeSimpleAll(chunkHashArray_, batchNumber, chunkKeyArray_, batchedKeySize,
                 keySecurityChannelArray_, sslConnectionArray_);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
             second = diff / 1000000.0;
@@ -1009,7 +1009,7 @@ void keyClient::runSS()
                     assignNumberArray[i] = 0;
                 }
                 for (int i = 0; i < batchNumber; i++) {
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timestartKey, NULL);
 #endif
                     // generate the secret here
@@ -1054,18 +1054,18 @@ void keyClient::runSS()
 		            //	printf("%x", batchList[i].chunk.encryptKey[j]);
 		            // }
 		            // cout << endl;
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timeendKey, NULL);
                     diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
                     second = diff / 1000000.0;
                     keyGenTime += second;
                     keyDerivationTime += second;
 #endif
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timestartKey, NULL);
 #endif
                     bool encodeChunkStatus = encodeChunk(batchList[i]);
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timeendKey, NULL);
                     diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
                     second = diff / 1000000.0;
@@ -1105,7 +1105,7 @@ void keyClient::runSS()
             break;
         }
     }
-#if BREAK_DOWN_DEFINE == 1
+#if SYSTEM_BREAK_DOWN == 1
     cout << "KeyClient : keyGen total work time = " << keyGenTime << " s" << endl;
     cout << "KeyClient : assign chunk work time = " << assignTime << " s" << endl;
     cout << "KeyClient : short hash compute work time = " << shortHashTime << " s" << endl;

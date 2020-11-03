@@ -20,9 +20,10 @@ using namespace std;
 #define K_PARA 3
 
 // macro for system running types
-#define BREAK_DOWN_DEFINE 1 // 0:breakdown disable| 1:breakdown enable
+#define SYSTEM_BREAK_DOWN 1 // 0:breakdown disable| 1:breakdown enable
+#define TRACE_DRIVEN_TEST 1  // set 1 to ignore errors in trace-driven test
+#define MULTI_CLIENT_UPLOAD_TEST 0 // set 1 to add mutex for multi-client test
 #define SINGLE_THREAD_KEY_MANAGER 0 // 0:dual thread key server| 1:single thread key server
-#define SEND_CHUNK_LIST_METHOD 0 //0:reduce structure overhead | 1:fix second upload error on some platform
 
 //macro for the type of chunker
 #define CHUNKER_FIX_SIZE_TYPE 0
