@@ -516,8 +516,8 @@ void Chunker::traceDrivenChunkingUBC()
     }
     cout << "Chunker : trace gen over:\nTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
 #if SYSTEM_BREAK_DOWN == 1
-    cout << "Chunker : total chunking time is" << chunkTime << " s" << endl;
-    cout << "Chunker : total hashing time is" << hashTime << " s" << endl;
+    cout << "Chunker : total chunking time = " << chunkTime << " s" << endl;
+    cout << "Chunker : total hashing time = " << hashTime << " s" << endl;
 #endif
 }
 
