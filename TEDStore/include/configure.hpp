@@ -25,7 +25,7 @@ using namespace std;
 #define DATABASE_TYPE ROCKSDB
 
 // macro for system running types
-#define SYSTEM_BREAK_DOWN 1 // 0:breakdown disable| 1:breakdown enable
+#define SYSTEM_BREAK_DOWN 0 // 0:breakdown disable| 1:breakdown enable
 #define TRACE_DRIVEN_TEST 1  // set 1 to ignore errors in trace-driven test
 #define MULTI_CLIENT_UPLOAD_TEST 0 // set 1 to add mutex for multi-client test
 #define SINGLE_THREAD_KEY_MANAGER 0 // 0:dual thread key server| 1:single thread key server

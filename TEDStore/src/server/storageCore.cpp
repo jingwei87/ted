@@ -259,7 +259,9 @@ bool StorageCore::restoreRecipeAndChunk(char* recipeList, uint32_t startID, uint
             index += sizeof(int);
             memset(restoredChunkList + index, 0, chunkSize);
             index += chunkSize;
+#if SYSTEM_BREAK_DOWN == 1
             notFoundChunkNumber++;
+#endif
             restoredChunkSize += chunkSize;
 #else
             cerr << "StorageCore : can not restore chunk " << startID + i << " , chunk size = " << chunkSize << " chunk hash = " << endl;
