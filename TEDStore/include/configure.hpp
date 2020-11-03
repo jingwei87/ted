@@ -19,6 +19,11 @@ using namespace std;
 // for multiple key manager
 #define K_PARA 3
 
+// database settings
+#define LEVELDB 1
+#define ROCKSDB 2
+#define DATABASE_TYPE ROCKSDB
+
 // macro for system running types
 #define SYSTEM_BREAK_DOWN 1 // 0:breakdown disable| 1:breakdown enable
 #define TRACE_DRIVEN_TEST 1  // set 1 to ignore errors in trace-driven test
