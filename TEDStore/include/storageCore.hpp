@@ -1,10 +1,10 @@
 #ifndef SGXDEDUP_STORAGECORE_HPP
 #define SGXDEDUP_STORAGECORE_HPP
 
+#include "configure.hpp"
 #if STORAGE_CORE_READ_CACHE == 1
 #include "cache.hpp"
 #endif
-#include "configure.hpp"
 #include "cryptoPrimitive.hpp"
 #include "dataStructure.hpp"
 #include "database.hpp"

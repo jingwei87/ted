@@ -15,6 +15,7 @@ using namespace std;
 #define SINGLE_MACHINE_TEST 1 //1: test on single machine, key server use cmd input | 0: test on multi-machine, key server use config.json
 
 #define ENABLE_SECRET_SHARE 1 // 1:using secret sharing | 0:disable secret sharing
+#define STORAGE_CORE_READ_CACHE 1 // set 1 to use lru cache
 
 // for multiple key manager
 #define K_PARA 3
