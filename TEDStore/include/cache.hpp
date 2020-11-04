@@ -1,26 +1,33 @@
 #ifndef TEDSTORE_CACHE_HPP
 #define TEDSTORE_CACHE_HPP
 
-#include "boost/compute/detail/lru_cache.hpp"
 #include "boost/thread.hpp"
 #include "configure.hpp"
 #include <string>
+#include "lruCache.h"
 
 extern Configure config;
 
-using namespace boost::compute::detail;
 using namespace std;
 
 class Cache {
 private:
-    lru_cache<string, string>* Cache_;
+    lru11::Cache<string, uint32_t>* Cache_;
+
+    uint8_t** containerPool_;
+
+    uint64_t cacheSize_ = 0;
+
+    size_t currentIndex_ = 0;    
+
     boost::shared_mutex mtx;
 
 public:
     Cache();
-    void insertToCache(string& name, string& data);
+    void insertToCache(string& name, uint8_t* data, uint32_t length);
     bool existsInCache(string& name);
-    string getFromCache(string& name);
+    uint8_t* getFromCache(string& name);
+    ~Cache();
 };
 
 #endif //TEDSTORE_CACHE_HPP

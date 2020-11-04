@@ -56,7 +56,7 @@ public:
     StorageCore();
     ~StorageCore();
 #if STORAGE_CORE_READ_CACHE == 1
-    Cache containerCache;
+    Cache* containerCache;
 #endif
     bool restoreChunks(NetworkHeadStruct_t& networkHead, char* data);
     bool storeRecipes(char* fileNameHash, u_char* recipeContent, uint64_t recipeSize);

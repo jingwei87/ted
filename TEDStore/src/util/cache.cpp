@@ -1,19 +1,38 @@
 #include <boost/thread/mutex.hpp>
-#include <cache.hpp>
+#include "../../include/cache.hpp" 
 
-using namespace std;
-using namespace boost::compute::detail;
 
 Cache::Cache()
-{
-    this->Cache_ = new lru_cache<string, string>(100);
+{   
+    cacheSize_ = 64;    
+    this->Cache_ = new lru11::Cache<string, uint32_t>(cacheSize_, 0);
+    containerPool_ = (uint8_t**) malloc(cacheSize_ * sizeof(uint8_t*));
+    for (size_t i = 0; i < cacheSize_; i++) {
+        containerPool_[i] = (uint8_t*) malloc(config.getMaxContainerSize() * sizeof(uint8_t));
+    }
+    currentIndex_ = 0;
+    fprintf(stderr, "Container Cache Size: %lu\n", this->cacheSize_);
 }
 
-void Cache::insertToCache(string& name, string& data)
+void Cache::insertToCache(string& name, uint8_t* data, uint32_t length)
 {
     {
         boost::unique_lock<boost::shared_mutex> t(this->mtx);
-        this->Cache_->insert(name, data);
+        if (Cache_->size() + 1 > cacheSize_) {
+            // evict a item
+            uint32_t replaceIndex = Cache_->pruneValue();
+            // fprintf(stdout, "Cache evict: %u\n", replaceIndex);
+            memset(containerPool_[replaceIndex], 0, config.getMaxContainerSize());
+            memcpy(containerPool_[replaceIndex], data, length);
+            Cache_->insert(name, replaceIndex);
+        } else {
+            // directly using current index
+            // fprintf(stdout, "Cache use: %lu\n", currentIndex_);
+            memset(containerPool_[currentIndex_], 0, config.getMaxContainerSize());
+            memcpy(containerPool_[currentIndex_], data, length);
+            Cache_->insert(name, currentIndex_);
+            currentIndex_++;
+        }
     }
 }
 
@@ -27,10 +46,20 @@ bool Cache::existsInCache(string& name)
     return flag;
 }
 
-string Cache::getFromCache(string& name)
-{
-    string ans = "";
-    boost::shared_lock<boost::shared_mutex> t(this->mtx);
-    ans = this->Cache_->get(name).get();
-    return ans;
+uint8_t* Cache::getFromCache(string& name)
+{   
+    {
+        boost::shared_lock<boost::shared_mutex> t(this->mtx);
+        uint32_t index = this->Cache_->get(name);
+        return containerPool_[index]; 
+    }
+    
+}
+
+Cache::~Cache() {
+    for (size_t i = 0; i < cacheSize_; i++) {
+        free(containerPool_[i]);
+    } 
+    free(containerPool_);
+    delete Cache_;
 }
