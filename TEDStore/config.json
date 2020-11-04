@@ -1,0 +1,41 @@
+{
+	"ChunkerConfig": {
+		"_chunkingType": 3,
+		"_minChunkSize": 4096,
+		"_avgChunkSize": 8192,
+		"_maxChunkSize": 16384,
+		"_slidingWinSize": 256,
+		"_ReadSize": 128
+	},
+	"KeyServerConfig": {
+		"_keyBatchSize": 3000,
+		"_keyServerIP": "127.0.0.1",
+		"_keyServerPort": 6666,
+		"_sketchTableWidth": 1048576,
+		"_optimalSolverComputeItemNumberThreshold": 48000,
+		"_storageBlowPercent": 0,
+		"_secretShare": 64
+	},
+	"SPConfig": {
+		"_storageServerIP": "192.168.1.103",
+		"_storageServerPort": 7001,
+		"_maxContainerSize": 8388608,
+		"_RecipeRootPath": "Recipes/",
+		"_containerRootPath": "Containers/",
+		"_fp2ChunkDBName": "db1",
+		"_fp2MetaDBame": "db2"
+	},
+	"client": {
+		"_clientID": 1,
+		"_sendChunkBatchSize": 1000,
+		"_sendRecipeBatchSize": 100000,
+		"_sendShortHashMaskBitNumber": 12,
+		"_keyManagerIPList": {
+			"192.168.1.101": 6666,
+			"192.168.1.101": 6667,
+			"192.168.1.101": 6668,
+			"192.168.1.101": 6669
+		},
+		"_adjustValue": 3
+	}
+}

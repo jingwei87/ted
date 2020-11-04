@@ -12,7 +12,7 @@ using namespace std;
 // macore for debug
 #define DEBUG 0
 #define OLD_VERSION 0 // 1:using old version| 0:using new version
-#define SINGLE_MACHINE_TEST 0 //1: test on single machine, key server use cmd input | 0: test on multi-machine, key server use config.json
+#define SINGLE_MACHINE_TEST 1 //1: test on single machine, key server use cmd input | 0: test on multi-machine, key server use config.json
 
 #define ENABLE_SECRET_SHARE 1 // 1:using secret sharing | 0:disable secret sharing
 #define STORAGE_CORE_READ_CACHE 1 // set 1 to use lru cache
@@ -23,10 +23,10 @@ using namespace std;
 // database settings
 #define LEVELDB 1
 #define ROCKSDB 2
-#define DATABASE_TYPE ROCKSDB
+#define DATABASE_TYPE LEVELDB
 
 // macro for system running types
-#define SYSTEM_BREAK_DOWN 0 // 0:breakdown disable| 1:breakdown enable
+#define SYSTEM_BREAK_DOWN 1 // 0:breakdown disable| 1:breakdown enable
 #define TRACE_DRIVEN_TEST 1  // set 1 to ignore errors in trace-driven test
 #define MULTI_CLIENT_UPLOAD_TEST 0 // set 1 to add mutex for multi-client test
 #define SINGLE_THREAD_KEY_MANAGER 0 // 0:dual thread key server| 1:single thread key server
