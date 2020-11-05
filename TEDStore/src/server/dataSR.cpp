@@ -49,6 +49,15 @@ void DataSR::run(Socket socket)
             // cerr << "DataSR : recv message type " << netBody.messageType << ", message size = " << netBody.dataSize << endl;
             switch (netBody.messageType) {
             case CLIENT_EXIT: {
+#if SYSTEM_BREAK_DOWN == 1
+                if (uploadFlag == true) {
+                    cout << "DataSR : total save chunk time = " << saveChunkTime << " s" << endl;
+                    cout << "DataSR : total save recipe time = " << saveRecipeTime << " s" << endl;
+                } else {
+                    cout << "DataSR : total restore chunk time = " << restoreChunkTime << " s" << endl;
+                }
+                storageObj_->clientExitSystemStatusOutput(uploadFlag);
+#endif
                 cerr << "DataSR : client send job done check flag, server side job over, thread exit now" << endl;
                 netBody.messageType = SERVER_JOB_DONE_EXIT_PERMIT;
                 netBody.dataSize = 0;
