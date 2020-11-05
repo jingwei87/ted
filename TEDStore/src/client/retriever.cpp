@@ -2,6 +2,8 @@
 
 struct timeval timestartRetriever;
 struct timeval timeendRetriever;
+struct timeval timestartRetriever_thread;
+struct timeval timeendRetriever_thread;
 
 Retriever::Retriever(string fileName, RecvDecode*& recvDecodeObjTemp)
 {
@@ -23,6 +25,7 @@ void Retriever::run()
     long diff;
     double second;
     double writeFileTime = 0;
+    gettimeofday(&timestartRetriever_thread, NULL);
 #endif
     RetrieverData_t newData;
     uint32_t totalRecvNumber_ = 0;
@@ -45,6 +48,10 @@ void Retriever::run()
     while (!recvDecodeObj_->getJobDoneFlag())
         ;
     cout << "Retriever : write file time = " << writeFileTime << " s" << endl;
+    gettimeofday(&timeendRetriever_thread, NULL);
+    diff = 1000000 * (timeendRetriever_thread.tv_sec - timestartRetriever_thread.tv_sec) + timeendRetriever_thread.tv_usec - timestartRetriever_thread.tv_usec;
+    second = diff / 1000000.0;
+    cout << "Retriever : thread work time = " << second << " s" << endl;
 #endif
     return;
 }
