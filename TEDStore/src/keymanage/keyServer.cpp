@@ -444,31 +444,11 @@ void keyServer::runKeyGenSimple(SSL* connection)
             }
 
             int param = floor(sketchTableSearchCompareNumber / T_);
-
-            if (tempKeyGen.usingCount) {
-                if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_POISSON_RAND) {
-                    int lambda = ceil(param / 2.0);
-                    poisson_distribution<> dis(lambda);
-                    param = dis(gen_);
-                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_UNIFORM_INT_RAND) {
-                    uniform_int_distribution<> dis(0, param);
-                    param = dis(gen_);
-                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_GEOMETRIC_RAND) {
-                    geometric_distribution<> dis;
-                    int random = dis(gen_);
-                    if (param < random)
-                        param = 0;
-                    else
-                        param = param - random;
-                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_NORMAL_RAND) {
-                    normal_distribution<> dis(param, 1);
-                    int result = round(dis(gen_));
-                    if (result < 0)
-                        param = 0;
-                    else
-                        param = result;
-                }
-            }
+            
+            // use nonce to determine the seed
+            uint32_t nonce = tempKeyGen.nonce;
+            param = nonce % (param + 1);
+            
             
             if (config.getStorageBlowPercent() == 0) {
                 param = 1;
@@ -590,46 +570,27 @@ void keyServer::runKeyGenSS(SSL* connection)
                 sketchTable_[j][hashNumber[j] % sketchTableWidith_]++;
             }
 
-            if (tempKeyGen.usingCount) {
-                // find min counter in the sketch
-                sketchTableSearchCompareNumber = sketchTable_[0][hashNumber[0] % sketchTableWidith_];
-                if (sketchTableSearchCompareNumber > sketchTable_[1][hashNumber[1] % sketchTableWidith_]) {
-                    sketchTableSearchCompareNumber = sketchTable_[1][hashNumber[1] % sketchTableWidith_];
-                }
-                if (sketchTableSearchCompareNumber > sketchTable_[2][hashNumber[2] % sketchTableWidith_]) {
-                    sketchTableSearchCompareNumber = sketchTable_[2][hashNumber[2] % sketchTableWidith_];
-                }
-                if (sketchTableSearchCompareNumber > sketchTable_[3][hashNumber[3] % sketchTableWidith_]) {
-                    sketchTableSearchCompareNumber = sketchTable_[3][hashNumber[3] % sketchTableWidith_];
-                }
+            // find min counter in the sketch
+            sketchTableSearchCompareNumber = sketchTable_[0][hashNumber[0] % sketchTableWidith_];
+            if (sketchTableSearchCompareNumber > sketchTable_[1][hashNumber[1] % sketchTableWidith_]) {
+                sketchTableSearchCompareNumber = sketchTable_[1][hashNumber[1] % sketchTableWidith_];
+            }
+            if (sketchTableSearchCompareNumber > sketchTable_[2][hashNumber[2] % sketchTableWidith_]) {
+                sketchTableSearchCompareNumber = sketchTable_[2][hashNumber[2] % sketchTableWidith_];
+            }
+            if (sketchTableSearchCompareNumber > sketchTable_[3][hashNumber[3] % sketchTableWidith_]) {
+                sketchTableSearchCompareNumber = sketchTable_[3][hashNumber[3] % sketchTableWidith_];
+            }
 
-                int param = floor(sketchTableSearchCompareNumber / T_);
+            int param = floor(sketchTableSearchCompareNumber / T_);
+            param = tempKeyGen.nonce % (param + 1);
 
-                if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_POISSON_RAND) {
-                    int lambda = ceil(param / 2.0);
-                    poisson_distribution<> dis(lambda);
-                    param = dis(gen_);
-                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_UNIFORM_INT_RAND) {
-                    uniform_int_distribution<> dis(0, param);
-                    param = dis(gen_);
-                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_GEOMETRIC_RAND) {
-                    geometric_distribution<> dis;
-                    int random = dis(gen_);
-                    if (param < random)
-                        param = 0;
-                    else
-                        param = param - random;
-                } else if (KEY_SERVER_RANDOM_TYPE == KEY_SERVER_NORMAL_RAND) {
-                    normal_distribution<> dis(param, 1);
-                    int result = round(dis(gen_));
-                    if (result < 0)
-                        param = 0;
-                    else
-                        param = result;
-                }
-		        if (config.getStorageBlowPercent() == 0) {
-		            param = 1;
-		        }
+                
+            if (config.getStorageBlowPercent() == 0) {
+                param = 1;
+            }
+
+            if (tempKeyGen.isShare == true) {
                 // memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
                 // memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
                 // memcpy(newKeyBuffer + SECRET_SIZE + 4 * sizeof(uint32_t), &param, sizeof(int));

@@ -110,7 +110,8 @@ typedef vector<Chunk_t> ChunkList_t;
 typedef vector<RecipeEntry_t> RecipeList_t;
 
 typedef struct {
-    bool usingCount = false;
+    uint32_t nonce;
+    bool isShare;
     u_char singleChunkHash[4 * sizeof(int)];
 } keyGenEntry_t;
 

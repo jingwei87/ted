@@ -684,6 +684,7 @@ uint32_t keyClient::convertFPtoValue(Data_t& newChunk)
 
 void keyClient::runSimple()
 {
+    srand(time(NULL));
 #if SYSTEM_BREAK_DOWN == 1
     double keyGenTime = 0;
     double assignTime = 0;
@@ -723,12 +724,17 @@ void keyClient::runSimple()
             char hash[16];
 
             // for multiple key manager
-            uint32_t fpValue;
-            uint32_t keyManagerIndex = 0;
-            fpValue = convertFPtoValue(tempChunk);
+            // uint32_t fpValue;
+            // uint32_t keyManagerIndex = 0;
+            // fpValue = convertFPtoValue(tempChunk);
 
             // assign the key manager here
-            keyManagerIndex = this->keyAssignment(fpValue);
+            uint32_t keyManagerIndex = 0;
+            uint32_t nonce = 0;
+            nonce = rand();
+
+            keyManagerIndex = nonce % (this->keyManNum_);
+
 #if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKey, NULL);
             diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
@@ -748,15 +754,9 @@ void keyClient::runSimple()
                 memcpy(tempKeyGenEntry.singleChunkHash + i * sizeof(int), &hashInt[i], sizeof(int));
             }
             for (size_t i = 0; i < this->keyManNum_; i++) {
-                tempKeyGenEntry.usingCount = false;
-                if (i == keyManagerIndex) {
-                    tempKeyGenEntry.usingCount = true;
-                    memcpy(chunkHashArray_[i] + batchNumber * sizeof(keyGenEntry_t),
-                        &tempKeyGenEntry, sizeof(keyGenEntry_t));
-                } else {
-                    memcpy(chunkHashArray_[i] + batchNumber * sizeof(keyGenEntry_t),
-                        &tempKeyGenEntry, sizeof(keyGenEntry_t));
-                }
+                tempKeyGenEntry.nonce = nonce;
+                memcpy(chunkHashArray_[i] + batchNumber * sizeof(keyGenEntry_t),
+                    &tempKeyGenEntry, sizeof(keyGenEntry_t));
             }
             batchNumber++;
             counterArray_[keyManagerIndex]++;
@@ -870,6 +870,8 @@ void keyClient::runSimple()
 
 void keyClient::runSS()
 {
+    // using random nonce
+    srand(time(NULL));
 #if SYSTEM_BREAK_DOWN == 1
     double keyGenTime = 0;
     double assignTime = 0;
@@ -912,12 +914,14 @@ void keyClient::runSS()
             char hash[16];
 
             // for multiple key manager
-            uint32_t fpValue;
-            uint32_t keyManagerIndex = 0;
-            fpValue = convertFPtoValue(tempChunk);
+            // uint32_t fpValue;
+            // uint32_t keyManagerIndex = 0;
+            // fpValue = convertFPtoValue(tempChunk);
+            uint32_t nonce = 0;
+            nonce = rand();
 
-            // assign the key manager here
-            keyManagerIndex = this->keyAssignment(fpValue);
+            
+
             // fprintf(stderr, "Choose key manager index: %u\n", keyManagerIndex);
 #if SYSTEM_BREAK_DOWN == 1
             gettimeofday(&timeendKey, NULL);
@@ -941,29 +945,36 @@ void keyClient::runSS()
             // allocate the share to the key managers
             int remainShareNum = 0;
             ShareIndexEntry_t tempShareIndex;
+            uint32_t keyManagerIndex = 0;
+            keyManagerIndex = nonce % (this->keyManNum_);
+            // assign the key manager here
+            set<int> choosenKeyManagerSet;
+            for (size_t i = 0; i < K_PARA - 1; i++) {
+                int index = (nonce + 1 + i) % (this->keyManNum_);
+                choosenKeyManagerSet.insert(index);
+            }
             for (size_t i = 0; i < this->keyManNum_; i++) {
-                tempKeyGenEntry.usingCount = false;
+                tempKeyGenEntry.nonce = nonce;
+                tempKeyGenEntry.isShare = false;
                 if (i == keyManagerIndex) {
-                    tempKeyGenEntry.usingCount = true;
+                    tempKeyGenEntry.isShare = true;
                     memcpy(chunkHashArray_[i] + assignNumberArray[i] * sizeof(keyGenEntry_t),
                         &tempKeyGenEntry, sizeof(keyGenEntry_t));
-                    assignNumberArray[i]++;
                     tempShareIndex.tedSeedIndex = keyManagerIndex;
                 } else {
-                    if (remainShareNum < (K_PARA - 1)) {
-                        tempKeyGenEntry.usingCount = true;
+                    auto status = choosenKeyManagerSet.find(i);
+                    if (status != choosenKeyManagerSet.end()) {
+                        tempKeyGenEntry.isShare = true;
                         memcpy(chunkHashArray_[i] + assignNumberArray[i] * sizeof(keyGenEntry_t),
                             &tempKeyGenEntry, sizeof(keyGenEntry_t));
-                        assignNumberArray[i]++;
                         tempShareIndex.shareIndexArray[remainShareNum] = static_cast<int>(i);
                         remainShareNum++;  
 		            } else {
-			            tempKeyGenEntry.usingCount = false;
                         memcpy(chunkHashArray_[i] + assignNumberArray[i] * sizeof(keyGenEntry_t),
                             &tempKeyGenEntry, sizeof(keyGenEntry_t));
-                        assignNumberArray[i]++;
 		            }
                 } 
+                assignNumberArray[i]++;
             }
             if (remainShareNum != (K_PARA - 1)) {
                 cerr << "The number of key manager:" << this->keyManNum_
