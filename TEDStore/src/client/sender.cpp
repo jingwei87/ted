@@ -75,7 +75,6 @@ bool Sender::sendChunkList(char* requestBufferIn, int sendBufferSize, int sendCh
     NetworkHeadStruct_t requestBody;
     requestBody.clientID = clientID_;
     requestBody.messageType = CLIENT_UPLOAD_CHUNK;
-    u_char requestBuffer[NETWORK_MESSAGE_DATA_SIZE];
     int sendSize = sizeof(NetworkHeadStruct_t) + sizeof(int) + sendBufferSize;
     memcpy(requestBufferIn + sizeof(NetworkHeadStruct_t), &sendChunkNumber, sizeof(int));
     requestBody.dataSize = sendBufferSize + sizeof(int);

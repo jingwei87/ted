@@ -537,7 +537,6 @@ void keyServer::runKeyGenSS(SSL* connection)
     mpz_t fpBlock[BLOCK_NUM];
     mpz_t finalHash;
     mpz_t secretValue;
-    uint64_t secretShare;
     HHash* hHash = new HHash();
     for (size_t i = 0; i < BLOCK_NUM; i++) {
         mpz_init(fpBlock[i]);
@@ -581,7 +580,6 @@ void keyServer::runKeyGenSS(SSL* connection)
             keyGenEntry_t tempKeyGen;
             KeySeedReturnEntry_t tempKeySeed;
 
-            u_char newKeyBuffer[SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int)];
             memcpy(&tempKeyGen, hash + i * sizeof(keyGenEntry_t), sizeof(keyGenEntry_t));
 
             

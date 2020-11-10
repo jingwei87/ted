@@ -344,7 +344,6 @@ void Chunker::fixSizeChunking()
 
 void Chunker::traceDrivenChunkingFSL()
 {
-    char* readFlag;
     double chunkTime = 0;
     double hashTime = 0;
     long diff;
@@ -433,7 +432,6 @@ void Chunker::traceDrivenChunkingFSL()
 
 void Chunker::traceDrivenChunkingUBC()
 {
-    char* readFlag;
     double chunkTime = 0;
     double hashTime = 0;
     long diff;
