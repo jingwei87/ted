@@ -891,9 +891,8 @@ void keyClient::runSS()
     }
     bool JobDoneFlag = false;
     uint32_t maskInt = ~(0);
-    for (int i = 0; i < sendShortHashMaskBitNumber; i++) {
-        maskInt &= ~(1 << (32 - i));
-    }
+    maskInt = (maskInt >> sendShortHashMaskBitNumber);
+    fprintf(stderr, "mashInt: %u\n", maskInt);
     int hashInt[4];
     while (true) {
         keyGenEntry_t tempKeyGenEntry;
@@ -941,6 +940,7 @@ void keyClient::runSS()
                 hashInt[i] &= maskInt;
                 memcpy(tempKeyGenEntry.singleChunkHash + i * sizeof(int), &hashInt[i], sizeof(int));
             }
+	    
 
             // allocate the share to the key managers
             int remainShareNum = 0;

@@ -44,6 +44,7 @@ keyServer::keyServer(ssl* keyServerSecurityChannelTemp, uint64_t secretValue)
     gen_ = mt19937_64(rd_());
     memset(keyServerPrivate_, 1, SECRET_SIZE);
     optimalSolverComputeItemNumberThreshold_ = config.getOptimalSolverComputeItemNumberThreshold();
+    secretValue_ = secretValue;
     
 }
 #endif
@@ -597,7 +598,7 @@ void keyServer::runKeyGenSS(SSL* connection)
 		        //cout << "para: " << param << endl;
                 // cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int),
                 //     tempKeySeed.simpleKeySeed.shaKeySeed);
-                hHash->ConvertFPtoBlocks(fpBlock, (const char*)tempKeyGen.singleChunkHash);
+		hHash->ConvertFPtoBlocks(fpBlock, (const char*)tempKeyGen.singleChunkHash);
                 hHash->ComputeMulForBlock(fpBlock, secretValue);
                 mpz_set_ui(finalHash, static_cast<unsigned long>(param));
                 hHash->ComputeMulForBlock(fpBlock, finalHash);
