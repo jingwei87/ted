@@ -208,12 +208,8 @@ bool CryptoPrimitive::encryptWithKey(u_char* dataBuffer, const int dataSize, u_c
         return false;
     }
 
-    if (EVP_EncryptFinal_ex(ctx, ciphertext + cipherlen, &len) != 1) {
-        cerr << "encrypt error\n";
-        EVP_CIPHER_CTX_cleanup(ctx);
-        EVP_CIPHER_CTX_free(ctx);
-        return false;
-    }
+    EVP_EncryptFinal_ex(ctx, ciphertext + cipherlen, &len);
+   
     cipherlen += len;
 
     if (cipherlen != dataSize) {
@@ -242,7 +238,7 @@ bool CryptoPrimitive::decryptWithKey(u_char* ciphertext, const int dataSize, u_c
 
     EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL);
     EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, CRYPTO_BLOCK_SIZE, NULL);
-    if (EVP_DecryptInit_ex(ctx, NULL, NULL, 
+    if (!EVP_DecryptInit_ex(ctx, NULL, NULL, 
         key, iv_)) {
         cerr << "decrypt error\n";
         EVP_CIPHER_CTX_cleanup(ctx);
@@ -266,15 +262,10 @@ bool CryptoPrimitive::decryptWithKey(u_char* ciphertext, const int dataSize, u_c
         return false;
     }
 
-    if (EVP_DecryptFinal_ex(ctx, dataBuffer + plaintlen, &len) != 1) {
-        cerr << "decrypt error\n";
-        EVP_CIPHER_CTX_cleanup(ctx);
-        EVP_CIPHER_CTX_free(ctx);
-        return false;
-    }
+    EVP_DecryptFinal_ex(ctx, dataBuffer + plaintlen, &len);
 
     plaintlen += len;
-    
+
     if (plaintlen != dataSize) {
         cerr << "CryptoPrimitive : decrypt output size not equal to origin size" << endl;
         EVP_CIPHER_CTX_cleanup(ctx);
