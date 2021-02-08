@@ -512,7 +512,11 @@ bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_
 bool keyClient::encodeChunk(Data_t& newChunk)
 {
     bool statusChunk = cryptoObj_->encryptChunk(newChunk.chunk);
-    bool statusHash = cryptoObj_->generateHash(newChunk.chunk.logicData, newChunk.chunk.logicDataSize, newChunk.chunk.chunkHash);
+    // bool statusHash = cryptoObj_->generateHash(newChunk.chunk.logicData, newChunk.chunk.logicDataSize, newChunk.chunk.chunkHash);
+    uint8_t hash[CHUNK_HASH_SIZE];
+    bool statusHash = cryptoObj_->encryptWithKey(newChunk.chunk.chunkHash, CHUNK_HASH_SIZE, 
+        newChunk.chunk.encryptKey, hash);
+    memcpy(newChunk.chunk.chunkHash, hash, CHUNK_HASH_SIZE);
     if (!statusChunk) {
         cerr << "KeyClient : error encrypt chunk" << endl;
         return false;

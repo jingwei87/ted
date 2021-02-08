@@ -7,6 +7,7 @@
 #include <rocksdb/db.h>
 #elif DATABASE_TYPE == LEVELDB
 #include "leveldb/db.h"
+#include "leveldb/cache.h"
 #endif
 #include <bits/stdc++.h>
 #include <boost/thread.hpp>
@@ -36,6 +37,7 @@ private:
     leveldb::DB* levelDBObj_ = nullptr;
     std::mutex mutexDataBase_;
     std::string dbName_;
+    leveldb::Options options;
 
 public:
     Database() {};
