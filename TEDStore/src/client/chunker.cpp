@@ -9,6 +9,26 @@ struct timeval timeendChunker_VarSizeInsert;
 struct timeval timestartChunker_VarSizeHash;
 struct timeval timeendChunker_VarSizeHash;
 
+uint32_t DivCeil(uint32_t a, uint32_t b) {
+    uint32_t tmp = a / b;
+    if (a % b == 0) {
+        return tmp;
+    } else {
+        return (tmp + 1);
+    }
+}
+
+uint32_t CompareLimit(uint32_t input, uint32_t lower, uint32_t upper) {
+    if (input <= lower) {
+        return lower; 
+    } else if (input >= upper) {
+        return upper;
+    } else {
+        return input;
+    }
+}
+
+
 Chunker::Chunker(std::string path, keyClient* keyClientObjTemp)
 {
     loadChunkFile(path);
@@ -149,6 +169,35 @@ void Chunker::ChunkerInit(string path)
         if (ReadSize % avgChunkSize != 0) {
             cerr << "Chunker : Setting fixed size chunking error : ReadSize not compat with average chunk size" << endl;
         }
+
+    } else if (ChunkerType == CHUNKER_FAST_CDC) {
+
+        avgChunkSize = (int)config.getAverageChunkSize();
+        minChunkSize = (int)config.getMinChunkSize();
+        maxChunkSize = (int)config.getMaxChunkSize();
+        ReadSize = config.getReadSize();
+        ReadSize = ReadSize * 1024 * 1024;
+        waitingForChunkingBuffer = new u_char[ReadSize];
+        chunkBuffer = new u_char[maxChunkSize];
+
+        if (waitingForChunkingBuffer == NULL || chunkBuffer == NULL) {
+            cerr << "Chunker : Memory malloc error" << endl;
+            exit(1);
+        }
+        if (minChunkSize >= avgChunkSize) {
+            cerr << "Chunker : minChunkSize should be smaller than avgChunkSize!" << endl;
+            exit(1);
+        }
+        if (maxChunkSize <= avgChunkSize) {
+            cerr << "Chunker : maxChunkSize should be larger than avgChunkSize!" << endl;
+            exit(1);
+        }
+
+        normalSize_ = calNormalSize(minChunkSize, avgChunkSize, maxChunkSize);
+        uint32_t bits = (uint32_t) round(log2(static_cast<double>(avgChunkSize))); 
+        maskS_ = generateFastCDCMask(bits + 1);
+        maskL_ = generateFastCDCMask(bits - 1);
+
     } else if (ChunkerType == CHUNKER_FIX_SIZE_TYPE) {
 
         avgChunkSize = (int)config.getAverageChunkSize();
@@ -176,6 +225,9 @@ void Chunker::ChunkerInit(string path)
     } else if (ChunkerType == CHUNKER_TRACE_DRIVEN_TYPE_UBC) {
         maxChunkSize = (int)config.getMaxChunkSize();
         chunkBuffer = new u_char[maxChunkSize + 5];
+    } else {
+        cerr << "Chunker : Error chunker type.\n";
+        exit(1);
     }
 }
 
@@ -196,6 +248,10 @@ bool Chunker::chunking()
 
     if (ChunkerType == CHUNKER_TRACE_DRIVEN_TYPE_UBC) {
         traceDrivenChunkingUBC();
+    }
+
+    if (ChunkerType == CHUNKER_FAST_CDC) {
+        fastCDC();
     }
 
     return true;
@@ -710,4 +766,142 @@ bool Chunker::insertMQToKeyClient(Data_t& newData)
 bool Chunker::setJobDoneFlag()
 {
     return keyClientObj->editJobDoneFlag();
+}
+
+uint32_t Chunker::cutPoint(const uint8_t* src, const uint32_t len) {
+    uint32_t n;
+    uint32_t fp = 0;
+    uint32_t i;
+    i = std::min(len, static_cast<uint32_t>(minChunkSize)); 
+    n = std::min(normalSize_, len);
+    for (; i < n; i++) {
+        fp = (fp >> 1) + GEAR[src[i]];
+        if (!(fp & maskS_)) {
+            return (i + 1);
+        }
+    }
+
+    n = std::min(static_cast<uint32_t>(maxChunkSize), len);
+    for (; i < n; i++) {
+        fp = (fp >> 1) + GEAR[src[i]];
+        if (!(fp & maskL_)) {
+            return (i + 1);
+        }
+    } 
+    return i;
+}
+
+void Chunker::fastCDC() {
+    double insertTime = 0;
+    double hashTime = 0;
+    long diff;
+    double second;
+    size_t pos = 0;
+    ifstream& fin = getChunkingFile();
+    uint64_t fileSize = 0;
+    uint64_t chunkIDCnt = 0;
+    size_t totalOffset = 0;
+    bool end = false;
+/*start chunking*/
+#if SYSTEM_BREAK_DOWN == 1
+    gettimeofday(&timestartChunker, NULL);
+#endif
+    while (!end) {
+        memset((char*)waitingForChunkingBuffer, 0, sizeof(uint8_t) * ReadSize);
+        fin.read((char*)waitingForChunkingBuffer, sizeof(uint8_t) * ReadSize);
+        end = fin.eof();
+        size_t len = fin.gcount();
+        fprintf(stderr, "Chunker: len: %lu\n", len);
+        size_t localOffset = 0;
+        while (((len - localOffset) >= maxChunkSize) || (end && (localOffset < len))) {
+            uint32_t cp = cutPoint(waitingForChunkingBuffer + localOffset, len - localOffset);
+            Data_t tempChunk;
+            tempChunk.chunk.ID = chunkIDCnt;
+            tempChunk.chunk.logicDataSize = cp;
+            memcpy(tempChunk.chunk.logicData, waitingForChunkingBuffer + localOffset, cp);
+            tempChunk.dataType = DATA_TYPE_CHUNK;
+
+#if SYSTEM_BREAK_DOWN==1
+            gettimeofday(&timestartChunker_VarSizeHash, NULL);
+#endif
+            if (!cryptoObj->generateHash(tempChunk.chunk.logicData, tempChunk.chunk.logicDataSize, tempChunk.chunk.chunkHash)) {
+                    cerr << "Chunker : average size chunking compute hash error" << endl;
+                    return;
+            }
+
+#if SYSTEM_BREAK_DOWN == 1
+            gettimeofday(&timeendChunker_VarSizeHash, NULL);
+            diff = 1000000 * (timeendChunker_VarSizeHash.tv_sec - timestartChunker_VarSizeHash.tv_sec) + timeendChunker_VarSizeHash.tv_usec - timestartChunker_VarSizeHash.tv_usec;
+            second = diff / 1000000.0;
+            hashTime += second;
+#endif
+
+
+#if SYSTEM_BREAK_DOWN == 1
+            gettimeofday(&timestartChunker_VarSizeInsert, NULL);
+#endif
+            if (!insertMQToKeyClient(tempChunk)) {
+                fprintf(stderr, "Chunker, error insert chunk to FPWorker MQ for chunkID: %u.\n",
+                    tempChunk.chunk.ID);
+            }
+#if SYSTEM_BREAK_DOWN == 1
+            gettimeofday(&timeendChunker_VarSizeInsert, NULL);
+            diff = 1000000 * (timeendChunker_VarSizeInsert.tv_sec - timestartChunker_VarSizeInsert.tv_sec) + timeendChunker_VarSizeInsert.tv_usec - timestartChunker_VarSizeInsert.tv_usec;
+            second = diff / 1000000.0;
+            insertTime += second;
+#endif
+            localOffset += cp;
+            fileSize += cp;
+            chunkIDCnt++;
+        }
+        pos += localOffset;
+        totalOffset += localOffset;
+    
+        fin.seekg(totalOffset, std::ios_base::beg);
+    }
+    fileRecipe.recipe.fileRecipeHead.totalChunkNumber = chunkIDCnt;
+    fileRecipe.recipe.keyRecipeHead.totalChunkKeyNumber = chunkIDCnt;
+    fileRecipe.recipe.fileRecipeHead.fileSize = fileSize;
+    fileRecipe.recipe.keyRecipeHead.fileSize = fileSize;
+    fileRecipe.dataType = DATA_TYPE_RECIPE;
+
+    if (!insertMQToKeyClient(fileRecipe)) {
+        cerr << "Chunker : error insert recipe head to keyClient message queue" << endl;
+        return;
+    }
+    if (setJobDoneFlag() == false) {
+        cerr << "Chunker: set chunking done flag error" << endl;
+        return;
+    }
+
+    cout << "Chunker : variable size chunking over:\nTotal file size = " << fileRecipe.recipe.fileRecipeHead.fileSize << "; Total chunk number = " << fileRecipe.recipe.fileRecipeHead.totalChunkNumber << endl;
+#if SYSTEM_BREAK_DOWN == 1
+    gettimeofday(&timeendChunker, NULL);
+    diff = 1000000 * (timeendChunker.tv_sec - timestartChunker.tv_sec) + timeendChunker.tv_usec - timestartChunker.tv_usec;
+    second = diff / 1000000.0;
+    cout << "Chunker : total chunking time = " << setbase(10) << second - (insertTime + hashTime) << " s" << endl;
+    cout << "Chunker : total hashing time = " << hashTime << " s" << endl;
+#endif
+
+    return ;
+}
+
+
+uint32_t Chunker::calNormalSize(const uint32_t min, const uint32_t av, const uint32_t max) {
+    uint32_t off = min + DivCeil(min, 2);
+    if (off > av) {
+        off = av;
+    } 
+    uint32_t diff = av - off;
+    if (diff > max) {
+        return max;
+    }
+    return diff;
+}
+
+
+uint32_t Chunker::generateFastCDCMask(uint32_t bits) {
+    uint32_t tmp;
+    tmp = (1 << CompareLimit(bits, 1, 31)) - 1;
+    return tmp;
 }

@@ -36,6 +36,7 @@ using namespace std;
 #define CHUNKER_VAR_SIZE_TYPE 1
 #define CHUNKER_TRACE_DRIVEN_TYPE_FSL 2
 #define CHUNKER_TRACE_DRIVEN_TYPE_UBC 3
+#define CHUNKER_FAST_CDC 4
 
 #define MIN_CHUNK_SIZE 4096 //macro for the min size of variable-size chunker
 #define AVG_CHUNK_SIZE 8192 //macro for the average size of variable-size chunker
