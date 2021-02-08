@@ -23,7 +23,8 @@ using namespace std;
 // database settings
 #define LEVELDB 1
 #define ROCKSDB 2
-#define DATABASE_TYPE LEVELDB
+#define PEBBLESDB 3
+#define DATABASE_TYPE PEBBLESDB
 
 // macro for system running types
 #define SYSTEM_BREAK_DOWN 1 // 0:breakdown disable| 1:breakdown enable

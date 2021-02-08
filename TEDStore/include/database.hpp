@@ -8,6 +8,9 @@
 #elif DATABASE_TYPE == LEVELDB
 #include "leveldb/db.h"
 #include "leveldb/cache.h"
+#elif DATABASE_TYPE == PEBBLESDB
+#include "pebblesdb/db.h"
+#include "pebblesdb/cache.h"
 #endif
 #include <bits/stdc++.h>
 #include <boost/thread.hpp>
@@ -30,7 +33,7 @@ public:
     bool insert(std::string key, std::string value);
 };
 
-#elif DATABASE_TYPE == LEVELDB
+#elif ((DATABASE_TYPE == LEVELDB) || (DATABASE_TYPE == PEBBLESDB))
 
 class Database {
 private:

@@ -50,7 +50,7 @@ Database::~Database()
     remove(name.c_str());
 }
 
-#elif DATABASE_TYPE == LEVELDB
+#elif ((DATABASE_TYPE == LEVELDB) || (DATABASE_TYPE == PEBBLESDB))
 
 bool Database::query(std::string key, std::string& value)
 {
