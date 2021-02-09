@@ -281,6 +281,13 @@ bool StorageCore::restoreRecipeAndChunk(char* recipeList, uint32_t startID, uint
 
 bool StorageCore::storeChunk(std::string chunkHash, char* chunkData, int chunkSize)
 {
+    string dbValue;
+    bool queryStatus = fp2ChunkDB.query(chunkHash, dbValue);
+
+    if (queryStatus == true) {
+        return true;
+    }
+
     keyForChunkHashDB_t key;
     key.length = chunkSize;
 #if SYSTEM_BREAK_DOWN == 1
@@ -299,7 +306,7 @@ bool StorageCore::storeChunk(std::string chunkHash, char* chunkData, int chunkSi
 #if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartStorage, NULL);
 #endif
-    string dbValue;
+    
     dbValue.resize(sizeof(keyForChunkHashDB_t));
     memcpy(&dbValue[0], &key, sizeof(keyForChunkHashDB_t));
     if (chunkHash.size() != CHUNK_HASH_SIZE) {

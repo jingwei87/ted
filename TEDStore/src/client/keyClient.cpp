@@ -817,6 +817,11 @@ void keyClient::runSimple()
 
                     memcpy(newKeyBuffer + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.chunkHash, CHUNK_HASH_SIZE);
                     cryptoObj_->generateHash(newKeyBuffer, CHUNK_ENCRYPT_KEY_SIZE + CHUNK_ENCRYPT_KEY_SIZE, batchList[i].chunk.encryptKey);
+                    // for (size_t index = 0; index < CHUNK_HASH_SIZE; index++) {
+                    //     fprintf(stdout, "%02x", batchList[i].chunk.encryptKey[index]);
+                    // }
+                    // fprintf(stdout, "\n");
+
 #if SYSTEM_BREAK_DOWN == 1
                     gettimeofday(&timeendKey, NULL);
                     diff = 1000000 * (timeendKey.tv_sec - timestartKey.tv_sec) + timeendKey.tv_usec - timestartKey.tv_usec;
