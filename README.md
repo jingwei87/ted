@@ -272,7 +272,7 @@ configuration (`./bin/config.json`) of TEDStore as follows.
 }
 ```
 
-Also, you can configure the different key management scheme in `./include/configure.hpp` as follows.
+Also, you can configure the key management scheme in `./include/configure.hpp` as follows.
 ```c++
 #define OLD_VERSION 0 // 1:using single-key-manager scheme | 0: does not use single-key-manager scheme
 #define SINGLE_MACHINE_TEST 0 //1: test on single machine, key server use cmd input | 0: test on multi-machine, key server use config.json
