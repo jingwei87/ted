@@ -21,10 +21,11 @@ efficiency and data confidentiality, with small performance overhead.
 
 ## Prerequisites
 
-We test TED and TEDStore under Ubuntu 18.04 and 16.04 (note that to run TEDStore, your machine needs to have at least 4GB memory). They require OpenSSL ([version 1.1.1d](https://www.openssl.org/source/openssl-1.1.1d.tar.gz)), Leveldb ([version 1.22](https://github.com/google/leveldb/archive/1.22.tar.gz)), Boost C++ library, and Snappy. Our test compiles TED and TEDStore using CMake 3.17 and GNU GCC 7.4.0.     
+We test TED and TEDStore under Ubuntu 18.04 and 16.04 (note that to run TEDStore, your machine needs to have at least 4GB memory). They require OpenSSL ([version 1.1.1d](https://www.openssl.org/source/openssl-1.1.1d.tar.gz)), Leveldb ([version 1.22](https://github.com/google/leveldb/archive/1.22.tar.gz)), Boost C++ library, Snappy and 
+GNU MP library. Our test compiles TED and TEDStore using CMake 3.17 and GNU GCC 7.4.0.     
 
 ```shell
-sudo apt-get install libboost-all-dev libsnappy-dev 
+sudo apt-get install libboost-all-dev libsnappy-dev libgmp-dev
 
 # openssl
 wget -O - https://www.openssl.org/source/openssl-1.1.1d.tar.gz | tar -xz
@@ -242,7 +243,8 @@ configuration (`./bin/config.json`) of TEDStore as follows.
         "_keyServerPort": 6666, // Key server host port
         "_sketchTableWidth": 1048576, // Number of columns in the sketch table
         "_optimalSolverComputeItemNumberThreshold": 48000, // After every set number of keys are generated, the optimization parameter t is solved
-        "_storageBlowPercent": 0.005 // Preset storage blowup factor b, Uint: 1
+        "_storageBlowPercent": 0.005, // Preset storage blowup factor b, Uint: 1
+		"_secretShare": 64 // the secret sharing value
     },
     "SPConfig": {
         "_storageServerIP": "127.0.0.1", // Storage server host IP
@@ -257,22 +259,80 @@ configuration (`./bin/config.json`) of TEDStore as follows.
         "_clientID": 1, // Current client ID 
         "_sendChunkBatchSize": 1000, // Maximum number of chunks sent per communication
         "_sendRecipeBatchSize": 100000, // Maximum number of file recipe entry sent per communication
-        "_sendShortHashMaskBitNumber": 12 // Bit length modified during key generation (To prevent this information from being obtained by Key server)
+        "_sendShortHashMaskBitNumber": 12, // Bit length modified during key generation (To prevent this information from being obtained by Key server)
+		"_keyManagerIPList": {
+			"192.168.1.101": 6666, // first key manager: ip:port
+			"192.168.1.101": 6667, // second key manager: ip:port
+			"192.168.1.101": 6668, // third manager: ip:port
+			"192.168.1.101": 6669, // fourth manager: ip:port 
+			...                    // ...
+		},
+		"_adjustValue": 3 // the value to control the secret sharing result precision
     }
 }
 ```
 
+Also, you can configure the different key management scheme in `./include/configure.hpp` as follows.
+```c++
+#define OLD_VERSION 0 // 1:using single-key-manager scheme | 0: does not use single-key-manager scheme
+#define SINGLE_MACHINE_TEST 0 //1: test on single machine, key server use cmd input | 0: test on multi-machine, key server use config.json
+...
+#define ENABLE_SECRET_SHARE 1 // 1:using quorum-based scheme | 0: using unanimity-based scheme
+...
+
+// for number of k in (n,k)-Shamir's secret sharing for quorum-based scheme
+#define K_PARA 3
+```
+
 ### Usage
 
-You can test TEDStore in a single machine, and connect the key manager, server (e.g., the provider in the paper) and client instances via the local loopback interface. To this end, switch your current working directory to `bin/`, and start each instance in an independent terminal:   
+You can test TEDStore in a single machine, and connect the key manager, server (e.g., the provider in the paper) and client instances via the local loopback interface. To this end, switch your current working directory to `bin/`, and start each instance in an independent terminal.
 
+#### Run the key managers
+
+For both the single-key-manager scheme and the unanimity-based scheme, you can directly start the key manager as follows.
 ```shell
 ./keymanager
 ```
+
+For the quorum-based scheme, you need to generate the secret share for each key manager. For example, suppose we use (4,3)-Shamir's secret sharing and the global secret is 1, you can generate the secret shares of 4 key managers as follows.
+
+```shell
+./secretShare 3 4 1
+```
+Then, the output is:
+```shell
+1 861  # the secret share for the first key manager
+2 2367 # the secret share for the second key manager
+3 4519 # the secret share for the third key manager
+4 7317 # the secret share for the fourth key manager
+ 1 2 3
+ 1 2 4
+ 1 3 4
+ 2 3 4
+The adjustment value: 3 # the adjust value for the client (set it in the "config.json")
+```
+Finally, you can run those four key managers with their corresponding secret shares:
+
+```shell
+# For example
+# for the first key manager, you need to run:
+./keymanager 861
+# for the second key manager, you need to run:
+./keymanager 2367
+# for the third key manager, you need to run:
+./keymanager 4519
+# for the fourth key manager, you need to run:
+./keymanager 7317 
+```
+
+Note that if you deploy the key managers in different machines, you can directly configure the secret share in `config.json` of each key manager (i.e., in `_secretShare` entry).
+#### Run the storage server
+You can directly run the storage server via the following command:
 ```shell
 ./server
 ```
-
+#### Run the client
 TEDStore provides store and restore interfaces to client. 
 ```shell
 # store file
