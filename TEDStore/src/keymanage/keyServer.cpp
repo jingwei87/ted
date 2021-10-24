@@ -590,16 +590,15 @@ void keyServer::runKeyGenSS(SSL* connection)
                 param = 1;
             }
             
-            hHash->ConvertFPtoBlocks(fpBlock, (const char*)tempKeyGen.singleChunkHash);
-            hHash->ComputeMulForBlock(fpBlock, secretValue);
-            mpz_set_ui(finalHash, static_cast<unsigned long>(param));
-            hHash->ComputeMulForBlock(fpBlock, finalHash);
-            mpz_set_ui(finalHash, 0);
-            hHash->ComputeBlockHash(finalHash, fpBlock);
-            size_t length;
-            mpz_export(tempKeySeed.hhashKeySeed.hhashKeySeed, &length, 1, sizeof(char), 1, 0, finalHash);
-
             if (tempKeyGen.isShare == true) {
+                hHash->ConvertFPtoBlocks(fpBlock, (const char*)tempKeyGen.singleChunkHash);
+                hHash->ComputeMulForBlock(fpBlock, secretValue);
+                mpz_set_ui(finalHash, static_cast<unsigned long>(param));
+                hHash->ComputeMulForBlock(fpBlock, finalHash);
+                mpz_set_ui(finalHash, 0);
+                hHash->ComputeBlockHash(finalHash, fpBlock);
+                size_t length;
+                mpz_export(tempKeySeed.hhashKeySeed.hhashKeySeed, &length, 1, sizeof(char), 1, 0, finalHash);
                 tempKeySeed.isShare = true;
             } else {
                 tempKeySeed.isShare = false;

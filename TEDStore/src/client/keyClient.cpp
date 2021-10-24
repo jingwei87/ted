@@ -463,16 +463,16 @@ bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_
 #if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timestartKeySocket, NULL);
 #endif
+    //for (size_t i = 0; i < this->keyManNum_; i++) {
+    //   if (!securityChannelArray[i]->send(sslConnectionArray[i], (char*)batchHashList[i], sizeof(keyGenEntry_t) * batchNumber)) {
+    //       cerr << "keyClient: send socket error: for id = " << setbase(10) << i << endl;
+    //       return false;
+    //   }
+    //}
     for (size_t i = 0; i < this->keyManNum_; i++) {
-       if (!securityChannelArray[i]->send(sslConnectionArray[i], (char*)batchHashList[i], sizeof(keyGenEntry_t) * batchNumber)) {
-           cerr << "keyClient: send socket error: for id = " << setbase(10) << i << endl;
-           return false;
-       }
+	   tPool_->enqueue(&ssl::send, securityChannelArray[i], sslConnectionArray[i], (char*)batchHashList[i], sizeof(keyGenEntry_t) * batchNumber);
     }
-    // for (size_t i = 0; i < this->keyManNum_; i++) {
-	//     tPool_->enqueue(&ssl::send, securityChannelArray[i], sslConnectionArray[i], (char*)batchHashList[i], sizeof(keyGenEntry_t) * batchNumber);
-    // }
-    // tPool_->wait_until_nothing_in_flight();
+    tPool_->wait_until_nothing_in_flight();
 #if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timeendKeySocket, NULL);
     keySocketSendTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
@@ -482,30 +482,28 @@ bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_
     gettimeofday(&timestartKeySocket, NULL);
 #endif
     for (size_t i = 0; i < this->keyManNum_; i++) {
-        // if (!securityChannelArray[i]->recv(sslConnectionArray[i], (char*)chunkKeyArray[i], recvSize[i])) {
-        //     cerr << "keyClient: recv socket error: for id = " << setbase(10) << i << endl;
-        //     return false;
-        // }
-        tPool_->enqueue(&ssl::recv, securityChannelArray[i], sslConnectionArray[i], (char*)chunkKeyArray[i], recvSize[i]);
-        // if (recvSize[i] % sizeof(KeySeedReturnEntry_t) != 0) {
-        //     cerr << "keyClient: recv size % KeySeedReturnEntry_t not equal to 0: for id = " << setbase(10) << i << endl;
-        //     return false;
-        // }
+        if (!securityChannelArray[i]->recv(sslConnectionArray[i], (char*)chunkKeyArray[i], recvSize[i])) {
+            cerr << "keyClient: recv socket error: for id = " << setbase(10) << i << endl;
+            return false;
+        }
+        if (recvSize[i] % sizeof(KeySeedReturnEntry_t) != 0) {
+            cerr << "keyClient: recv size % KeySeedReturnEntry_t not equal to 0: for id = " << setbase(10) << i << endl;
+            return false;
+        }
     }
-    tPool_->wait_until_nothing_in_flight();
 #if SYSTEM_BREAK_DOWN == 1
     gettimeofday(&timeendKeySocket, NULL);
     keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
     int batchSize[this->keyManNum_];
     int tmpBatchSize = recvSize[0] / sizeof(KeySeedReturnEntry_t);
-    for (size_t i = 0; i < this->keyManNum_; i++) {
-        batchSize[i] = recvSize[i] / sizeof(KeySeedReturnEntry_t);
-        if (tmpBatchSize != batchSize[i]) {
-            return false;
-        }
-        tmpBatchSize = batchSize[i];
-    }
+    // for (size_t i = 0; i < this->keyManNum_; i++) {
+    //     batchSize[i] = recvSize[i] / sizeof(KeySeedReturnEntry_t);
+    //     if (tmpBatchSize != batchSize[i]) {
+    //         return false;
+    //     }
+    //     tmpBatchSize = batchSize[i];
+    // }
     batchkeyNumber = tmpBatchSize;
     return true;
 }
