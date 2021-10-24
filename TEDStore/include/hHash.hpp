@@ -25,6 +25,9 @@
 
 #define BLOCK_NUM 4
 
+#define BIG_PRIME_P "112449052109842996128546702348259796295591183528744470135451223438922216340717569"
+#define BIG_PRIME_Q "8146420229"
+
 class HHash {
 private:
     // two big prime
@@ -86,15 +89,6 @@ public:
      * @param mulVal another operand 
      */
     void ComputeMulForBlock(mpz_t block[BLOCK_NUM], mpz_t mulVal);
-
-    /**
-     * @brief Recover the secret from share hashes
-     * 
-     * @param hash the array of share hashes 
-     * @param powVal the array of share parameter 
-     * @param secret the recovery secret
-     */
-    void RecoverySecretFromHash(mpz_t hash[K_PARA], mpz_t powVal[K_PARA], mpz_t secret);
 
     /**
      * @brief Recover the secret from share hashes

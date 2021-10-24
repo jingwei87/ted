@@ -56,7 +56,7 @@ using namespace std;
 #define KEY_SERVER_RANDOM_TYPE KEY_SERVER_NO_RAND
 
 #define SIMPLE_KEY_SEED 32
-#define HHASH_KEY_SEED 16
+#define HHASH_KEY_SEED 32
 
 class Configure {
 private:

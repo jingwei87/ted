@@ -17,7 +17,7 @@
 		"_secretShare": 64
 	},
 	"SPConfig": {
-		"_storageServerIP": "192.168.1.103",
+		"_storageServerIP": "192.168.10.103",
 		"_storageServerPort": 7001,
 		"_maxContainerSize": 8388608,
 		"_RecipeRootPath": "Recipes/",
@@ -31,10 +31,10 @@
 		"_sendRecipeBatchSize": 100000,
 		"_sendShortHashMaskBitNumber": 12,
 		"_keyManagerIPList": {
-			"192.168.1.101": 6666,
-			"192.168.1.101": 6667,
-			"192.168.1.101": 6668,
-			"192.168.1.101": 6669
+			"192.168.10.52": 6666,
+			"192.168.10.53": 6666,
+			"192.168.10.55": 6666,
+			"192.168.10.56": 6666
 		},
 		"_adjustValue": 3
 	}

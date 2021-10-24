@@ -62,8 +62,8 @@ struct fraction {
 HHash::HHash()
 {
     // set the init value of p,q
-    mpz_init_set_str(p_, "225232741022919503494335621622594011137", 10);
-    mpz_init_set_str(q_, "5685673727", 10);
+    mpz_init_set_str(p_, BIG_PRIME_P, 10);
+    mpz_init_set_str(q_, BIG_PRIME_Q, 10);
 
 
     // initialize the array g_
@@ -204,26 +204,6 @@ HHash::~HHash()
     mpz_clear(op1_);
     mpz_clear(op2_);
     fprintf(stderr, "HHash: destory the HHash done.\n");
-}
-
-/**
- * @brief Recover the secret from share hashes
- * 
- * @param hash the array of share hash 
- * @param powVal the array of share parameter 
- * @param secret the recovery secret
- */
-void HHash::RecoverySecretFromHash(mpz_t hash[K_PARA], mpz_t powVal[K_PARA], mpz_t secret)
-{
-    for (size_t i = 0; i < K_PARA; i++) {
-        mpz_powm(hash[i], hash[i], powVal[i], p_);
-    }
-
-    mpz_set_ui(secret, 1);
-    for (size_t i = 0; i < K_PARA; i++) {
-        mpz_mul(secret, secret, hash[i]);
-        mpz_mod(secret, secret, p_);
-    }
 }
 
 /**

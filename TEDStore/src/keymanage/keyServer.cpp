@@ -383,8 +383,7 @@ void keyServer::runOptimalSolver()
 
 void keyServer::runKeyGenSimple(SSL* connection)
 {
-
-    cerr << "Zuoru: Using the runKeyGenSimple" << endl;
+    cerr << "keyServer: Using the runKeyGenSimple" << endl;
 
     double keySeedGenTime = 0;
     long diff;
@@ -513,7 +512,7 @@ void keyServer::runKeyGenSimple(SSL* connection)
 void keyServer::runKeyGenSS(SSL* connection)
 {
 
-    cerr << "Zuoru: Using the runKeyGenSS" << endl;
+    cerr << "keyServer: Using the runKeyGenSS" << endl;
     // for hHash function
     mpz_t fpBlock[BLOCK_NUM];
     mpz_t finalHash;
@@ -590,27 +589,17 @@ void keyServer::runKeyGenSS(SSL* connection)
             if (config.getStorageBlowPercent() == 0) {
                 param = 1;
             }
+            
+            hHash->ConvertFPtoBlocks(fpBlock, (const char*)tempKeyGen.singleChunkHash);
+            hHash->ComputeMulForBlock(fpBlock, secretValue);
+            mpz_set_ui(finalHash, static_cast<unsigned long>(param));
+            hHash->ComputeMulForBlock(fpBlock, finalHash);
+            mpz_set_ui(finalHash, 0);
+            hHash->ComputeBlockHash(finalHash, fpBlock);
+            size_t length;
+            mpz_export(tempKeySeed.hhashKeySeed.hhashKeySeed, &length, 1, sizeof(char), 1, 0, finalHash);
 
             if (tempKeyGen.isShare == true) {
-                // memcpy(newKeyBuffer, keyServerPrivate_, SECRET_SIZE);
-                // memcpy(newKeyBuffer + SECRET_SIZE, tempKeyGen.singleChunkHash, 4 * sizeof(uint32_t));
-                // memcpy(newKeyBuffer + SECRET_SIZE + 4 * sizeof(uint32_t), &param, sizeof(int));
-		        //cout << "para: " << param << endl;
-                // cryptoObj_->generateHash(newKeyBuffer, SECRET_SIZE + 4 * sizeof(uint32_t) + sizeof(int),
-                //     tempKeySeed.simpleKeySeed.shaKeySeed);
-		hHash->ConvertFPtoBlocks(fpBlock, (const char*)tempKeyGen.singleChunkHash);
-                hHash->ComputeMulForBlock(fpBlock, secretValue);
-                mpz_set_ui(finalHash, static_cast<unsigned long>(param));
-                hHash->ComputeMulForBlock(fpBlock, finalHash);
-                mpz_set_ui(finalHash, 0);
-                hHash->ComputeBlockHash(finalHash, fpBlock);
-                size_t length;
-                mpz_export(tempKeySeed.hhashKeySeed.hhashKeySeed, &length, 1, sizeof(char), 1, 0, finalHash);
-                // cout << "Key seed: ";
-                //for (size_t j = 0; j < 32; j++) {
-                //	printf("%x", tempKeySeed.simpleKeySeed.shaKeySeed[j]);	
-                //}
-                //cout << endl;
                 tempKeySeed.isShare = true;
             } else {
                 tempKeySeed.isShare = false;
