@@ -495,7 +495,6 @@ bool keyClient::keyExchangeSimpleAll(u_char** batchHashList, int batchNumber, u_
     gettimeofday(&timeendKeySocket, NULL);
     keySocketRecvTime += (1000000 * (timeendKeySocket.tv_sec - timestartKeySocket.tv_sec) + timeendKeySocket.tv_usec - timestartKeySocket.tv_usec) / 1000000.0;
 #endif
-    int batchSize[this->keyManNum_];
     int tmpBatchSize = recvSize[0] / sizeof(KeySeedReturnEntry_t);
     // for (size_t i = 0; i < this->keyManNum_; i++) {
     //     batchSize[i] = recvSize[i] / sizeof(KeySeedReturnEntry_t);
