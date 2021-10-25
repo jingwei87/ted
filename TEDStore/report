@@ -1,4 +1,0 @@
-/home/zryang/ted/TEDStore/src/client/keyClient.cpp:498:9: warning: unused variable 'batchSize' [-Wunused-variable]
-    int batchSize[this->keyManNum_];
-        ^
-1 warning generated.

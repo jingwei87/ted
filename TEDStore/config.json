@@ -1,5 +1,4 @@
-{
-	"ChunkerConfig": {
+{ "ChunkerConfig": {
 		"_chunkingType": 3,
 		"_minChunkSize": 4096,
 		"_avgChunkSize": 8192,
@@ -17,7 +16,7 @@
 		"_secretShare": 64
 	},
 	"SPConfig": {
-		"_storageServerIP": "192.168.10.103",
+		"_storageServerIP": "192.168.10.64",
 		"_storageServerPort": 7001,
 		"_maxContainerSize": 8388608,
 		"_RecipeRootPath": "Recipes/",

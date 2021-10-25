@@ -79,10 +79,10 @@ HHash::HHash()
     GenerateForG(g_, p_, seed_);
 
     //Curiosity: print g
-    fprintf(stderr, "Show the g[BLOCK_NUM] array.\n");
-    for (uint32_t i = 0; i < BLOCK_NUM; i++) {
-        gmp_printf("g[%d] = %Zd\n", i, g_[i]);
-    }
+    // fprintf(stderr, "Show the g[BLOCK_NUM] array.\n");
+    // for (uint32_t i = 0; i < BLOCK_NUM; i++) {
+    //     gmp_printf("g[%d] = %Zd\n", i, g_[i]);
+    // }
 
     // init temp value
     mpz_init(tempVal_);
